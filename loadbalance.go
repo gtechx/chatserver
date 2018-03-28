@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/nature19862001/base/common"
+	. "github.com/gtechx/base/common"
 )
 
 func loadBanlanceInit() {

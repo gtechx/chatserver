@@ -4,7 +4,7 @@ import (
 	//"errors"
 
 	"github.com/garyburd/redigo/redis"
-	. "github.com/nature19862001/base/common"
+	. "github.com/gtechx/base/common"
 )
 
 //[sorted sets]serverlist pair(count,addr)

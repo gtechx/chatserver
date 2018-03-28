@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/garyburd/redigo/redis"
-	. "github.com/nature19862001/base/common"
+	. "github.com/gtechx/base/common"
 )
 
 var defaultGroupName string = "我的好友"

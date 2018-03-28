@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	. "github.com/nature19862001/base/common"
-	"github.com/nature19862001/base/gtnet"
-	"github.com/nature19862001/base/php"
+	. "github.com/gtechx/base/common"
+	"github.com/gtechx/base/gtnet"
+	"github.com/gtechx/base/php"
 )
 
 const (

@@ -1,6 +1,6 @@
 package gtentity
 
-import "github.com/nature19862001/base/gtnet"
+import "github.com/gtechx/base/gtnet"
 
 type IEntity interface {
 	ID() uint64

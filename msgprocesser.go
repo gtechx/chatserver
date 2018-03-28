@@ -1,8 +1,8 @@
 package main
 
 // import (
-// 	. "github.com/nature19862001/Chat/protocol"
-// 	. "github.com/nature19862001/base/common"
+// 	. "github.com/gtechx/Chat/protocol"
+// 	. "github.com/gtechx/base/common"
 // )
 
 // func OnReqFriendList(client *ChatClient, data []byte) {

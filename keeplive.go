@@ -1,8 +1,8 @@
 package main
 
 import (
-	//. "github.com/nature19862001/Chat/common"
-	//"github.com/nature19862001/base/gtnet"
+	//. "github.com/gtechx/Chat/common"
+	//"github.com/gtechx/base/gtnet"
 	"time"
 )
 

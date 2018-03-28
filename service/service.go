@@ -3,7 +3,7 @@ package gtservice
 import (
 	"time"
 
-	"github.com/nature19862001/base/gtnet"
+	"github.com/gtechx/base/gtnet"
 )
 
 type Service struct {

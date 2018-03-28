@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	"github.com/nature19862001/Chat/chatserver/Config"
-	. "github.com/nature19862001/base/common"
+	. "github.com/gtechx/base/common"
+	"github.com/gtechx/chatserver/config"
 )
 
 type RedisDataManager struct {

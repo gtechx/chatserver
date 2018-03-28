@@ -1,8 +1,8 @@
 package main
 
 // import (
-// 	. "github.com/nature19862001/base/common"
-// 	//"github.com/nature19862001/base/gtnet"
+// 	. "github.com/gtechx/base/common"
+// 	//"github.com/gtechx/base/gtnet"
 // )
 
 func messagePullInit() {

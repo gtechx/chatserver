@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	"github.com/nature19862001/Chat/chatserver/Config"
-	. "github.com/nature19862001/base/common"
+	. "github.com/gtechx/base/common"
+	"github.com/gtechx/chatserver/config"
 )
 
 //每个app之间可以是独立的数据，也可以共享数据，根据你的设置

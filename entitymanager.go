@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/nature19862001/Chat/chatserver/entity"
-	"github.com/nature19862001/base/gtnet"
+	"github.com/gtechx/base/gtnet"
+	"github.com/gtechx/chatserver/entity"
 )
 
 var BigMsgIDCounter uint8 = 0

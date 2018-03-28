@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	//. "github.com/nature19862001/Chat/common"
-	//"github.com/nature19862001/base/gtnet"
-	"github.com/nature19862001/Chat/chatserver/Config"
-	"github.com/nature19862001/Chat/chatserver/Service"
-	"github.com/nature19862001/base/gtnet"
+	//. "github.com/gtechx/Chat/common"
+	//"github.com/gtechx/base/gtnet"
+
+	"github.com/gtechx/base/gtnet"
+	"github.com/gtechx/chatserver/config"
+	"github.com/gtechx/chatserver/service"
 )
 
 var quit chan os.Signal
