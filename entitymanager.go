@@ -36,7 +36,9 @@ var msgProcesser [][]func(*UserEntity, []byte)
 // var smallMsgProcesser []func(IEntity, []byte) = []func(IEntity, []byte){}
 
 func init() {
-	msgProcesser = make([][]func(*UserEntity, []byte), BIG_MSG_ID_COUNT)
+	if msgProcesser == nil {
+		msgProcesser = make([][]func(*UserEntity, []byte), BIG_MSG_ID_COUNT)
+	}
 }
 
 type CEntityManager struct {

@@ -87,14 +87,16 @@ func redisDial() (redis.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := c.Do("AUTH", "ztgame@123"); err != nil {
+	if config.RedisPassword != "" {
+		if _, err := c.Do("AUTH", config.RedisPassword); err != nil {
+			c.Close()
+			return nil, err
+		}
+	}
+	if _, err := c.Do("SELECT", config.DefaultDB); err != nil {
 		c.Close()
 		return nil, err
 	}
-	// if _, err := c.Do("SELECT", db); err != nil {
-	// 	c.Close()
-	// 	return nil, err
-	// }
 	return c, nil
 }
 

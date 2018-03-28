@@ -20,6 +20,9 @@ const (
 )
 
 func init() {
+	if msgProcesser == nil {
+		msgProcesser = make([][]func(*UserEntity, []byte), BIG_MSG_ID_COUNT)
+	}
 	msgProcesser[BIG_MSG_ID_USER] = make([]func(*UserEntity, []byte), SMALL_MSG_ID_COUNT)
 	msgProcesser[BIG_MSG_ID_USER][SMALL_MSG_ID_CREATE_ACCOUNT] = onCreateAccount
 	msgProcesser[BIG_MSG_ID_USER][SMALL_MSG_ID_TICK] = onTick

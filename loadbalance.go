@@ -24,11 +24,14 @@ func startHTTPServer() {
 func getServerList(rw http.ResponseWriter, req *http.Request) {
 	serverlist, _ := DataManager().GetServerList()
 
-	ret := "{\r\n\tserverlist:\r\n\t[\r\n"
+	ret := "{\r\n\t\"serverlist\":\r\n\t[\r\n"
 	for i := 0; i < len(serverlist); i++ {
-		ret += "\t\t{ addr:\"" + serverlist[i] + "\" },\r\n"
+		ret += "\t\t{ \"addr\":\"" + serverlist[i] + "\" }"
+		if i != len(serverlist)-1 {
+			ret += ",\r\n"
+		}
 	}
-	ret += "\t]\r\n"
+	ret += "\r\n\t]\r\n"
 	ret += "}\r\n"
 
 	io.WriteString(rw, ret)
@@ -38,7 +41,7 @@ func starUserRegister() {
 	http.HandleFunc("/register", register)
 	http.HandleFunc("/create", create)
 	http.HandleFunc("/tokenverify", tokenVerify)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8081", nil)
 }
 
 type Error struct {

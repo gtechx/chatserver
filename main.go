@@ -90,9 +90,12 @@ func main() {
 	//msg from other server monitor
 	messagePullInit()
 
+	fmt.Println("server start ok...")
+
 	<-quit
 
 	//chatServerStop()
+	DataManager().UnRegisterServer(config.ServerAddr)
 	EntityManager().CleanOnlineUsers()
 }
 

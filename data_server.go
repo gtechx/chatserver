@@ -20,6 +20,14 @@ func (rdm *RedisDataManager) RegisterServer(addr string) error {
 	return err
 }
 
+func (rdm *RedisDataManager) UnRegisterServer(addr string) error {
+	conn := rdm.redisPool.Get()
+	defer conn.Close()
+	_, err := conn.Do("ZREM", serverListKeyName, addr)
+
+	return err
+}
+
 func (rdm *RedisDataManager) IncrByServerClientCount(addr string, count int) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
