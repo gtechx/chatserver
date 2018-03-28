@@ -9,6 +9,7 @@ import (
 	"time"
 
 	. "github.com/gtechx/base/common"
+	"github.com/gtechx/chatserver/data"
 )
 
 func loadBanlanceInit() {
@@ -22,7 +23,7 @@ func startHTTPServer() {
 }
 
 func getServerList(rw http.ResponseWriter, req *http.Request) {
-	serverlist, _ := DataManager().GetServerList()
+	serverlist, _ := gtdata.Manager().GetServerList()
 
 	ret := "{\r\n\t\"serverlist\":\r\n\t[\r\n"
 	for i := 0; i < len(serverlist); i++ {
@@ -61,7 +62,7 @@ func tokenVerify(rw http.ResponseWriter, req *http.Request) {
 		errmsg.ErrorCode = ERR_TIME_OUT
 		errmsg.ErrorMsg = "ERR_TIME_OUT"
 	} else {
-		flag, err := DataManager().IsUIDExists(uid)
+		flag, err := gtdata.Manager().IsUIDExists(uid)
 		if err != nil {
 			errmsg.ErrorCode = ERR_REDIS
 			errmsg.ErrorMsg = "ERR_REDIS"
@@ -175,7 +176,7 @@ func create(rw http.ResponseWriter, req *http.Request) {
 		goto errend
 	}
 
-	err = DataManager().CreateAccount(account, password, regip)
+	err = gtdata.Manager().CreateAccount(account, password, regip)
 
 	if err != nil {
 		// ret := "{\r\n\terrorcode:3,\r\n"

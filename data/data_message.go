@@ -1,4 +1,4 @@
-package main
+package gtdata
 
 import (
 	"github.com/garyburd/redigo/redis"
@@ -24,7 +24,7 @@ func (rdm *RedisDataManager) PullOnlineMessage(serveraddr string, timeout int) (
 	return Bytes(retarr[1]), err
 }
 
-func (rdm *RedisDataManager) GetOfflineMessage(entity *UserEntity) ([][]byte, error) {
+func (rdm *RedisDataManager) GetOfflineMessage(entity *EntityKey) ([][]byte, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
@@ -55,7 +55,7 @@ func (rdm *RedisDataManager) SendMsgToUserOnline(uid, appid uint64, data []byte,
 	return err
 }
 
-func (rdm *RedisDataManager) SendMsgToUserOffline(entity *UserEntity, data []byte) error {
+func (rdm *RedisDataManager) SendMsgToUserOffline(entity *EntityKey, data []byte) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	_, err := conn.Do("RPUSH", entity.KeyMessageOffline, data)

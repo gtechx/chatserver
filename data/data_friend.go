@@ -1,4 +1,4 @@
-package main
+package gtdata
 
 import (
 	"github.com/garyburd/redigo/redis"
@@ -8,21 +8,21 @@ import (
 var defaultGroupName string = "我的好友"
 var userOnlineKeyName string = "user:online"
 
-func (rdm *RedisDataManager) AddFriendRequest(entity *UserEntity, otheruid uint64, group string) error {
+func (rdm *RedisDataManager) AddFriendRequest(entity *EntityKey, otheruid uint64, group string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	_, err := conn.Do("HSET", entity.KeyFriendRequest, otheruid, group)
 	return err
 }
 
-func (rdm *RedisDataManager) RemoveFriendRequest(entity *UserEntity, otheruid uint64) error {
+func (rdm *RedisDataManager) RemoveFriendRequest(entity *EntityKey, otheruid uint64) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	_, err := conn.Do("HDEL", entity.KeyFriendRequest, otheruid)
 	return err
 }
 
-func (rdm *RedisDataManager) AddFriend(entity *UserEntity, otheruid uint64, group string) error {
+func (rdm *RedisDataManager) AddFriend(entity *EntityKey, otheruid uint64, group string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
@@ -34,7 +34,7 @@ func (rdm *RedisDataManager) AddFriend(entity *UserEntity, otheruid uint64, grou
 	return err
 }
 
-func (rdm *RedisDataManager) RemoveFriend(entity *UserEntity, otheruid uint64, group string) error {
+func (rdm *RedisDataManager) RemoveFriend(entity *EntityKey, otheruid uint64, group string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
@@ -46,7 +46,7 @@ func (rdm *RedisDataManager) RemoveFriend(entity *UserEntity, otheruid uint64, g
 	return err
 }
 
-func (rdm *RedisDataManager) GetFriendList(entity *UserEntity, group string) ([]uint64, error) {
+func (rdm *RedisDataManager) GetFriendList(entity *EntityKey, group string) ([]uint64, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
@@ -70,35 +70,35 @@ func (rdm *RedisDataManager) GetFriendList(entity *UserEntity, group string) ([]
 	return userlist, err
 }
 
-func (rdm *RedisDataManager) IsFriend(entity *UserEntity, otheruid uint64) (bool, error) {
+func (rdm *RedisDataManager) IsFriend(entity *EntityKey, otheruid uint64) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HEXISTS", entity.KeyFriend, otheruid)
 	return Bool(ret), err
 }
 
-func (rdm *RedisDataManager) GetGroupOfFriend(entity *UserEntity, otheruid uint64) (string, error) {
+func (rdm *RedisDataManager) GetGroupOfFriend(entity *EntityKey, otheruid uint64) (string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HGET", entity.KeyFriend, otheruid)
 	return String(ret), err
 }
 
-func (rdm *RedisDataManager) AddGroup(entity *UserEntity, group string) error {
+func (rdm *RedisDataManager) AddGroup(entity *EntityKey, group string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	_, err := conn.Do("SADD", entity.KeyGroup, group)
 	return err
 }
 
-func (rdm *RedisDataManager) RemoveGroup(entity *UserEntity, group string) error {
+func (rdm *RedisDataManager) RemoveGroup(entity *EntityKey, group string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	_, err := conn.Do("SREM", entity.KeyGroup, group)
 	return err
 }
 
-func (rdm *RedisDataManager) GetGroupList(entity *UserEntity) ([]string, error) {
+func (rdm *RedisDataManager) GetGroupList(entity *EntityKey) ([]string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
@@ -122,21 +122,21 @@ func (rdm *RedisDataManager) GetGroupList(entity *UserEntity) ([]string, error) 
 	return grouplist, err
 }
 
-func (rdm *RedisDataManager) IsGroupExists(entity *UserEntity, group string) (bool, error) {
+func (rdm *RedisDataManager) IsGroupExists(entity *EntityKey, group string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("SISMEMBER", entity.KeyGroup, group)
 	return Bool(ret), err
 }
 
-func (rdm *RedisDataManager) IsFriendInGroup(entity *UserEntity, otheruid uint64, group string) (bool, error) {
+func (rdm *RedisDataManager) IsFriendInGroup(entity *EntityKey, otheruid uint64, group string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("SISMEMBER", entity.KeyGroup+":"+group, otheruid)
 	return Bool(ret), err
 }
 
-func (rdm *RedisDataManager) MoveFriendToGroup(entity *UserEntity, otheruid uint64, srcgroup, destgroup string) error {
+func (rdm *RedisDataManager) MoveFriendToGroup(entity *EntityKey, otheruid uint64, srcgroup, destgroup string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 

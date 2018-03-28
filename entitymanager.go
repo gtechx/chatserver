@@ -5,6 +5,7 @@ import (
 
 	"github.com/gtechx/base/gtnet"
 	"github.com/gtechx/chatserver/entity"
+	"github.com/gtechx/chatserver/data"
 )
 
 var BigMsgIDCounter uint8 = 0
@@ -154,7 +155,7 @@ func (this *CEntityManager) doRemoveEntity(entity gtentity.IEntity) {
 
 func (this *CEntityManager) CleanOnlineUsers() {
 	for _, entity := range this.userIDEntityMap {
-		DataManager().SetUserOffline(entity.(*UserEntity))
+		gtdata.Manager().SetUserOffline(entity.(*UserEntity).EntityKey)
 	}
 
 	fmt.Println("cleanOnlineUsers end")

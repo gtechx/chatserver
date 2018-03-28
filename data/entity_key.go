@@ -1,4 +1,4 @@
-package main
+package gtdata
 
 type EntityKey struct {
 	KeyUID            string

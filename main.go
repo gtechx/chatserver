@@ -10,6 +10,7 @@ import (
 
 	"github.com/gtechx/base/gtnet"
 	"github.com/gtechx/chatserver/config"
+	"github.com/gtechx/chatserver/data"
 	"github.com/gtechx/chatserver/service"
 )
 
@@ -46,20 +47,20 @@ func main() {
 	// redisNet = *predisnet
 	// redisAddr = *predisaddr
 
-	err := DataManager().Initialize()
+	err := gtdata.Manager().Initialize()
 
 	if err != nil {
-		fmt.Println("register server to datamanager err:", err)
+		fmt.Println("register server to gtdata.Manager err:", err)
 		return
 	}
 
 	EntityManager().Initialize()
 
 	//register server
-	err = DataManager().RegisterServer(config.ServerAddr)
+	err = gtdata.Manager().RegisterServer(config.ServerAddr)
 
 	if err != nil {
-		fmt.Println("register server to datamanager err:", err)
+		fmt.Println("register server to gtdata.Manager err:", err)
 		return
 	}
 
@@ -95,7 +96,8 @@ func main() {
 	<-quit
 
 	//chatServerStop()
-	DataManager().UnRegisterServer(config.ServerAddr)
+	gtdata.Manager().UnRegisterServer(config.ServerAddr)
+	gtdata.Manager().UnInitialize()
 	EntityManager().CleanOnlineUsers()
 }
 

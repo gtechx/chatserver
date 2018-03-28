@@ -1,4 +1,4 @@
-package main
+package gtdata
 
 import (
 	"github.com/garyburd/redigo/redis"

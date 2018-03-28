@@ -2,6 +2,7 @@ package main
 
 import (
 	. "github.com/gtechx/base/common"
+	"github.com/gtechx/chatserver/data"
 )
 
 const (
@@ -34,7 +35,7 @@ func onCreateAccount(entity *UserEntity, data []byte) {
 	account := String(data[:32])
 	password := string(data[8:])
 
-	flag, err := DataManager().IsAccountExists(account)
+	flag, err := gtdata.Manager().IsAccountExists(account)
 
 	if err != nil {
 		entity.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
@@ -46,7 +47,7 @@ func onCreateAccount(entity *UserEntity, data []byte) {
 		return
 	}
 
-	err = DataManager().CreateAccount(account, password, "")
+	err = gtdata.Manager().CreateAccount(account, password, "")
 
 	if err != nil {
 		entity.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
@@ -65,14 +66,14 @@ func onEcho(entity *UserEntity, data []byte) {
 }
 
 func onLogout(entity *UserEntity, data []byte) {
-	err := DataManager().SetUserOffline(entity)
+	err := gtdata.Manager().SetUserOffline(entity.EntityKey)
 
 	if err != nil {
 		entity.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
 		return
 	}
 
-	grouplist, err := DataManager().GetGroupList(entity)
+	grouplist, err := gtdata.Manager().GetGroupList(entity.EntityKey)
 
 	if err != nil {
 		entity.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
@@ -82,7 +83,7 @@ func onLogout(entity *UserEntity, data []byte) {
 	friendlist := []uint64{}
 
 	for _, group := range grouplist {
-		gfriendlist, err := DataManager().GetFriendList(entity, group)
+		gfriendlist, err := gtdata.Manager().GetFriendList(entity.EntityKey, group)
 
 		if err != nil {
 			entity.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
@@ -93,7 +94,7 @@ func onLogout(entity *UserEntity, data []byte) {
 	}
 
 	for _, fuid := range friendlist {
-		flag, err := DataManager().IsUserOnline(fuid)
+		flag, err := gtdata.Manager().IsUserOnline(fuid)
 		if err != nil {
 			entity.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
 			return

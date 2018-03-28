@@ -7,6 +7,7 @@ import (
 
 	. "github.com/gtechx/base/common"
 	"github.com/gtechx/base/gtnet"
+	"github.com/gtechx/chatserver/data"
 	"github.com/gtechx/chatserver/entity"
 )
 
@@ -20,7 +21,7 @@ type UserEntity struct {
 	recvChan chan []byte
 	quitChan chan int
 
-	EntityKey
+	*gtdata.EntityKey
 }
 
 func keyJoin(params ...interface{}) string {
@@ -37,7 +38,7 @@ func keyJoin(params ...interface{}) string {
 }
 
 func newUserEntity(entity gtentity.IEntity) *UserEntity {
-	newentity := &UserEntity{id: entity.ID(), uid: entity.UID(), appid: entity.APPID(), zone: entity.ZONE(), conn: entity.Conn(), EntityKey: EntityKey{}}
+	newentity := &UserEntity{id: entity.ID(), uid: entity.UID(), appid: entity.APPID(), zone: entity.ZONE(), conn: entity.Conn(), EntityKey: &gtdata.EntityKey{}}
 	newentity.init()
 	newentity.start()
 	return newentity
@@ -95,7 +96,7 @@ func (this *UserEntity) stop() {
 	if this.conn != nil {
 		this.conn.SetMsgParser(nil)
 		this.conn.SetListener(nil)
-		DataManager().SetUserOffline(this)
+		gtdata.Manager().SetUserOffline(this.EntityKey)
 
 		this.conn.Close()
 		this.conn = nil
@@ -114,14 +115,14 @@ func (this *UserEntity) start() {
 }
 
 func (this *UserEntity) broadcastOnlineMsg() {
-	err := DataManager().SetUserOffline(this)
+	err := gtdata.Manager().SetUserOffline(this.EntityKey)
 
 	if err != nil {
 		this.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
 		return
 	}
 
-	grouplist, err := DataManager().GetGroupList(this)
+	grouplist, err := gtdata.Manager().GetGroupList(this.EntityKey)
 
 	if err != nil {
 		this.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
@@ -131,7 +132,7 @@ func (this *UserEntity) broadcastOnlineMsg() {
 	friendlist := []uint64{}
 
 	for _, group := range grouplist {
-		gfriendlist, err := DataManager().GetFriendList(this, group)
+		gfriendlist, err := gtdata.Manager().GetFriendList(this.EntityKey, group)
 
 		if err != nil {
 			this.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
@@ -142,7 +143,7 @@ func (this *UserEntity) broadcastOnlineMsg() {
 	}
 
 	for _, fuid := range friendlist {
-		flag, err := DataManager().IsUserOnline(fuid)
+		flag, err := gtdata.Manager().IsUserOnline(fuid)
 		if err != nil {
 			this.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
 			return

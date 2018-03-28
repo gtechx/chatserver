@@ -1,4 +1,4 @@
-package main
+package gtdata
 
 import (
 	"time"
@@ -14,7 +14,7 @@ type RedisDataManager struct {
 
 var instanceDataManager *RedisDataManager
 
-func DataManager() *RedisDataManager {
+func Manager() *RedisDataManager {
 	if instanceDataManager == nil {
 		instanceDataManager = &RedisDataManager{}
 	}
@@ -79,6 +79,14 @@ func (rdm *RedisDataManager) Initialize() error {
 		}
 	}
 
+	return err
+}
+
+func (rdm *RedisDataManager) UnInitialize() error {
+	var err error
+	if rdm.redisPool != nil {
+		err = rdm.redisPool.Close()
+	}
 	return err
 }
 

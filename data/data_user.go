@@ -1,4 +1,4 @@
-package main
+package gtdata
 
 import (
 	"time"
@@ -29,7 +29,7 @@ func (rdm *RedisDataManager) CreateAccount(account, password, regip string) erro
 	return err
 }
 
-func (rdm *RedisDataManager) CreateAppData(entity *UserEntity) error {
+func (rdm *RedisDataManager) CreateAppData(entity *EntityKey) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
@@ -40,7 +40,7 @@ func (rdm *RedisDataManager) CreateAppData(entity *UserEntity) error {
 	return err
 }
 
-func (rdm *RedisDataManager) DeleteAppData(entity *UserEntity) error {
+func (rdm *RedisDataManager) DeleteAppData(entity *EntityKey) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
@@ -54,21 +54,21 @@ func (rdm *RedisDataManager) DeleteAppData(entity *UserEntity) error {
 	return err
 }
 
-func (rdm *RedisDataManager) IsAppDataExists(entity *UserEntity) (bool, error) {
+func (rdm *RedisDataManager) IsAppDataExists(entity *EntityKey) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HEXISTS", entity.KeyAppData)
 	return Bool(ret), err
 }
 
-func (rdm *RedisDataManager) SetAppDataConfig(entity *UserEntity, configname string, data interface{}) error {
+func (rdm *RedisDataManager) SetAppDataConfig(entity *EntityKey, configname string, data interface{}) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	_, err := conn.Do("HSET", entity.KeyAppData, configname)
 	return err
 }
 
-func (rdm *RedisDataManager) GetAppDataConfig(entity *UserEntity, configname string) (interface{}, error) {
+func (rdm *RedisDataManager) GetAppDataConfig(entity *EntityKey, configname string) (interface{}, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HGET", entity.KeyAppData, configname)
@@ -124,22 +124,22 @@ func (rdm *RedisDataManager) GetPassword(uid uint64) (string, error) {
 	return String(ret), err
 }
 
-func (rdm *RedisDataManager) SetUserOnline(entity *UserEntity) error {
+func (rdm *RedisDataManager) SetUserOnline(entity *EntityKey) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	conn.Send("MULTI")
 	conn.Send("HSET", entity.KeyAppData, "online", config.ServerAddr)
-	conn.Send("SADD", "online", entity.UID())
+	conn.Send("SADD", "online", entity.KeyUID)
 	_, err := conn.Do("EXEC")
 	return err
 }
 
-func (rdm *RedisDataManager) SetUserOffline(entity *UserEntity) error {
+func (rdm *RedisDataManager) SetUserOffline(entity *EntityKey) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	conn.Send("MULTI")
 	conn.Send("HDEL", entity.KeyAppData, "online", config.ServerAddr)
-	conn.Send("SREM", "online", entity.UID())
+	conn.Send("SREM", "online", entity.KeyUID)
 	_, err := conn.Do("EXEC")
 	return err
 }
@@ -151,28 +151,28 @@ func (rdm *RedisDataManager) IsUserOnline(uid uint64) (bool, error) {
 	return Bool(ret), err
 }
 
-func (rdm *RedisDataManager) SetUserState(entity *UserEntity, state uint8) error {
+func (rdm *RedisDataManager) SetUserState(entity *EntityKey, state uint8) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	_, err := conn.Do("HSET", entity.KeyAppData, "state", state)
 	return err
 }
 
-func (rdm *RedisDataManager) AddUserToBlack(entity *UserEntity, otheruid uint64) error {
+func (rdm *RedisDataManager) AddUserToBlack(entity *EntityKey, otheruid uint64) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	_, err := conn.Do("SADD", entity.KeyBlack, otheruid)
 	return err
 }
 
-func (rdm *RedisDataManager) RemoveUserFromBlack(entity *UserEntity, otheruid uint64) error {
+func (rdm *RedisDataManager) RemoveUserFromBlack(entity *EntityKey, otheruid uint64) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	_, err := conn.Do("SREM", entity.KeyBlack, otheruid)
 	return err
 }
 
-func (rdm *RedisDataManager) IsUserInBlack(entity *UserEntity, otheruid uint64) (bool, error) {
+func (rdm *RedisDataManager) IsUserInBlack(entity *EntityKey, otheruid uint64) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("SISMEMBER", entity.KeyBlack, otheruid)

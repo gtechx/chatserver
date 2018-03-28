@@ -7,6 +7,7 @@ import (
 	. "github.com/gtechx/base/common"
 	"github.com/gtechx/base/gtnet"
 	"github.com/gtechx/base/php"
+	"github.com/gtechx/chatserver/data"
 )
 
 const (
@@ -101,7 +102,7 @@ func (this *NullEntity) process(data []byte) bool {
 		zone := Uint32(data[18:22])
 		password := string(data[22:])
 
-		upass, err := DataManager().GetPassword(uid)
+		upass, err := gtdata.Manager().GetPassword(uid)
 
 		if err != nil {
 			return false
@@ -111,7 +112,7 @@ func (this *NullEntity) process(data []byte) bool {
 			return false
 		}
 
-		flag, err := DataManager().IsAppExists(appid)
+		flag, err := gtdata.Manager().IsAppExists(appid)
 
 		if err != nil {
 			return false
@@ -121,14 +122,14 @@ func (this *NullEntity) process(data []byte) bool {
 			return false
 		}
 
-		apptype, err := DataManager().GetAppType(appid)
+		apptype, err := gtdata.Manager().GetAppType(appid)
 
 		if err != nil {
 			return false
 		}
 
 		if apptype == "game" {
-			flag, err = DataManager().IsAppZone(appid, zone)
+			flag, err = gtdata.Manager().IsAppZone(appid, zone)
 
 			if err != nil {
 				return false
