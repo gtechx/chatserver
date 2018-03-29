@@ -30,6 +30,13 @@ func (rdm *RedisDataManager) CreateAccount(account, password, regip string) erro
 	return err
 }
 
+func (rdm *RedisDataManager) SetPassword(uid uint64, password string) error {
+	conn := rdm.redisPool.Get()
+	defer conn.Close()
+	_, err := conn.Do("HSET", uid, "password", password)
+	return err
+}
+
 func (rdm *RedisDataManager) CreateAppData(entity *EntityKey) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()

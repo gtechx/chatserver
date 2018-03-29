@@ -33,7 +33,8 @@ func (rdm *RedisDataManager) GetPrivilege(uid uint64) (uint32, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HGET", "admin", uid)
-	return Uint32(ret), err
+	priv, err := redis.Uint64(ret, err)
+	return uint32(priv), err
 }
 
 func (rdm *RedisDataManager) SetAdminPrivilege(uid uint64, privilege uint32) error {
