@@ -59,16 +59,14 @@ func (rdm *RedisDataManager) GetAppType(appid uint64) (string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HGET", "app:"+String(appid), "type")
-	return String(ret), err
+	return redis.String(ret, err)
 }
 
 func (rdm *RedisDataManager) IsAppExists(appid uint64) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-
 	ret, err := conn.Do("SISMEMBER", "app", appid)
-
-	return Bool(ret), err
+	return redis.Bool(ret, err)
 }
 
 func (rdm *RedisDataManager) AddAppZone(appid uint64, zones ...uint32) error {
@@ -84,7 +82,7 @@ func (rdm *RedisDataManager) GetAppOwner(appid uint64) (uint64, error) {
 
 	ret, err := conn.Do("HGET", "app:"+String(appid), "owner")
 
-	return Uint64(ret), err
+	return redis.Uint64(ret, err)
 }
 
 func (rdm *RedisDataManager) IsAppZone(appid uint64, zone uint32) (bool, error) {
@@ -93,7 +91,7 @@ func (rdm *RedisDataManager) IsAppZone(appid uint64, zone uint32) (bool, error) 
 
 	ret, err := conn.Do("SISMEMBER", "app:zone:"+String(appid), zone)
 
-	return Bool(ret), err
+	return redis.Bool(ret, err)
 }
 
 func (rdm *RedisDataManager) AddShareApp(uid, appid, otherappid uint64) error {
@@ -110,14 +108,14 @@ func (rdm *RedisDataManager) IsShareWithOtherApp(uid, appid uint64) (bool, error
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HEXISTS", "app:"+String(uid)+":"+String(appid), "share")
-	return Bool(ret), err
+	return redis.Bool(ret, err)
 }
 
 func (rdm *RedisDataManager) GetShareApp(uid, appid uint64) (uint64, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HGET", "app:"+String(uid)+":"+String(appid), "share")
-	return Uint64(ret), err
+	return redis.Uint64(ret, err)
 }
 
 func (rdm *RedisDataManager) GetMyShareAppList(appid uint64) ([]uint64, error) {

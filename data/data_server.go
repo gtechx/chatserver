@@ -56,7 +56,9 @@ func (rdm *RedisDataManager) GetServerCount() (int, error) {
 
 	ret, err := conn.Do("ZCARD", serverListKeyName)
 
-	return Int(ret), err
+	count, err := redis.Uint64(ret, err)
+
+	return Int(count), err
 }
 
 func (rdm *RedisDataManager) SetServerTTL(addr string, seconds int) error {

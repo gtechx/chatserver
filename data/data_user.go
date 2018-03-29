@@ -3,6 +3,7 @@ package gtdata
 import (
 	"time"
 
+	"github.com/garyburd/redigo/redis"
 	. "github.com/gtechx/base/common"
 	"github.com/gtechx/chatserver/config"
 )
@@ -58,7 +59,7 @@ func (rdm *RedisDataManager) IsAppDataExists(entity *EntityKey) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HEXISTS", entity.KeyAppData)
-	return Bool(ret), err
+	return redis.Bool(ret, err)
 }
 
 func (rdm *RedisDataManager) SetAppDataConfig(entity *EntityKey, configname string, data interface{}) error {
@@ -68,11 +69,11 @@ func (rdm *RedisDataManager) SetAppDataConfig(entity *EntityKey, configname stri
 	return err
 }
 
-func (rdm *RedisDataManager) GetAppDataConfig(entity *EntityKey, configname string) (interface{}, error) {
+func (rdm *RedisDataManager) GetAppDataConfig(entity *EntityKey, configname string) (string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HGET", entity.KeyAppData, configname)
-	return ret, err
+	return redis.String(ret, err)
 }
 
 // func (rdm *RedisDataManager) SetMaxFriends(uid uint64, count int) error {
@@ -93,35 +94,35 @@ func (rdm *RedisDataManager) IsAccountExists(account string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HEXISTS", "account:uid", account)
-	return Bool(ret), err
+	return redis.Bool(ret, err)
 }
 
 func (rdm *RedisDataManager) IsUIDExists(uid uint64) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("EXISTS", uid)
-	return Bool(ret), err
+	return redis.Bool(ret, err)
 }
 
 func (rdm *RedisDataManager) GetUIDByAccount(account string) (uint64, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HGET", "account:uid", account)
-	return Uint64(ret), err
+	return redis.Uint64(ret, err)
 }
 
 func (rdm *RedisDataManager) GetAccountByUID(uid uint64) (string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HGET", uid, "account")
-	return String(ret), err
+	return redis.String(ret, err)
 }
 
 func (rdm *RedisDataManager) GetPassword(uid uint64) (string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HGET", uid, "password")
-	return String(ret), err
+	return redis.String(ret, err)
 }
 
 func (rdm *RedisDataManager) SetUserOnline(entity *EntityKey) error {
@@ -148,7 +149,7 @@ func (rdm *RedisDataManager) IsUserOnline(uid uint64) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("SISMEMBER", "online", uid)
-	return Bool(ret), err
+	return redis.Bool(ret, err)
 }
 
 func (rdm *RedisDataManager) SetUserState(entity *EntityKey, state uint8) error {
@@ -176,5 +177,5 @@ func (rdm *RedisDataManager) IsUserInBlack(entity *EntityKey, otheruid uint64) (
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("SISMEMBER", entity.KeyBlack, otheruid)
-	return Bool(ret), err
+	return redis.Bool(ret, err)
 }

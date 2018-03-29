@@ -12,7 +12,7 @@ func (rdm *RedisDataManager) IsAdmin(uid uint64) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HEXISTS", "admin", uid)
-	return Bool(ret), err
+	return redis.Bool(ret, err)
 }
 
 func (rdm *RedisDataManager) AddAdmin(uid uint64, privilege uint32) error {

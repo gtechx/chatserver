@@ -74,14 +74,14 @@ func (rdm *RedisDataManager) IsFriend(entity *EntityKey, otheruid uint64) (bool,
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HEXISTS", entity.KeyFriend, otheruid)
-	return Bool(ret), err
+	return redis.Bool(ret, err)
 }
 
 func (rdm *RedisDataManager) GetGroupOfFriend(entity *EntityKey, otheruid uint64) (string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HGET", entity.KeyFriend, otheruid)
-	return String(ret), err
+	return redis.String(ret, err)
 }
 
 func (rdm *RedisDataManager) AddGroup(entity *EntityKey, group string) error {
@@ -126,14 +126,14 @@ func (rdm *RedisDataManager) IsGroupExists(entity *EntityKey, group string) (boo
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("SISMEMBER", entity.KeyGroup, group)
-	return Bool(ret), err
+	return redis.Bool(ret, err)
 }
 
 func (rdm *RedisDataManager) IsFriendInGroup(entity *EntityKey, otheruid uint64, group string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	ret, err := conn.Do("SISMEMBER", entity.KeyGroup+":"+group, otheruid)
-	return Bool(ret), err
+	return redis.Bool(ret, err)
 }
 
 func (rdm *RedisDataManager) MoveFriendToGroup(entity *EntityKey, otheruid uint64, srcgroup, destgroup string) error {
