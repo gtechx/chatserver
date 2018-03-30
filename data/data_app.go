@@ -69,29 +69,58 @@ func (rdm *RedisDataManager) IsAppExists(appid uint64) (bool, error) {
 	return redis.Bool(ret, err)
 }
 
-func (rdm *RedisDataManager) AddAppZone(appid uint64, zones ...uint32) error {
+func (rdm *RedisDataManager) AddAppZone(appid uint64, zone uint32, zonename string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("HGET", "app:zone:"+String(appid), zones)
+	_, err := conn.Do("HSET", "app:zone:"+String(appid), zone, zonename)
 	return err
+}
+
+func (rdm *RedisDataManager) GetAppZones(appid uint64) (map[uint32]string, error) {
+	conn := rdm.redisPool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("HGETALL", "app:zone:"+String(appid))
+
+	if err != nil {
+		return nil, err
+	}
+
+	retarr, err := redis.Values(ret, err)
+
+	if err != nil {
+		return nil, err
+	}
+
+	zonemap := map[uint32]string{}
+	for i := 0; i < len(retarr); {
+		zoneid := Uint32(retarr[i])
+		zonename := String(retarr[i+1])
+		zonemap[zoneid] = zonename
+		i = i + 2
+	}
+
+	return zonemap, err
 }
 
 func (rdm *RedisDataManager) GetAppOwner(appid uint64) (uint64, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-
 	ret, err := conn.Do("HGET", "app:"+String(appid), "owner")
-
 	return redis.Uint64(ret, err)
 }
 
 func (rdm *RedisDataManager) IsAppZone(appid uint64, zone uint32) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-
-	ret, err := conn.Do("SISMEMBER", "app:zone:"+String(appid), zone)
-
+	ret, err := conn.Do("HEXISTS", "app:zone:"+String(appid), zone)
 	return redis.Bool(ret, err)
+}
+
+func (rdm *RedisDataManager) GetAppZoneName(appid uint64, zone uint32) (string, error) {
+	conn := rdm.redisPool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("HGET", "app:"+String(appid), zone)
+	return redis.String(ret, err)
 }
 
 func (rdm *RedisDataManager) AddShareApp(uid, appid, otherappid uint64) error {
