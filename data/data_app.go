@@ -27,7 +27,7 @@ func (rdm *RedisDataManager) CreateApp(uid uint64, name string) error {
 	conn.Send("MULTI")
 	conn.Send("SADD", "app", appid)
 	conn.Send("SADD", "app:"+String(uid), appid)
-	conn.Send("HMSET", "app:"+String(appid), "owner", uid, "desc", "", "iconurl", "", "regdate", time.Now().Unix())
+	conn.Send("HMSET", "app:"+String(appid), "name", name, "owner", uid, "desc", "", "iconurl", "", "regdate", time.Now().Unix())
 
 	_, err = conn.Do("EXEC")
 
