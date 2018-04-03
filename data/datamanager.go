@@ -10,6 +10,12 @@ import (
 
 type RedisDataManager struct {
 	redisPool *redis.Pool
+
+	serverAddr     string
+	serverPassword string
+	startUID       int
+	startAPPID     int
+	defaultDB      int
 }
 
 var instanceDataManager *RedisDataManager
