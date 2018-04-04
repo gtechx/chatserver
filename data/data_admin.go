@@ -8,43 +8,42 @@ import (
 //[hashes]admin pair(uid, privilege) --管理员权限
 //[sets]online uid --在线用户uid
 
-func (rdm *RedisDataManager) IsAdmin(uid uint64) (bool, error) {
+func (rdm *RedisDataManager) IsAdmin(account string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HEXISTS", "admin", uid)
+	ret, err := conn.Do("HEXISTS", "admin", account)
 	return redis.Bool(ret, err)
 }
 
-func (rdm *RedisDataManager) AddAdmin(uid uint64, privilege uint32) error {
+func (rdm *RedisDataManager) AddAdmin(account string, privilege uint64) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("HSET", "admin", uid, privilege)
+	_, err := conn.Do("HSET", "admin", account, privilege)
 	return err
 }
 
-func (rdm *RedisDataManager) RemoveAdmin(uid, uuid uint64) error {
+func (rdm *RedisDataManager) RemoveAdmin(account string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("HDEL", "admin", uuid)
+	_, err := conn.Do("HDEL", "admin", account)
 	return err
 }
 
-func (rdm *RedisDataManager) GetPrivilege(uid uint64) (uint32, error) {
+func (rdm *RedisDataManager) GetPrivilege(account string) (uint64, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HGET", "admin", uid)
-	priv, err := redis.Uint64(ret, err)
-	return uint32(priv), err
+	ret, err := conn.Do("HGET", "admin", account)
+	return redis.Uint64(ret, err)
 }
 
-func (rdm *RedisDataManager) SetAdminPrivilege(uid uint64, privilege uint32) error {
+func (rdm *RedisDataManager) SetAdminPrivilege(account string, privilege uint64) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("HSET", "admin", uid, privilege)
+	_, err := conn.Do("HSET", "admin", account, privilege)
 	return err
 }
 
-func (rdm *RedisDataManager) GetAdminList(uid uint64) ([]uint64, error) {
+func (rdm *RedisDataManager) GetAdminList() ([]string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
@@ -60,19 +59,19 @@ func (rdm *RedisDataManager) GetAdminList(uid uint64) ([]uint64, error) {
 		return nil, err
 	}
 
-	adminlist := []uint64{}
-	for _, uid := range retarr {
-		adminlist = append(adminlist, Uint64(uid))
+	adminlist := []string{}
+	for _, account := range retarr {
+		adminlist = append(adminlist, String(account))
 	}
 
 	return adminlist, err
 }
 
-func (rdm *RedisDataManager) GetUserOnline() ([]uint64, error) {
+func (rdm *RedisDataManager) GetUserOnline(appname, zonename string) ([]string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
-	ret, err := conn.Do("SMEMBERS", "online")
+	ret, err := conn.Do("SMEMBERS", "online:"+appname+":"+zonename)
 
 	if err != nil {
 		return nil, err
@@ -84,9 +83,9 @@ func (rdm *RedisDataManager) GetUserOnline() ([]uint64, error) {
 		return nil, err
 	}
 
-	userlist := []uint64{}
-	for _, uid := range retarr {
-		userlist = append(userlist, Uint64(uid))
+	userlist := []string{}
+	for _, account := range retarr {
+		userlist = append(userlist, String(account))
 	}
 
 	return userlist, err

@@ -21,7 +21,7 @@ type UserEntity struct {
 	recvChan chan []byte
 	quitChan chan int
 
-	*gtdata.EntityKey
+	*gtdata.DataKey
 }
 
 func keyJoin(params ...interface{}) string {
@@ -38,14 +38,14 @@ func keyJoin(params ...interface{}) string {
 }
 
 func newUserEntity(entity gtentity.IEntity) *UserEntity {
-	newentity := &UserEntity{id: entity.ID(), uid: entity.UID(), appid: entity.APPID(), zone: entity.ZONE(), conn: entity.Conn(), EntityKey: &gtdata.EntityKey{}}
+	newentity := &UserEntity{id: entity.ID(), uid: entity.UID(), appid: entity.APPID(), zone: entity.ZONE(), conn: entity.Conn(), DataKey: &gtdata.DataKey{}}
 	newentity.init()
 	newentity.start()
 	return newentity
 }
 
 func (this *UserEntity) init() {
-	this.KeyUID = keyJoin(this.uid)
+	this.KeyUID = keyJoin("uid", this.uid)
 	this.KeyAppData = keyJoin("appdata", this.appid, this.zone, this.uid)
 	this.KeyGroup = keyJoin("group", this.appid, this.zone, this.uid)
 	this.KeyFriend = keyJoin("friend", this.appid, this.zone, this.uid)
@@ -96,7 +96,7 @@ func (this *UserEntity) stop() {
 	if this.conn != nil {
 		this.conn.SetMsgParser(nil)
 		this.conn.SetListener(nil)
-		gtdata.Manager().SetUserOffline(this.EntityKey)
+		gtdata.Manager().SetUserOffline(this.DataKey)
 
 		this.conn.Close()
 		this.conn = nil
@@ -115,14 +115,14 @@ func (this *UserEntity) start() {
 }
 
 func (this *UserEntity) broadcastOnlineMsg() {
-	err := gtdata.Manager().SetUserOffline(this.EntityKey)
+	err := gtdata.Manager().SetUserOffline(this.DataKey)
 
 	if err != nil {
 		this.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
 		return
 	}
 
-	grouplist, err := gtdata.Manager().GetGroupList(this.EntityKey)
+	grouplist, err := gtdata.Manager().GetGroupList(this.DataKey)
 
 	if err != nil {
 		this.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
@@ -132,7 +132,7 @@ func (this *UserEntity) broadcastOnlineMsg() {
 	friendlist := []uint64{}
 
 	for _, group := range grouplist {
-		gfriendlist, err := gtdata.Manager().GetFriendList(this.EntityKey, group)
+		gfriendlist, err := gtdata.Manager().GetFriendList(this.DataKey, group)
 
 		if err != nil {
 			this.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)

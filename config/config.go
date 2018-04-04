@@ -9,4 +9,4 @@ var RedisPassword string = ""
 var StartUID uint64 = 1000
 var StartAPPID uint64 = 0
 
-var DefaultDB int = 2
+var DefaultDB uint64 = 2

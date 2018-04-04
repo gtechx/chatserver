@@ -47,10 +47,10 @@ func main() {
 	// redisNet = *predisnet
 	// redisAddr = *predisaddr
 
-	err := gtdata.Manager().Initialize()
+	err := gtdata.Manager().Initialize(config.RedisAddr, config.RedisPassword, config.DefaultDB, config.StartUID, config.StartAPPID)
 
 	if err != nil {
-		fmt.Println("register server to gtdata.Manager err:", err)
+		fmt.Println("Initialize gtdata.Manager err:", err)
 		return
 	}
 

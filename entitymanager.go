@@ -155,7 +155,7 @@ func (this *CEntityManager) doRemoveEntity(entity gtentity.IEntity) {
 
 func (this *CEntityManager) CleanOnlineUsers() {
 	for _, entity := range this.userIDEntityMap {
-		gtdata.Manager().SetUserOffline(entity.(*UserEntity).EntityKey)
+		gtdata.Manager().SetUserOffline(entity.(*UserEntity).DataKey)
 	}
 
 	fmt.Println("cleanOnlineUsers end")

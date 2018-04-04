@@ -8,107 +8,95 @@ import (
 var defaultGroupName string = "我的好友"
 var userOnlineKeyName string = "user:online"
 
-func (rdm *RedisDataManager) AddFriendRequest(entity *EntityKey, otheruid uint64, group string) error {
+func (rdm *RedisDataManager) AddFriendRequest(datakey *DataKey, otheraccount, group string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("HSET", entity.KeyFriendRequest, otheruid, group)
+	_, err := conn.Do("HSET", datakey.KeyAppDataHsetFriendrequestGroupByAppidZonenameAccount, otheraccount, group)
 	return err
 }
 
-func (rdm *RedisDataManager) RemoveFriendRequest(entity *EntityKey, otheruid uint64) error {
+func (rdm *RedisDataManager) RemoveFriendRequest(datakey *DataKey, otheraccount string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("HDEL", entity.KeyFriendRequest, otheruid)
+	_, err := conn.Do("HDEL", datakey.KeyAppDataHsetFriendrequestGroupByAppidZonenameAccount, otheraccount)
 	return err
 }
 
-func (rdm *RedisDataManager) AddFriend(entity *EntityKey, otheruid uint64, group string) error {
+func (rdm *RedisDataManager) AddFriend(datakey *DataKey, otheraccount, group string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-
 	conn.Send("MULTI")
-	conn.Send("HSET", entity.KeyFriend, otheruid, group)
-	conn.Send("SADD", entity.KeyGroup+":"+group, otheruid)
+	conn.Send("HSET", datakey.KeyAppDataHsetFriendByAppidZonenameAccount, otheraccount, group)
+	conn.Send("SADD", datakey.KeyAppDataHsetFriendByAppidZonenameAccount+":"+group, otheraccount)
 	_, err := conn.Do("EXEC")
-
 	return err
 }
 
-func (rdm *RedisDataManager) RemoveFriend(entity *EntityKey, otheruid uint64, group string) error {
+func (rdm *RedisDataManager) RemoveFriend(datakey *DataKey, otheraccount, group string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-
 	conn.Send("MULTI")
-	conn.Send("HDEL", entity.KeyFriend, otheruid)
-	conn.Send("SREM", entity.KeyGroup+":"+group, otheruid)
+	conn.Send("HDEL", datakey.KeyAppDataHsetFriendByAppidZonenameAccount, otheraccount)
+	conn.Send("SREM", datakey.KeyAppDataHsetFriendByAppidZonenameAccount+":"+group, otheraccount)
 	_, err := conn.Do("EXEC")
-
 	return err
 }
 
-func (rdm *RedisDataManager) GetFriendList(entity *EntityKey, group string) ([]uint64, error) {
+func (rdm *RedisDataManager) GetFriendList(datakey *DataKey, group string) ([]string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
-	ret, err := conn.Do("SMEMBERS", entity.KeyGroup+":"+group)
+	ret, err := conn.Do("SMEMBERS", datakey.KeyAppDataHsetFriendByAppidZonenameAccount+":"+group)
+
+	retarr, err := redis.Values(ret, err)
 
 	if err != nil {
 		return nil, err
 	}
 
-	retarr, err := redis.Values(ret, nil)
-
-	if err != nil {
-		return nil, err
-	}
-
-	userlist := []uint64{}
-	for _, uid := range retarr {
-		userlist = append(userlist, Uint64(uid))
+	userlist := []string{}
+	for _, account := range retarr {
+		userlist = append(userlist, String(account))
 	}
 
 	return userlist, err
 }
 
-func (rdm *RedisDataManager) IsFriend(entity *EntityKey, otheruid uint64) (bool, error) {
+func (rdm *RedisDataManager) IsFriend(datakey *DataKey, otheraccount string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HEXISTS", entity.KeyFriend, otheruid)
+	ret, err := conn.Do("HEXISTS", datakey.KeyAppDataHsetFriendByAppidZonenameAccount, otheraccount)
 	return redis.Bool(ret, err)
 }
 
-func (rdm *RedisDataManager) GetGroupOfFriend(entity *EntityKey, otheruid uint64) (string, error) {
+func (rdm *RedisDataManager) GetGroupFriendIn(datakey *DataKey, otheraccount string) (string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HGET", entity.KeyFriend, otheruid)
+	ret, err := conn.Do("HGET", datakey.KeyAppDataHsetFriendByAppidZonenameAccount, otheraccount)
 	return redis.String(ret, err)
 }
 
-func (rdm *RedisDataManager) AddGroup(entity *EntityKey, group string) error {
+func (rdm *RedisDataManager) AddGroup(datakey *DataKey, group string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("SADD", entity.KeyGroup, group)
+	_, err := conn.Do("SADD", datakey.KeyAppDataSetGroupByAppidZonenameAccount, group)
 	return err
 }
 
-func (rdm *RedisDataManager) RemoveGroup(entity *EntityKey, group string) error {
+func (rdm *RedisDataManager) RemoveGroup(datakey *DataKey, group string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("SREM", entity.KeyGroup, group)
+	_, err := conn.Do("SREM", datakey.KeyAppDataSetGroupByAppidZonenameAccount, group)
 	return err
 }
 
-func (rdm *RedisDataManager) GetGroupList(entity *EntityKey) ([]string, error) {
+func (rdm *RedisDataManager) GetGroupList(datakey *DataKey) ([]string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
-	ret, err := conn.Do("SMEMBERS", entity.KeyGroup)
+	ret, err := conn.Do("SMEMBERS", datakey.KeyAppDataSetGroupByAppidZonenameAccount)
 
-	if err != nil {
-		return nil, err
-	}
-
-	retarr, err := redis.Values(ret, nil)
+	retarr, err := redis.Values(ret, err)
 
 	if err != nil {
 		return nil, err
@@ -122,27 +110,27 @@ func (rdm *RedisDataManager) GetGroupList(entity *EntityKey) ([]string, error) {
 	return grouplist, err
 }
 
-func (rdm *RedisDataManager) IsGroupExists(entity *EntityKey, group string) (bool, error) {
+func (rdm *RedisDataManager) IsGroupExists(datakey *DataKey, group string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("SISMEMBER", entity.KeyGroup, group)
+	ret, err := conn.Do("SISMEMBER", datakey.KeyAppDataSetGroupByAppidZonenameAccount, group)
 	return redis.Bool(ret, err)
 }
 
-func (rdm *RedisDataManager) IsFriendInGroup(entity *EntityKey, otheruid uint64, group string) (bool, error) {
+func (rdm *RedisDataManager) IsFriendInGroup(datakey *DataKey, otheraccount, group string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("SISMEMBER", entity.KeyGroup+":"+group, otheruid)
+	ret, err := conn.Do("SISMEMBER", datakey.KeyAppDataSetGroupByAppidZonenameAccount+":"+group, otheraccount)
 	return redis.Bool(ret, err)
 }
 
-func (rdm *RedisDataManager) MoveFriendToGroup(entity *EntityKey, otheruid uint64, srcgroup, destgroup string) error {
+func (rdm *RedisDataManager) MoveFriendToGroup(datakey *DataKey, otheraccount, srcgroup, destgroup string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
 	conn.Send("MULTI")
-	conn.Send("SREM", entity.KeyGroup+":"+srcgroup, otheruid)
-	conn.Send("SADD", entity.KeyGroup+":"+destgroup, otheruid)
+	conn.Send("SREM", datakey.KeyAppDataSetGroupByAppidZonenameAccount+":"+srcgroup, otheraccount)
+	conn.Send("SADD", datakey.KeyAppDataSetGroupByAppidZonenameAccount+":"+destgroup, otheraccount)
 	_, err := conn.Do("EXEC")
 
 	return err

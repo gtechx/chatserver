@@ -5,7 +5,6 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 	. "github.com/gtechx/base/common"
-	"github.com/gtechx/chatserver/config"
 )
 
 type RedisDataManager struct {
@@ -13,9 +12,7 @@ type RedisDataManager struct {
 
 	serverAddr     string
 	serverPassword string
-	startUID       int
-	startAPPID     int
-	defaultDB      int
+	defaultDB      uint64
 }
 
 var instanceDataManager *RedisDataManager
@@ -27,12 +24,16 @@ func Manager() *RedisDataManager {
 	return instanceDataManager
 }
 
-func (rdm *RedisDataManager) Initialize() error {
+func (rdm *RedisDataManager) Initialize(saddr, spass string, defaultdb, startuid, startappid uint64) error {
+	rdm.serverAddr = saddr
+	rdm.serverPassword = spass
+	rdm.defaultDB = defaultdb
+
 	rdm.redisPool = &redis.Pool{
 		MaxIdle:      3,
 		IdleTimeout:  240 * time.Second,
-		Dial:         redisDial,
-		TestOnBorrow: redisOnBorrow,
+		Dial:         rdm.redisDial,
+		TestOnBorrow: rdm.redisOnBorrow,
 	}
 
 	conn := rdm.redisPool.Get()
@@ -44,7 +45,7 @@ func (rdm *RedisDataManager) Initialize() error {
 	}
 
 	if !Bool(ret) {
-		_, err = conn.Do("SET", "UID", config.StartUID)
+		_, err = conn.Do("SET", "UID", startuid)
 
 		if err != nil {
 			return err
@@ -58,7 +59,7 @@ func (rdm *RedisDataManager) Initialize() error {
 	}
 
 	if !Bool(ret) {
-		_, err = conn.Do("SET", "APPID", config.StartAPPID)
+		_, err = conn.Do("SET", "APPID", startappid)
 
 		if err != nil {
 			return err
@@ -96,25 +97,25 @@ func (rdm *RedisDataManager) UnInitialize() error {
 	return err
 }
 
-func redisDial() (redis.Conn, error) {
-	c, err := redis.Dial("tcp", config.RedisAddr)
+func (rdm *RedisDataManager) redisDial() (redis.Conn, error) {
+	c, err := redis.Dial("tcp", rdm.serverAddr)
 	if err != nil {
 		return nil, err
 	}
-	if config.RedisPassword != "" {
-		if _, err := c.Do("AUTH", config.RedisPassword); err != nil {
+	if rdm.serverPassword != "" {
+		if _, err := c.Do("AUTH", rdm.serverPassword); err != nil {
 			c.Close()
 			return nil, err
 		}
 	}
-	if _, err := c.Do("SELECT", config.DefaultDB); err != nil {
+	if _, err := c.Do("SELECT", rdm.defaultDB); err != nil {
 		c.Close()
 		return nil, err
 	}
 	return c, nil
 }
 
-func redisOnBorrow(c redis.Conn, t time.Time) error {
+func (rdm *RedisDataManager) redisOnBorrow(c redis.Conn, t time.Time) error {
 	if time.Since(t) < time.Minute {
 		return nil
 	}

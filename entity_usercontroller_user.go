@@ -66,14 +66,14 @@ func onEcho(entity *UserEntity, data []byte) {
 }
 
 func onLogout(entity *UserEntity, data []byte) {
-	err := gtdata.Manager().SetUserOffline(entity.EntityKey)
+	err := gtdata.Manager().SetUserOffline(entity.DataKey)
 
 	if err != nil {
 		entity.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
 		return
 	}
 
-	grouplist, err := gtdata.Manager().GetGroupList(entity.EntityKey)
+	grouplist, err := gtdata.Manager().GetGroupList(entity.DataKey)
 
 	if err != nil {
 		entity.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)
@@ -83,7 +83,7 @@ func onLogout(entity *UserEntity, data []byte) {
 	friendlist := []uint64{}
 
 	for _, group := range grouplist {
-		gfriendlist, err := gtdata.Manager().GetFriendList(entity.EntityKey, group)
+		gfriendlist, err := gtdata.Manager().GetFriendList(entity.DataKey, group)
 
 		if err != nil {
 			entity.RPC(BIG_MSG_ID_ERR, SMALL_MSG_ID_ERR_REDIS)

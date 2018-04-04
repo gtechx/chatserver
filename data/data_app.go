@@ -12,7 +12,7 @@ import (
 //[hset]app:aid:uid:config
 
 //app op
-func (rdm *RedisDataManager) CreateApp(uid uint64, name string) error {
+func (rdm *RedisDataManager) CreateApp(account, appname string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
@@ -26,40 +26,44 @@ func (rdm *RedisDataManager) CreateApp(uid uint64, name string) error {
 	regdate := time.Now().Unix()
 
 	conn.Send("MULTI")
-	conn.Send("SADD", "app", appid)
-	conn.Send("SADD", "app:uid:"+String(uid), appid)
-	conn.Send("HMSET", "app:"+String(appid), "appid", appid, "name", name, "owner", uid, "desc", "", "iconurl", "", "regdate", regdate)
-	conn.Send("ZADD", "app:index", regdate, appid) //create index of app regdate
-	//conn.Send("ZADD", "app:index", name, appid)    //create index of app name
+	conn.Send("SADD", "set:app", appname)
+	conn.Send("SADD", "set:app:account", appname) //添加uid防止app:appid和app:uid重复
+	conn.Send("HMSET", "hset:app:appname:"+appname, "appid", appid, "name", appname, "owner", account, "desc", "", "iconurl", "", "regdate", regdate)
+	conn.Send("HSET", "hset:app:appid:appname", appid, appname)
+	conn.Send("ZADD", "zset:app:regdate:account:"+account, regdate, appname) //create index of app regdate
 
 	_, err = conn.Do("EXEC")
 
 	return err
 }
 
-func (rdm *RedisDataManager) DeleteApp(uid, appid uint64) error {
+func (rdm *RedisDataManager) DeleteApp(account, appname string, appid uint64) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
 	conn.Send("MULTI")
-	conn.Send("SREM", "app", appid)
-	conn.Send("SREM", "app:uid:"+String(uid), appid)
-	conn.Send("DEL", "app:"+String(appid))
-	conn.Send("ZREM", "app:index", appid)
+	conn.Send("SREM", "set:app", appname)
+	conn.Send("SREM", "set:app:account", appname)
+	conn.Send("DEL", "hset:app:appname:"+appname)
+	conn.Send("HDEL", "hset:app:appid:appname", appid)
+	conn.Send("ZREM", "zset:app:regdate:account:"+account, appname)
 
 	_, err := conn.Do("EXEC")
 
 	return err
 }
 
-func (rdm *RedisDataManager) GetApp(appid uint64) (*App, error) {
+func (rdm *RedisDataManager) IsAppExists(appname string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HGETALL", "app:"+String(appid))
+	ret, err := conn.Do("HEXISTS", "hset:app:appname", appname)
+	return redis.Bool(ret, err)
+}
 
-	if err != nil {
-		return nil, err
-	}
+func (rdm *RedisDataManager) GetApp(datakey *DataKey) (*App, error) {
+	conn := rdm.redisPool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("HGETALL", datakey.KeyAppHsetByAppname)
 
 	retarr, err := redis.Values(ret, err)
 
@@ -77,28 +81,24 @@ func (rdm *RedisDataManager) GetApp(appid uint64) (*App, error) {
 	return app, err
 }
 
-func (rdm *RedisDataManager) SetAppField(appid uint64, fieldname string, value interface{}) error {
+func (rdm *RedisDataManager) SetAppField(datakey *DataKey, fieldname string, value interface{}) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("HSET", "app:"+String(appid), fieldname, value)
+	_, err := conn.Do("HSET", datakey.KeyAppHsetByAppname, fieldname, value)
 	return err
 }
 
-func (rdm *RedisDataManager) GetAppField(appid uint64, fieldname string, value interface{}) (interface{}, error) {
+func (rdm *RedisDataManager) GetAppField(datakey *DataKey, fieldname string, value interface{}) (interface{}, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HGET", "app:"+String(appid), fieldname)
+	ret, err := conn.Do("HGET", datakey.KeyAppHsetByAppname, fieldname)
 	return ret, err
 }
 
-func (rdm *RedisDataManager) GetAppIDByPage(start, end int) ([]uint64, error) {
+func (rdm *RedisDataManager) GetAppnameByPage(datakey *DataKey, start, end int) ([]string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("ZRANGE", "app:index", start, end)
-
-	if err != nil {
-		return nil, err
-	}
+	ret, err := conn.Do("ZRANGE", datakey.KeyAppZsetRegdateAppnameByAccount, start, end)
 
 	retarr, err := redis.Values(ret, err)
 
@@ -115,42 +115,38 @@ func (rdm *RedisDataManager) GetAppIDByPage(start, end int) ([]uint64, error) {
 	return appidlist, err
 }
 
-func (rdm *RedisDataManager) SetAppType(appid uint64, typestr string) error {
-	conn := rdm.redisPool.Get()
-	defer conn.Close()
-	_, err := conn.Do("HSET", "app:"+String(appid), "type", typestr)
-	return err
-}
+// func (rdm *RedisDataManager) SetAppType(appid uint64, typestr string) error {
+// 	conn := rdm.redisPool.Get()
+// 	defer conn.Close()
+// 	_, err := conn.Do("HSET", "app:"+String(appid), "type", typestr)
+// 	return err
+// }
 
-func (rdm *RedisDataManager) GetAppType(appid uint64) (string, error) {
-	conn := rdm.redisPool.Get()
-	defer conn.Close()
-	ret, err := conn.Do("HGET", "app:"+String(appid), "type")
-	return redis.String(ret, err)
-}
+// func (rdm *RedisDataManager) GetAppType(appid uint64) (string, error) {
+// 	conn := rdm.redisPool.Get()
+// 	defer conn.Close()
+// 	ret, err := conn.Do("HGET", "app:"+String(appid), "type")
+// 	return redis.String(ret, err)
+// }
 
-func (rdm *RedisDataManager) IsAppExists(appid uint64) (bool, error) {
+func (rdm *RedisDataManager) IsAppIDExists(datakey *DataKey) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("SISMEMBER", "app", appid)
+	ret, err := conn.Do("SISMEMBER", datakey.KeyAppSet, datakey.Appid)
 	return redis.Bool(ret, err)
 }
 
-func (rdm *RedisDataManager) AddAppZone(appid uint64, zone uint32, zonename string) error {
+func (rdm *RedisDataManager) AddAppZone(datakey *DataKey) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("HSET", "app:zone:"+String(appid), zone, zonename)
+	_, err := conn.Do("SADD", datakey.KeyAppSetZonenameByAppname, datakey.Zonename)
 	return err
 }
 
-func (rdm *RedisDataManager) GetAppZones(appid uint64) (map[uint32]string, error) {
+func (rdm *RedisDataManager) GetAppZones(datakey *DataKey) ([]string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HGETALL", "app:zone:"+String(appid))
-
-	if err != nil {
-		return nil, err
-	}
+	ret, err := conn.Do("SMEMBERS", datakey.KeyAppSetZonenameByAppname)
 
 	retarr, err := redis.Values(ret, err)
 
@@ -158,71 +154,65 @@ func (rdm *RedisDataManager) GetAppZones(appid uint64) (map[uint32]string, error
 		return nil, err
 	}
 
-	zonemap := map[uint32]string{}
-	for i := 0; i < len(retarr); {
-		zoneid := Uint32(retarr[i])
-		zonename := String(retarr[i+1])
-		zonemap[zoneid] = zonename
-		i = i + 2
+	zonelist := []string{}
+	for i := 0; i < len(retarr); i++ {
+		zonename := String(retarr[i])
+		zonelist = append(zonelist, zonename)
 	}
 
-	return zonemap, err
+	return zonelist, err
 }
 
-func (rdm *RedisDataManager) GetAppOwner(appid uint64) (uint64, error) {
+func (rdm *RedisDataManager) GetAppOwner(datakey *DataKey) (uint64, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HGET", "app:"+String(appid), "owner")
+	ret, err := conn.Do("HGET", datakey.KeyAppHsetByAppname, "owner")
 	return redis.Uint64(ret, err)
 }
 
-func (rdm *RedisDataManager) IsAppZone(appid uint64, zone uint32) (bool, error) {
+func (rdm *RedisDataManager) IsAppZone(datakey *DataKey, zonename string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HEXISTS", "app:zone:"+String(appid), zone)
+	ret, err := conn.Do("SISMEMBER", datakey.KeyAppSetZonenameByAppname, zonename)
 	return redis.Bool(ret, err)
 }
 
-func (rdm *RedisDataManager) GetAppZoneName(appid uint64, zone uint32) (string, error) {
-	conn := rdm.redisPool.Get()
-	defer conn.Close()
-	ret, err := conn.Do("HGET", "app:"+String(appid), zone)
-	return redis.String(ret, err)
-}
+// func (rdm *RedisDataManager) GetAppZoneName(datakey *DataKey) (string, error) {
+// 	conn := rdm.redisPool.Get()
+// 	defer conn.Close()
+// 	ret, err := conn.Do("HGET", "app:"+String(appid), zone)
+// 	return redis.String(ret, err)
+// }
 
-func (rdm *RedisDataManager) AddShareApp(appid, otherappid uint64) error {
+func (rdm *RedisDataManager) AddShareApp(datakey *DataKey, otherappname string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	conn.Send("MULTI")
-	conn.Send("HMSET", "app:"+String(appid), "share", otherappid)
-	conn.Send("SADD", "app:share:"+String(otherappid), appid)
+	conn.Send("HMSET", datakey.KeyAppHsetByAppname, "share", otherappname)
+	conn.Send("SADD", "set:app:share:"+otherappname, otherappname)
 	_, err := conn.Do("EXEC")
 	return err
 }
 
-func (rdm *RedisDataManager) IsShareWithOtherApp(appid uint64) (bool, error) {
+func (rdm *RedisDataManager) IsShareWithOtherApp(datakey *DataKey) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HEXISTS", "app:"+String(appid), "share")
+	ret, err := conn.Do("HEXISTS", datakey.KeyAppHsetByAppname, "share")
 	return redis.Bool(ret, err)
 }
 
-func (rdm *RedisDataManager) GetShareApp(appid uint64) (uint64, error) {
+func (rdm *RedisDataManager) GetShareApp(datakey *DataKey) (string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HGET", "app:"+String(appid), "share")
-	return redis.Uint64(ret, err)
+	ret, err := conn.Do("HGET", datakey.KeyAppHsetByAppname, "share")
+	return redis.String(ret, err)
 }
 
-func (rdm *RedisDataManager) GetMyShareAppList(appid uint64) ([]uint64, error) {
+func (rdm *RedisDataManager) GetShareAppList(datakey *DataKey) ([]string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
-	ret, err := conn.Do("SMEMBERS", "app:share:"+String(appid))
-
-	if err != nil {
-		return nil, err
-	}
+	ret, err := conn.Do("SMEMBERS", datakey.KeyAppSetShareByAppname)
 
 	retarr, err := redis.Values(ret, nil)
 
@@ -230,9 +220,9 @@ func (rdm *RedisDataManager) GetMyShareAppList(appid uint64) ([]uint64, error) {
 		return nil, err
 	}
 
-	applist := []uint64{}
-	for _, otherappid := range retarr {
-		applist = append(applist, Uint64(otherappid))
+	applist := []string{}
+	for _, otherapp := range retarr {
+		applist = append(applist, String(otherapp))
 	}
 
 	return applist, err

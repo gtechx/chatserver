@@ -24,11 +24,11 @@ func (rdm *RedisDataManager) PullOnlineMessage(serveraddr string, timeout int) (
 	return Bytes(retarr[1]), err
 }
 
-func (rdm *RedisDataManager) GetOfflineMessage(entity *EntityKey) ([][]byte, error) {
+func (rdm *RedisDataManager) GetOfflineMessage(datakey *DataKey) ([][]byte, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
-	ret, err := conn.Do("LRANGE", entity.KeyMessageOffline, 0, -1)
+	ret, err := conn.Do("LRANGE", datakey.KeyAppDataListMsgByAppidZonenameAccount, 0, -1)
 
 	if err != nil {
 		return nil, err
@@ -55,10 +55,10 @@ func (rdm *RedisDataManager) SendMsgToUserOnline(uid, appid uint64, data []byte,
 	return err
 }
 
-func (rdm *RedisDataManager) SendMsgToUserOffline(entity *EntityKey, data []byte) error {
+func (rdm *RedisDataManager) SendMsgToUserOffline(datakey *DataKey, data []byte) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("RPUSH", entity.KeyMessageOffline, data)
+	_, err := conn.Do("RPUSH", datakey.KeyAppDataListMsgByAppidZonenameAccount, data)
 	return err
 }
 

@@ -5,7 +5,6 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 	. "github.com/gtechx/base/common"
-	"github.com/gtechx/chatserver/config"
 )
 
 //每个app之间可以是独立的数据，也可以共享数据，根据你的设置
@@ -22,64 +21,65 @@ func (rdm *RedisDataManager) CreateAccount(account, password, regip string) erro
 	uid := Uint64(ret)
 
 	conn.Send("MULTI")
-	conn.Send("HMSET", "uid:"+String(uid), "uid", uid, "account", account, "password", password, "regip", regip, "regdate", time.Now().Unix())
-	conn.Send("HSET", "account:uid", account, uid)
-	conn.Send("SADD", "user", uid)
+	conn.Send("HMSET", "hset:user:account"+account, "uid", uid, "account", account, "password", password, "regip", regip, "regdate", time.Now().Unix())
+	conn.Send("HSET", "hset:user:uid:account", uid, account)
+	conn.Send("SADD", "set:user", account)
 
 	_, err = conn.Do("EXEC")
 	return err
 }
 
-func (rdm *RedisDataManager) SetPassword(uid uint64, password string) error {
+func (rdm *RedisDataManager) SetPassword(account, password string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("HSET", "uid:"+String(uid), "password", password)
+	_, err := conn.Do("HSET", "hset:user:account"+account, "password", password)
 	return err
 }
 
-func (rdm *RedisDataManager) CreateAppData(entity *EntityKey) error {
+func (rdm *RedisDataManager) CreateAppData(datakey *DataKey) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
 	conn.Send("MULTI")
-	conn.Send("HSET", entity.KeyAppData, "createdate", time.Now().Unix())
-	conn.Send("SADD", entity.KeyGroup, defaultGroupName)
+	conn.Send("HSET", datakey.KeyAppDataHsetByAppidZonenameAccount, "regdate", time.Now().Unix())
+	conn.Send("SADD", datakey.KeyAppDataSetGroupByAppidZonenameAccount, defaultGroupName)
 	_, err := conn.Do("EXEC")
 	return err
 }
 
-func (rdm *RedisDataManager) DeleteAppData(entity *EntityKey) error {
+func (rdm *RedisDataManager) DeleteAppData(datakey *DataKey) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
 	conn.Send("MULTI")
-	conn.Send("HDEL", entity.KeyAppData)
-	conn.Send("DEL", entity.KeyGroup)
-	conn.Send("HDEL", entity.KeyFriend)
-	conn.Send("HDEL", entity.KeyFriendRequest)
-	conn.Send("HDEL", entity.KeyBlack)
+	conn.Send("DEL", datakey.KeyAppDataHsetByAppidZonenameAccount)
+	conn.Send("DEL", datakey.KeyAppDataSetGroupByAppidZonenameAccount)
+	conn.Send("DEL", datakey.KeyAppDataHsetFriendByAppidZonenameAccount)
+	conn.Send("DEL", datakey.KeyAppDataHsetFriendrequestGroupByAppidZonenameAccount)
+	conn.Send("DEL", datakey.KeyAppDataSetBlackByAppidZonenameAccount)
+	conn.Send("DEL", datakey.KeyAppDataListMsgByAppidZonenameAccount)
 	_, err := conn.Do("EXEC")
 	return err
 }
 
-func (rdm *RedisDataManager) IsAppDataExists(entity *EntityKey) (bool, error) {
+func (rdm *RedisDataManager) IsAppDataExists(datakey *DataKey) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HEXISTS", entity.KeyAppData)
+	ret, err := conn.Do("EXISTS", datakey.KeyAppDataHsetByAppidZonenameAccount)
 	return redis.Bool(ret, err)
 }
 
-func (rdm *RedisDataManager) SetAppDataField(entity *EntityKey, fieldname string, value interface{}) error {
+func (rdm *RedisDataManager) SetAppDataField(datakey *DataKey, fieldname string, value interface{}) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("HSET", entity.KeyAppData, fieldname, value)
+	_, err := conn.Do("HSET", datakey.KeyAppDataHsetByAppidZonenameAccount, fieldname, value)
 	return err
 }
 
-func (rdm *RedisDataManager) GetAppDataField(entity *EntityKey, fieldname string) (interface{}, error) {
+func (rdm *RedisDataManager) GetAppDataField(datakey *DataKey, fieldname string) (interface{}, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HGET", entity.KeyAppData, fieldname)
+	ret, err := conn.Do("HGET", datakey.KeyAppDataHsetByAppidZonenameAccount, fieldname)
 	return ret, err
 }
 
@@ -100,89 +100,89 @@ func (rdm *RedisDataManager) GetAppDataField(entity *EntityKey, fieldname string
 func (rdm *RedisDataManager) IsAccountExists(account string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HEXISTS", "account:uid", account)
+	ret, err := conn.Do("SISMEMBER", "set:user", account)
 	return redis.Bool(ret, err)
 }
 
-func (rdm *RedisDataManager) IsUIDExists(uid uint64) (bool, error) {
-	conn := rdm.redisPool.Get()
-	defer conn.Close()
-	ret, err := conn.Do("EXISTS", "uid:"+String(uid))
-	return redis.Bool(ret, err)
-}
+// func (rdm *RedisDataManager) IsUIDExists(uid uint64) (bool, error) {
+// 	conn := rdm.redisPool.Get()
+// 	defer conn.Close()
+// 	ret, err := conn.Do("EXISTS", "uid:"+String(uid))
+// 	return redis.Bool(ret, err)
+// }
 
-func (rdm *RedisDataManager) GetUIDByAccount(account string) (uint64, error) {
-	conn := rdm.redisPool.Get()
-	defer conn.Close()
-	ret, err := conn.Do("HGET", "account:uid", account)
-	return redis.Uint64(ret, err)
-}
+// func (rdm *RedisDataManager) GetUIDByAccount(account string) (uint64, error) {
+// 	conn := rdm.redisPool.Get()
+// 	defer conn.Close()
+// 	ret, err := conn.Do("HGET", "account:uid", account)
+// 	return redis.Uint64(ret, err)
+// }
 
-func (rdm *RedisDataManager) GetAccountByUID(uid uint64) (string, error) {
+// func (rdm *RedisDataManager) GetAccountByUID(uid uint64) (string, error) {
+// 	conn := rdm.redisPool.Get()
+// 	defer conn.Close()
+// 	ret, err := conn.Do("HGET", "uid:"+String(uid), "account")
+// 	return redis.String(ret, err)
+// }
+
+func (rdm *RedisDataManager) GetPassword(account string) (string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HGET", "uid:"+String(uid), "account")
+	ret, err := conn.Do("HGET", "hset:user:account"+account, "password")
 	return redis.String(ret, err)
 }
 
-func (rdm *RedisDataManager) GetPassword(uid uint64) (string, error) {
-	conn := rdm.redisPool.Get()
-	defer conn.Close()
-	ret, err := conn.Do("HGET", "uid:"+String(uid), "password")
-	return redis.String(ret, err)
-}
-
-func (rdm *RedisDataManager) SetUserOnline(entity *EntityKey) error {
+func (rdm *RedisDataManager) SetUserOnline(datakey *DataKey) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	conn.Send("MULTI")
-	conn.Send("HSET", entity.KeyAppData, "online", config.ServerAddr)
-	conn.Send("SADD", "online", entity.KeyUID)
+	conn.Send("HSET", datakey.KeyAppDataHsetByAppidZonenameAccount, "online", rdm.serverAddr)
+	conn.Send("SADD", "online:"+datakey.Appname+":"+datakey.Zonename, datakey.Account)
 	_, err := conn.Do("EXEC")
 	return err
 }
 
-func (rdm *RedisDataManager) SetUserOffline(entity *EntityKey) error {
+func (rdm *RedisDataManager) SetUserOffline(datakey *DataKey) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	conn.Send("MULTI")
-	conn.Send("HDEL", entity.KeyAppData, "online", config.ServerAddr)
-	conn.Send("SREM", "online", entity.KeyUID)
+	conn.Send("HDEL", datakey.KeyAppDataHsetByAppidZonenameAccount, "online", rdm.serverAddr)
+	conn.Send("SREM", "online:"+datakey.Appname+":"+datakey.Zonename, datakey.Account)
 	_, err := conn.Do("EXEC")
 	return err
 }
 
-func (rdm *RedisDataManager) IsUserOnline(uid uint64) (bool, error) {
+func (rdm *RedisDataManager) IsUserOnline(datakey *DataKey, account string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("SISMEMBER", "online", "uid:"+String(uid))
+	ret, err := conn.Do("HEXISTS", "hset:app:data:"+datakey.Appname+":"+datakey.Zonename+":"+datakey.Account, "online")
 	return redis.Bool(ret, err)
 }
 
-func (rdm *RedisDataManager) SetUserState(entity *EntityKey, state uint8) error {
+func (rdm *RedisDataManager) SetUserState(datakey *DataKey, state uint8) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("HSET", entity.KeyAppData, "state", state)
+	_, err := conn.Do("HSET", datakey.KeyAppDataHsetByAppidZonenameAccount, "state", state)
 	return err
 }
 
-func (rdm *RedisDataManager) AddUserToBlack(entity *EntityKey, otheruid uint64) error {
+func (rdm *RedisDataManager) AddUserToBlack(datakey *DataKey, otheraccount string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("SADD", entity.KeyBlack, otheruid)
+	_, err := conn.Do("SADD", datakey.KeyAppDataSetBlackByAppidZonenameAccount, otheraccount)
 	return err
 }
 
-func (rdm *RedisDataManager) RemoveUserFromBlack(entity *EntityKey, otheruid uint64) error {
+func (rdm *RedisDataManager) RemoveUserFromBlack(datakey *DataKey, otheraccount string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("SREM", entity.KeyBlack, otheruid)
+	_, err := conn.Do("SREM", datakey.KeyAppDataSetBlackByAppidZonenameAccount, otheraccount)
 	return err
 }
 
-func (rdm *RedisDataManager) IsUserInBlack(entity *EntityKey, otheruid uint64) (bool, error) {
+func (rdm *RedisDataManager) IsUserInBlack(datakey *DataKey, otheraccount string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("SISMEMBER", entity.KeyBlack, otheruid)
+	ret, err := conn.Do("SISMEMBER", datakey.KeyAppDataSetBlackByAppidZonenameAccount, otheraccount)
 	return redis.Bool(ret, err)
 }
