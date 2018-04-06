@@ -21,18 +21,25 @@ func (rdm *RedisDataManager) CreateAccount(account, password, regip string) erro
 	uid := Uint64(ret)
 
 	conn.Send("MULTI")
-	conn.Send("HMSET", "hset:user:account"+account, "uid", uid, "account", account, "password", password, "regip", regip, "regdate", time.Now().Unix())
-	conn.Send("HSET", "hset:user:uid:account", uid, account)
+	conn.Send("HMSET", "hset:user:account:"+account, "uid", uid, "account", account, "password", password, "regip", regip, "regdate", time.Now().Unix())
+	//conn.Send("HSET", "hset:user:uid:account", uid, account)
 	conn.Send("SADD", "set:user", account)
 
 	_, err = conn.Do("EXEC")
 	return err
 }
 
+func (rdm *RedisDataManager) IsAccountExists(account string) (bool, error) {
+	conn := rdm.redisPool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("SISMEMBER", "set:user", account)
+	return redis.Bool(ret, err)
+}
+
 func (rdm *RedisDataManager) SetPassword(account, password string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	_, err := conn.Do("HSET", "hset:user:account"+account, "password", password)
+	_, err := conn.Do("HSET", "hset:user:account:"+account, "password", password)
 	return err
 }
 
@@ -97,13 +104,6 @@ func (rdm *RedisDataManager) GetAppDataField(datakey *DataKey, fieldname string)
 // 	return err
 // }
 
-func (rdm *RedisDataManager) IsAccountExists(account string) (bool, error) {
-	conn := rdm.redisPool.Get()
-	defer conn.Close()
-	ret, err := conn.Do("SISMEMBER", "set:user", account)
-	return redis.Bool(ret, err)
-}
-
 // func (rdm *RedisDataManager) IsUIDExists(uid uint64) (bool, error) {
 // 	conn := rdm.redisPool.Get()
 // 	defer conn.Close()
@@ -128,7 +128,7 @@ func (rdm *RedisDataManager) IsAccountExists(account string) (bool, error) {
 func (rdm *RedisDataManager) GetPassword(account string) (string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HGET", "hset:user:account"+account, "password")
+	ret, err := conn.Do("HGET", "hset:user:account:"+account, "password")
 	return redis.String(ret, err)
 }
 
@@ -155,7 +155,7 @@ func (rdm *RedisDataManager) SetUserOffline(datakey *DataKey) error {
 func (rdm *RedisDataManager) IsUserOnline(datakey *DataKey, account string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HEXISTS", "hset:app:data:"+datakey.Appname+":"+datakey.Zonename+":"+datakey.Account, "online")
+	ret, err := conn.Do("HEXISTS", "hset:app:data:"+datakey.Appname+":"+datakey.Zonename+":"+account, "online")
 	return redis.Bool(ret, err)
 }
 

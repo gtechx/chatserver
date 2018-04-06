@@ -29,7 +29,7 @@ func (rdm *RedisDataManager) CreateApp(account, appname string) error {
 	conn.Send("SADD", "set:app", appname)
 	conn.Send("SADD", "set:app:account", appname) //添加uid防止app:appid和app:uid重复
 	conn.Send("HMSET", "hset:app:appname:"+appname, "appid", appid, "name", appname, "owner", account, "desc", "", "iconurl", "", "regdate", regdate)
-	conn.Send("HSET", "hset:app:appid:appname", appid, appname)
+	//conn.Send("HSET", "hset:app:appid:appname", appid, appname)
 	conn.Send("ZADD", "zset:app:regdate:account:"+account, regdate, appname) //create index of app regdate
 
 	_, err = conn.Do("EXEC")
@@ -37,7 +37,7 @@ func (rdm *RedisDataManager) CreateApp(account, appname string) error {
 	return err
 }
 
-func (rdm *RedisDataManager) DeleteApp(account, appname string, appid uint64) error {
+func (rdm *RedisDataManager) DeleteApp(account, appname string) error {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 
@@ -45,7 +45,7 @@ func (rdm *RedisDataManager) DeleteApp(account, appname string, appid uint64) er
 	conn.Send("SREM", "set:app", appname)
 	conn.Send("SREM", "set:app:account", appname)
 	conn.Send("DEL", "hset:app:appname:"+appname)
-	conn.Send("HDEL", "hset:app:appid:appname", appid)
+	//conn.Send("HDEL", "hset:app:appid:appname", appid)
 	conn.Send("ZREM", "zset:app:regdate:account:"+account, appname)
 
 	_, err := conn.Do("EXEC")
@@ -78,6 +78,10 @@ func (rdm *RedisDataManager) GetApp(datakey *DataKey) (*App, error) {
 		return nil, err
 	}
 
+	tm := time.Unix(app.Regdate, 0)
+	//var stamp = fmt.Sprintf("\"%s\"", time.Time(this).Format("2006-01-02 15:04:05"))
+	app.Sregdate = tm.Format("2006-01-02 15:04:05")
+
 	return app, err
 }
 
@@ -106,13 +110,13 @@ func (rdm *RedisDataManager) GetAppnameByPage(datakey *DataKey, start, end int) 
 		return nil, err
 	}
 
-	appidlist := []uint64{}
+	applist := []string{}
 	for i := 0; i < len(retarr); i++ {
-		appid, _ := redis.Uint64(retarr[i], err)
-		appidlist = append(appidlist, appid)
+		appname, _ := redis.String(retarr[i], err)
+		applist = append(applist, appname)
 	}
 
-	return appidlist, err
+	return applist, err
 }
 
 // func (rdm *RedisDataManager) SetAppType(appid uint64, typestr string) error {
@@ -129,12 +133,12 @@ func (rdm *RedisDataManager) GetAppnameByPage(datakey *DataKey, start, end int) 
 // 	return redis.String(ret, err)
 // }
 
-func (rdm *RedisDataManager) IsAppIDExists(datakey *DataKey) (bool, error) {
-	conn := rdm.redisPool.Get()
-	defer conn.Close()
-	ret, err := conn.Do("SISMEMBER", datakey.KeyAppSet, datakey.Appid)
-	return redis.Bool(ret, err)
-}
+// func (rdm *RedisDataManager) IsAppIDExists(datakey *DataKey) (bool, error) {
+// 	conn := rdm.redisPool.Get()
+// 	defer conn.Close()
+// 	ret, err := conn.Do("SISMEMBER", datakey.KeyAppSet, datakey.Appid)
+// 	return redis.Bool(ret, err)
+// }
 
 func (rdm *RedisDataManager) AddAppZone(datakey *DataKey) error {
 	conn := rdm.redisPool.Get()

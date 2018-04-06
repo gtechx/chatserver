@@ -79,7 +79,7 @@ func (rdm *RedisDataManager) Initialize(saddr, spass string, defaultdb, startuid
 			return err
 		}
 
-		_, err = conn.Do("HSET", 0, "password", Md5("ztgame@123"))
+		_, err = conn.Do("HSET", "hset:user:account:admin", "password", Md5("ztgame@123"))
 
 		if err != nil {
 			return err

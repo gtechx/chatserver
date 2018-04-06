@@ -1,7 +1,9 @@
 package gtdata
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	. "github.com/gtechx/base/common"
 )
@@ -55,8 +57,8 @@ type DataKey struct {
 	Appname  string
 	Zonename string
 	Account  string
-	Uid      uint64
-	Appid    uint64
+	// Uid      uint64
+	// Appid    uint64
 }
 
 func (datakey *DataKey) Update() {
@@ -81,17 +83,17 @@ func (datakey *DataKey) Update() {
 	datakey.KeyAppDataListMsgByAppidZonenameAccount = keyJoin("list:app:data:msg:offline", datakey.Appname, datakey.Zonename, datakey.Account)
 }
 
-func (datakey *DataKey) Init(appname, zonename, account string, uid, appid uint64) {
+func (datakey *DataKey) Init(appname, zonename, account string) {
 	datakey.Appname = appname
 	datakey.Zonename = zonename
 	datakey.Account = account
-	datakey.Uid = uid
-	datakey.Appid = appid
+	// datakey.Uid = uid
+	// datakey.Appid = appid
 
 	datakey.Update()
 }
 
-func (datakey *DataKey) SetAccount(appname, zonename, account string, uid, appid uint64) {
+func (datakey *DataKey) SetAccount(appname, zonename, account string) {
 	datakey.Account = account
 	datakey.Update()
 }
@@ -106,19 +108,28 @@ func (datakey *DataKey) SetZonename(zonename string) {
 	datakey.Update()
 }
 
+type JsonTime time.Time
+
+// 实现它的json序列化方法
+func (this JsonTime) MarshalJSON() ([]byte, error) {
+	var stamp = fmt.Sprintf("\"%s\"", time.Time(this).Format("2006-01-02 15:04:05"))
+	return []byte(stamp), nil
+}
+
 type App struct {
-	Appid   uint64 `redis:"appid" json:"appid"`
-	Name    string `redis:"name" json:"name"`
-	Owner   uint64 `redis:"owner" json:"owner"`
-	Desc    string `redis:"desc" json:"desc"`
-	Regdate int64  `redis:"regdate" json:"regdate"`
-	Type    string `redis:"type" json:"type"`
-	Share   uint64 `redis:"share" json:"share"`
+	Appid    uint64 `redis:"appid" json:"appid"`
+	Name     string `redis:"name" json:"name"`
+	Owner    string `redis:"owner" json:"owner"`
+	Desc     string `redis:"desc" json:"desc"`
+	Regdate  int64  `redis:"regdate" json:"regdate"`
+	Sregdate string `redis:"sregdate" json:"sregdate"`
+	Type     string `redis:"type" json:"type"`
+	Share    string `redis:"share" json:"share"`
 }
 
 type AppData struct {
 	Id       uint64 `redis:"id" json:"id"`
-	Name     string `redis:"name" json:"name"`
+	Nickname string `redis:"nickname" json:"nickname"`
 	Desc     string `redis:"desc" json:"desc"`
 	Regdate  int64  `redis:"regdate" json:"regdate"`
 	Sex      string `redis:"sex" json:"sex"`
