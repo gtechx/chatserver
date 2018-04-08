@@ -99,6 +99,13 @@ func (rdm *RedisDataManager) GetAppField(datakey *DataKey, fieldname string, val
 	return ret, err
 }
 
+func (rdm *RedisDataManager) GetAppCount(datakey *DataKey) (uint64, error) {
+	conn := rdm.redisPool.Get()
+	defer conn.Close()
+	ret, err := conn.Do("ZCARD", datakey.KeyAppZsetRegdateAppnameByAccount)
+	return redis.Uint64(ret, err)
+}
+
 func (rdm *RedisDataManager) GetAppnameByPage(datakey *DataKey, start, end int) ([]string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
