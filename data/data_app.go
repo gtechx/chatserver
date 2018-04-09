@@ -154,6 +154,13 @@ func (rdm *RedisDataManager) AddAppZone(datakey *DataKey) error {
 	return err
 }
 
+func (rdm *RedisDataManager) DelAppZone(datakey *DataKey) error {
+	conn := rdm.redisPool.Get()
+	defer conn.Close()
+	_, err := conn.Do("SREM", datakey.KeyAppSetZonenameByAppname, datakey.Zonename)
+	return err
+}
+
 func (rdm *RedisDataManager) GetAppZones(datakey *DataKey) ([]string, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
@@ -211,6 +218,7 @@ func (rdm *RedisDataManager) DelShareApp(datakey *DataKey, otherappname string) 
 	conn.Send("MULTI")
 	conn.Send("HDEL", datakey.KeyAppHsetByAppname, "share", otherappname)
 	conn.Send("SREM", "set:app:share:"+otherappname, otherappname)
+	conn.Send("DEL", datakey.KeyAppSetZonenameByAppname)
 	_, err := conn.Do("EXEC")
 	return err
 }
