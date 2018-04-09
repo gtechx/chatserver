@@ -123,8 +123,8 @@ type App struct {
 	Desc     string `redis:"desc" json:"desc"`
 	Regdate  int64  `redis:"regdate" json:"regdate"`
 	Sregdate string `redis:"sregdate" json:"sregdate"`
-	Type     string `redis:"type" json:"type"`
-	Share    string `redis:"share" json:"share"`
+	//Type     string `redis:"type" json:"type"`
+	Share string `redis:"share" json:"share"`
 }
 
 type AppData struct {

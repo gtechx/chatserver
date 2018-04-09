@@ -27,9 +27,8 @@ func (rdm *RedisDataManager) CreateApp(account, appname string) error {
 
 	conn.Send("MULTI")
 	conn.Send("SADD", "set:app", appname)
-	conn.Send("SADD", "set:app:account", appname) //添加uid防止app:appid和app:uid重复
+	conn.Send("SADD", "set:app:account:"+account, appname) //添加uid防止app:appid和app:uid重复
 	conn.Send("HMSET", "hset:app:appname:"+appname, "appid", appid, "name", appname, "owner", account, "desc", "", "iconurl", "", "regdate", regdate)
-	//conn.Send("HSET", "hset:app:appid:appname", appid, appname)
 	conn.Send("ZADD", "zset:app:regdate:account:"+account, regdate, appname) //create index of app regdate
 
 	_, err = conn.Do("EXEC")
@@ -43,9 +42,10 @@ func (rdm *RedisDataManager) DeleteApp(account, appname string) error {
 
 	conn.Send("MULTI")
 	conn.Send("SREM", "set:app", appname)
-	conn.Send("SREM", "set:app:account", appname)
+	conn.Send("SREM", "set:app:account:"+account, appname)
 	conn.Send("DEL", "hset:app:appname:"+appname)
-	//conn.Send("HDEL", "hset:app:appid:appname", appid)
+	conn.Send("DEL", "set:app:share:"+appname)
+	conn.Send("DEL", "set:app:zone:"+appname)
 	conn.Send("ZREM", "zset:app:regdate:account:"+account, appname)
 
 	_, err := conn.Do("EXEC")
@@ -56,7 +56,7 @@ func (rdm *RedisDataManager) DeleteApp(account, appname string) error {
 func (rdm *RedisDataManager) IsAppExists(appname string) (bool, error) {
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
-	ret, err := conn.Do("HEXISTS", "hset:app:appname", appname)
+	ret, err := conn.Do("SISMEMBER", "set:app", appname)
 	return redis.Bool(ret, err)
 }
 
@@ -199,8 +199,18 @@ func (rdm *RedisDataManager) AddShareApp(datakey *DataKey, otherappname string) 
 	conn := rdm.redisPool.Get()
 	defer conn.Close()
 	conn.Send("MULTI")
-	conn.Send("HMSET", datakey.KeyAppHsetByAppname, "share", otherappname)
+	conn.Send("HSET", datakey.KeyAppHsetByAppname, "share", otherappname)
 	conn.Send("SADD", "set:app:share:"+otherappname, otherappname)
+	_, err := conn.Do("EXEC")
+	return err
+}
+
+func (rdm *RedisDataManager) DelShareApp(datakey *DataKey, otherappname string) error {
+	conn := rdm.redisPool.Get()
+	defer conn.Close()
+	conn.Send("MULTI")
+	conn.Send("HDEL", datakey.KeyAppHsetByAppname, "share", otherappname)
+	conn.Send("SREM", "set:app:share:"+otherappname, otherappname)
 	_, err := conn.Do("EXEC")
 	return err
 }
