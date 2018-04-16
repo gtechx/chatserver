@@ -109,15 +109,15 @@ func (datakey *DataKey) SetZonename(zonename string) {
 
 type Admin struct {
 	Account             string `redis:"account" json:"account" gorm:"primary_key"`
-	AllowSetting        bool   `redis:"setting" json:"setting" gorm:"tinyint(1)"`
-	AllowUserAdd        bool   `redis:"useradd" json:"useradd" gorm:"tinyint(1)"`
-	AllowUserDel        bool   `redis:"userdel" json:"userdel" gorm:"tinyint(1)"`
-	AllowMonitorOnline  bool   `redis:"monitoronline" json:"monitoronline" gorm:"tinyint(1)"`
-	AllowAppAdd         bool   `redis:"appadd" json:"appadd" gorm:"tinyint(1)"`
-	AllowAppDel         bool   `redis:"appdel" json:"appdel" gorm:"tinyint(1)"`
-	AllowZoneAdd        bool   `redis:"zoneadd" json:"zoneadd" gorm:"tinyint(1)"`
-	AllowZoneDel        bool   `redis:"zonedel" json:"zonedel" gorm:"tinyint(1)"`
-	AllowMonitorAppData bool   `redis:"monitorappdata" json:"monitorappdata" gorm:"tinyint(1)"`
+	Allowsetting        bool   `redis:"setting" json:"setting" gorm:"tinyint(1)"`
+	Allowuseradd        bool   `redis:"useradd" json:"useradd" gorm:"tinyint(1)"`
+	Allowuserdel        bool   `redis:"userdel" json:"userdel" gorm:"tinyint(1)"`
+	Allowmonitoronline  bool   `redis:"monitoronline" json:"monitoronline" gorm:"tinyint(1)"`
+	Allowappadd         bool   `redis:"appadd" json:"appadd" gorm:"tinyint(1)"`
+	Allowappdel         bool   `redis:"appdel" json:"appdel" gorm:"tinyint(1)"`
+	Allowzoneadd        bool   `redis:"zoneadd" json:"zoneadd" gorm:"tinyint(1)"`
+	Allowzonedel        bool   `redis:"zonedel" json:"zonedel" gorm:"tinyint(1)"`
+	Allowmonitorappdata bool   `redis:"monitorappdata" json:"monitorappdata" gorm:"tinyint(1)"`
 }
 
 type Account struct {
@@ -125,7 +125,7 @@ type Account struct {
 	Password  string    `redis:"password" json:"password" gorm:"not null"`
 	Email     string    `redis:"email" json:"email"`
 	Salt      string    `redis:"salt" json:"salt" gorm:"type:varchar(6);not null;default:''"`
-	RegIp     string    `redis:"regip" json:"regip"`
+	Regip     string    `redis:"regip" json:"regip"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
 
@@ -144,7 +144,7 @@ type AppZone struct {
 
 type AppShare struct {
 	Name      string `redis:"name" json:"name"`
-	OtherName string `redis:"othername" json:"othername"`
+	Othername string `redis:"othername" json:"othername"`
 }
 
 type AppData struct {
@@ -157,41 +157,61 @@ type AppData struct {
 	Sex       string    `redis:"sex" json:"sex"`
 	Birthday  string    `redis:"birthday" json:"birthday"`
 	Country   string    `redis:"country" json:"country"`
-	LastIp    string    `redis:"lastip" json:"lastip"`
-	LastLogin time.Time `redis:"lastlogin" json:"lastlogin"`
+	Lastip    string    `redis:"lastip" json:"lastip"`
+	Lastlogin time.Time `redis:"lastlogin" json:"lastlogin"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
 
 type Online struct {
-	Account    string    `redis:"account" json:"account"`
-	Appname    string    `redis:"appname" json:"appname"`
-	Zonename   string    `redis:"zonename" json:"zonename"`
-	ServerAddr string    `redis:"serveraddr" json:"serveraddr"`
+	Dataid uint64 `redis:"dataid" json:"dataid"`
+	// Account    string    `redis:"account" json:"account"`
+	// Appname    string    `redis:"appname" json:"appname"`
+	// Zonename   string    `redis:"zonename" json:"zonename"`
+	Serveraddr string    `redis:"serveraddr" json:"serveraddr"`
 	State      string    `redis:"state" json:"state"`
 	CreatedAt  time.Time `redis:"createdate" json:"createdate"`
 }
 
 type Friend struct {
-	Account      string    `redis:"account" json:"account"`
-	Otheraccount string    `redis:"otheraccount" json:"otheraccount"`
-	Appname      string    `redis:"appname" json:"appname"`
-	Zonename     string    `redis:"zonename" json:"zonename"`
-	Group        string    `redis:"group" json:"group"`
-	Comment      string    `redis:"comment" json:"comment"`
-	CreatedAt    time.Time `redis:"createdate" json:"createdate"`
+	Dataid      uint64 `redis:"dataid" json:"dataid"`
+	Otherdataid uint64 `redis:"otherdataid" json:"otherdataid"`
+	// Account      string    `redis:"account" json:"account"`
+	// Otheraccount string    `redis:"otheraccount" json:"otheraccount"`
+	// Appname      string    `redis:"appname" json:"appname"`
+	// Zonename     string    `redis:"zonename" json:"zonename"`
+	Group     string    `redis:"group" json:"group"`
+	Comment   string    `redis:"comment" json:"comment"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
 
 type Black struct {
-	Account      string    `redis:"account" json:"account"`
-	Otheraccount string    `redis:"otheraccount" json:"otheraccount"`
-	Appname      string    `redis:"appname" json:"appname"`
-	Zonename     string    `redis:"zonename" json:"zonename"`
-	CreatedAt    time.Time `redis:"createdate" json:"createdate"`
+	Dataid      uint64 `redis:"dataid" json:"dataid"`
+	Otherdataid uint64 `redis:"otherdataid" json:"otherdataid"`
+	// Account      string    `redis:"account" json:"account"`
+	// Otheraccount string    `redis:"otheraccount" json:"otheraccount"`
+	// Appname      string    `redis:"appname" json:"appname"`
+	// Zonename     string    `redis:"zonename" json:"zonename"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
 
 type Group struct {
-	Name     string `redis:"name" json:"name"`
-	Account  string `redis:"account" json:"account"`
-	Appname  string `redis:"appname" json:"appname"`
-	Zonename string `redis:"zonename" json:"zonename"`
+	Name        string `redis:"name" json:"name"`
+	Dataid      uint64 `redis:"dataid" json:"dataid"`
+	Otherdataid uint64 `redis:"otherdataid" json:"otherdataid"`
+	// Account  string `redis:"account" json:"account"`
+	// Appname  string `redis:"appname" json:"appname"`
+	// Zonename string `redis:"zonename" json:"zonename"`
+}
+
+var db_tables []interface{} = []interface{}{
+	&Admin{},
+	&Account{},
+	&App{},
+	&AppZone{},
+	&AppShare{},
+	&AppData{},
+	&Online{},
+	&Friend{},
+	&Black{},
+	&Group{},
 }

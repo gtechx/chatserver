@@ -4,8 +4,10 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	. "github.com/gtechx/base/common"
+	//. "github.com/gtechx/base/common"
+
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 type Redis struct {
@@ -28,7 +30,7 @@ func (rdm *Redis) Initialize(saddr, spass string, defaultdb uint64) error {
 		TestOnBorrow: rdm.redisOnBorrow,
 	}
 
-	return err
+	return nil
 }
 
 func (rdm *Redis) UnInitialize() error {
@@ -71,24 +73,32 @@ type Mysql struct {
 	serverAddr     string
 	serverPassword string
 	defaultDB      string
+	prefix         string
 }
 
-func (mdm *Mysql) Initialize(saddr, user, spass, defaultdb string) error {
+func (mdm *Mysql) Initialize(saddr, user_pass, defaultdb, prefix string) error {
 	mdm.serverAddr = saddr
-	mdm.serverPassword = spass
+	mdm.serverPassword = user_pass
 	mdm.defaultDB = defaultdb
+	mdm.prefix = prefix
 
-	db, err := gorm.Open("mysql", user+":"+spass+"@tcp("+saddr+")/"+defaultdb+"?charset=utf8&parseTime=True&loc=Local")
+	db, err := gorm.Open("mysql", user_pass+"@tcp("+saddr+")/"+defaultdb+"?charset=utf8&parseTime=True&loc=Local")
 
 	if err != nil {
 		return err
 	}
 
+	gorm.DefaultTableNameHandler = mdm.DefaultTableNameHandler
+
 	db.DB().SetMaxIdleConns(10)
-	db.LogMode(true)
+	//db.LogMode(true)
 
 	mdm.DB = db
 	return err
+}
+
+func (mdm *Mysql) DefaultTableNameHandler(db *gorm.DB, defaultTableName string) string {
+	return mdm.prefix + "_" + defaultTableName
 }
 
 func (mdm *Mysql) UnInitialize() error {
@@ -115,12 +125,12 @@ func Manager() *DBManager {
 
 func (db *DBManager) InitializeRedis(saddr, spass string, defaultdb uint64) error {
 	db.rd = &Redis{}
-	db.rd.Initialize(saddr, spass, defaultdb)
+	return db.rd.Initialize(saddr, spass, defaultdb)
 }
 
-func (db *DBManager) InitializeMysql(saddr, spass, defaultdb string) error {
+func (db *DBManager) InitializeMysql(saddr, user_pass, defaultdb, prefix string) error {
 	db.sql = &Mysql{}
-	db.sql.Initialize(saddr, spass, defaultdb)
+	return db.sql.Initialize(saddr, user_pass, defaultdb, prefix)
 }
 
 func (db *DBManager) UnInitialize() error {
@@ -134,4 +144,31 @@ func (db *DBManager) UnInitialize() error {
 		db.sql = nil
 	}
 	return err
+}
+
+func (db *DBManager) Install() error {
+	conn := db.rd.Get()
+	defer conn.Close()
+
+	_, err := conn.Do("FLUSHDB")
+
+	if err != nil {
+		return err
+	}
+
+	tx := db.sql.Begin()
+	for _, dbtable := range db_tables {
+		tx.DropTableIfExists(dbtable)
+		if db.sql.Error != nil {
+			tx.Rollback()
+			return db.sql.Error
+		}
+		tx.CreateTable(dbtable)
+		if db.sql.Error != nil {
+			tx.Rollback()
+			return db.sql.Error
+		}
+	}
+	tx.Commit()
+	return db.sql.Error
 }

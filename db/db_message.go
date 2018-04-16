@@ -6,7 +6,7 @@ import (
 )
 
 func (db *DBManager) PullOnlineMessage(serveraddr string, timeout int) ([]byte, error) {
-	conn := db.redisPool.Get()
+	conn := db.rd.Get()
 	defer conn.Close()
 
 	ret, err := conn.Do("BLPOP", "message:"+serveraddr, timeout)
@@ -25,7 +25,7 @@ func (db *DBManager) PullOnlineMessage(serveraddr string, timeout int) ([]byte, 
 }
 
 func (db *DBManager) GetOfflineMessage(datakey *DataKey) ([][]byte, error) {
-	conn := db.redisPool.Get()
+	conn := db.rd.Get()
 	defer conn.Close()
 
 	ret, err := conn.Do("LRANGE", datakey.KeyAppDataListMsgByAppidZonenameAccount, 0, -1)
@@ -49,14 +49,14 @@ func (db *DBManager) GetOfflineMessage(datakey *DataKey) ([][]byte, error) {
 }
 
 func (db *DBManager) SendMsgToUserOnline(uid, appid uint64, data []byte, serveraddr string) error {
-	conn := db.redisPool.Get()
+	conn := db.rd.Get()
 	defer conn.Close()
 	_, err := conn.Do("RPUSH", "message:"+serveraddr, data)
 	return err
 }
 
 func (db *DBManager) SendMsgToUserOffline(datakey *DataKey, data []byte) error {
-	conn := db.redisPool.Get()
+	conn := db.rd.Get()
 	defer conn.Close()
 	_, err := conn.Do("RPUSH", datakey.KeyAppDataListMsgByAppidZonenameAccount, data)
 	return err

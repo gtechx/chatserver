@@ -1,65 +1,62 @@
 package gtdb
 
-import (
-	"github.com/garyburd/redigo/redis"
-	. "github.com/gtechx/base/common"
-)
+//. "github.com/gtechx/base/common"
 
 var defaultGroupName string = "我的好友"
 var userOnlineKeyName string = "user:online"
 
-friend_table := &Friend{}
-friend_tablelist := []*Friend{}
+var friend_table = &Friend{}
+var friend_tablelist = []*Friend{}
 
-group_table := &Group{}
-group_tablelist := []*Group{}
+var group_table = &Group{}
+var group_tablelist = []*Group{}
 
-func (db *DBManager) AddFriendRequest(appname, zonename, account, otheraccount, group string) error {
-	conn := db.redisPool.Get()
+func (db *DBManager) AddFriendRequest(id, otherid uint64, group string) error {
+	conn := db.rd.Get()
 	defer conn.Close()
-	_, err := conn.Do("HSET", keyJoin("hset:app:data:friend:request", appname, zonename, account), otheraccount, group)
+	_, err := conn.Do("HSET", keyJoin("hset:app:data:friend:request", id), otherid, group)
 	return err
 }
 
-func (db *DBManager) RemoveFriendRequest(appname, zonename, account, otheraccount string) error {
-	conn := db.redisPool.Get()
+func (db *DBManager) RemoveFriendRequest(id, otherid uint64) error {
+	conn := db.rd.Get()
 	defer conn.Close()
-	_, err := conn.Do("HDEL", keyJoin("hset:app:data:friend:request", appname, zonename, account), otheraccount)
+	_, err := conn.Do("HDEL", keyJoin("hset:app:data:friend:request", id), otherid)
 	return err
 }
 
 func (db *DBManager) AddFriend(tbl_friend *Friend) error {
-	db.sql.Create(tbl_friend)
-	return db.sql.Error
+	retdb := db.sql.Create(tbl_friend)
+	return retdb.Error
 }
 
-func (db *DBManager) RemoveFriend(appname, zonename, account, otheraccount string) error {
-	db.sql.Delete(friend_table, "appname = ? AND zonename = ? AND account = ? AND otheraccount = ?", appname, zonename, account, otheraccount)
-	return db.sql.Error
+func (db *DBManager) RemoveFriend(id, otherid uint64) error {
+	retdb := db.sql.Delete(friend_table, "dataid = ? AND otherdataid = ?", id, otherid)
+	return retdb.Error
 }
 
-func (db *DBManager) GetFriend(appname, zonename, account, otheraccount string) (*Friend, error) {
+func (db *DBManager) GetFriend(id, otherid uint64) (*Friend, error) {
 	friend := &Friend{}
-	db.sql.Where("appname = ? AND zonename = ? AND account = ? AND otheraccount = ?", appname, zonename, account, otheraccount).First(friend)
-	return friend, db.sql.Error
+	retdb := db.sql.Where("dataid = ? AND otherdataid = ?", id, otherid).First(friend)
+	return friend, retdb.Error
 }
 
-func (db *DBManager) GetFriendList(appname, zonename, account string, offset, count int) ([]*Friend, error) {
+func (db *DBManager) GetFriendList(id uint64, offset, count int) ([]*Friend, error) {
 	friendlist := []*Friend{}
-	db.sql.Offset(offset).Limit(count).Where("appname = ? AND zonename = ? AND account = ?", appname, zonename, account).Find(&friendlist)
-	return friendlist, err
+	retdb := db.sql.Offset(offset).Limit(count).Where("dataid = ?", id).Find(&friendlist)
+	return friendlist, retdb.Error
 }
 
-func (db *DBManager) GetFriendListByGroup(appname, zonename, account, group string) ([]*Friend, error) {
-	friendlist := []*App{}
-	db.sql.Where("appname = ? AND zonename = ? AND account = ? AND group = ?", appname, zonename, account, group).Find(&friendlist)
-	return friendlist, err
+func (db *DBManager) GetFriendListByGroup(id uint64, group string) ([]*Friend, error) {
+	friendlist := []*Friend{}
+	retdb := db.sql.Where("dataid = ? AND group = ?", id, group).Find(&friendlist)
+	return friendlist, retdb.Error
 }
 
-func (db *DBManager) IsFriend(appname, zonename, account, otheraccount string) (bool, error) {
+func (db *DBManager) IsFriend(id, otherid uint64) (bool, error) {
 	var count int
-	db.sql.Model(friend_table).Where("appname = ? AND zonename = ? AND account = ? AND otheraccount = ?", appname, zonename, account, otheraccount).Count(&count)
-	return count > 0, db.sql.Error
+	retdb := db.sql.Model(friend_table).Where("dataid = ? AND otherdataid = ?", id, otherid).Count(&count)
+	return count > 0, retdb.Error
 }
 
 // func (db *DBManager) GetGroupFriendIn(datakey *DataKey, otheraccount string) (string, error) {
@@ -70,42 +67,47 @@ func (db *DBManager) IsFriend(appname, zonename, account, otheraccount string) (
 // }
 
 func (db *DBManager) AddGroup(tbl_group *Group) error {
-	db.sql.Create(tbl_group)
-	return db.sql.Error
+	retdb := db.sql.Create(tbl_group)
+	return retdb.Error
 }
 
-func (db *DBManager) RemoveGroup(appname, zonename, account, group string) error {
-	db.sql.Delete(group_table, "appname = ? AND zonename = ? AND account = ? AND name = ?", appname, zonename, account, group)
-	return db.sql.Error
+func (db *DBManager) RemoveGroup(id uint64, group string) error {
+	retdb := db.sql.Delete(group_table, "dataid = ? AND group = ?", id, group)
+	return retdb.Error
 }
 
-func (db *DBManager) GetGroupList(appname, zonename, account string) ([]*Group, error) {
+func (db *DBManager) GetGroupList(id uint64) ([]*Group, error) {
 	grouplist := []*Group{}
-	db.sql.Where("appname = ? AND zonename = ? AND account = ?", appname, zonename, account).Find(&grouplist)
-	return grouplist, err
+	retdb := db.sql.Where("dataid = ?", id).Find(&grouplist)
+	return grouplist, retdb.Error
 }
 
-func (db *DBManager) IsGroupExists(appname, zonename, account, group string) (bool, error) {
+func (db *DBManager) IsGroupExists(id uint64, group string) (bool, error) {
 	var count int
-	db.sql.Model(group_table).Where("appname = ? AND zonename = ? AND account = ? AND name = ?", appname, zonename, account, group).Count(&count)
-	return count > 0, db.sql.Error
+	retdb := db.sql.Model(group_table).Where("dataid = ? AND group = ?", id, group).Count(&count)
+	return count > 0, retdb.Error
 }
 
-func (db *DBManager) IsFriendInGroup(appname, zonename, account, otheraccount, group string) (bool, error) {
+func (db *DBManager) IsInGroup(id, otherid uint64, group string) (bool, error) {
 	var count int
-	db.sql.Model(friend_table).Where("appname = ? AND zonename = ? AND account = ? AND otheraccount = ? AND group = ?", appname, zonename, account, group).Count(&count)
-	return count > 0, db.sql.Error
+	retdb := db.sql.Model(friend_table).Where("dataid = ? AND otherdataid = ? AND group = ?", id, otherid, group).Count(&count)
+	return count > 0, retdb.Error
 }
 
-func (db *DBManager) MoveFriendToGroup(appname, zonename, account, srcgroup, destgroup string) error {
-	db.Model(friend_table).Where("appname = ? AND zonename = ? AND account = ? AND otheraccount = ? AND group = ?", appname, zonename, account, srcgroup).Update("group", destgroup)
-	return db.sql.Error
+func (db *DBManager) MoveToGroup(id, otherid uint64, destgroup string) error {
+	retdb := db.sql.Model(friend_table).Where("dataid = ? AND otherdataid = ?", id, otherid).Update("group", destgroup)
+	return retdb.Error
 }
 
-// tx := db.sql.Begin()
+func (db *DBManager) SetComment(id, otherid uint64, comment string) error {
+	retdb := db.sql.Model(friend_table).Where("dataid = ? AND otherdataid = ?", id, otherid).Update("comment", comment)
+	return retdb.Error
+}
+
+// tx := retdb := db.sql.Begin()
 // // 注意，一旦你在一个事务中，使用tx作为数据库句柄
 
-// if err := db.sql.Create(&Animal{Name: "Giraffe"}).Error; err != nil {
+// if err := retdb := db.sql.Create(&Animal{Name: "Giraffe"}).Error; err != nil {
 // 	tx.Rollback()
 // 	return err
 // }
@@ -116,7 +118,7 @@ func (db *DBManager) MoveFriendToGroup(appname, zonename, account, srcgroup, des
 // }
 
 // tx.Commit()
-// return db.sql.Error
+// return retdb.Error
 
 // func (db *DBManager) BanFriend(uid, fuid uint64) {
 
