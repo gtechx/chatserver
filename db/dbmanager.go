@@ -91,7 +91,7 @@ func (mdm *Mysql) Initialize(saddr, user_pass, defaultdb, prefix string) error {
 	gorm.DefaultTableNameHandler = mdm.DefaultTableNameHandler
 
 	db.DB().SetMaxIdleConns(10)
-	//db.LogMode(true)
+	db.LogMode(true)
 
 	mdm.DB = db
 	return err

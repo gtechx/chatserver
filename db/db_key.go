@@ -1,10 +1,12 @@
 package gtdb
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
 	. "github.com/gtechx/base/common"
+	"github.com/jinzhu/gorm"
 )
 
 func keyJoin(params ...interface{}) string {
@@ -135,10 +137,31 @@ type App struct {
 	Desc      string    `redis:"desc" json:"desc"`
 	Share     string    `redis:"share" json:"share"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`
+	AppZones  []AppZone
+}
+
+func (app *App) BeforeDelete(tx *gorm.DB) error {
+	fmt.Println("BeforeDelete")
+
+	var zones []AppZone
+	tx.Model(&app).Related(&zones)
+
+	for _, zone := range zones {
+		tx.Delete(&zone)
+	}
+	return nil
+}
+
+func (app *App) AfterDelete(tx *gorm.DB) error {
+	fmt.Println("AfterDelete")
+	fmt.Println(app.Name)
+	fmt.Println(app)
+	return nil
 }
 
 type AppZone struct {
 	Name  string `redis:"name" json:"name"`
+	App   App    `json:"_" gorm:"ForeignKey:Owner;AssociationForeignKey:Name"`
 	Owner string `redis:"owner" json:"owner"`
 }
 

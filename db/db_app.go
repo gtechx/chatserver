@@ -71,7 +71,7 @@ func (db *DBManager) GetAppByAccount(account string, offset, count int) ([]*App,
 
 func (db *DBManager) GetAppOwner(appname string) (string, error) {
 	app := &App{}
-	retdb := db.sql.Where("name = ?", appname).First(app)
+	retdb := db.sql.First(app, "name = ?", appname)
 	return app.Owner, retdb.Error
 }
 
