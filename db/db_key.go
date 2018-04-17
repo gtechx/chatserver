@@ -110,16 +110,18 @@ func (datakey *DataKey) SetZonename(zonename string) {
 }
 
 type Admin struct {
-	Account             string `redis:"account" json:"account" gorm:"primary_key"`
-	Allowsetting        bool   `redis:"setting" json:"setting" gorm:"tinyint(1)"`
-	Allowuseradd        bool   `redis:"useradd" json:"useradd" gorm:"tinyint(1)"`
-	Allowuserdel        bool   `redis:"userdel" json:"userdel" gorm:"tinyint(1)"`
-	Allowmonitoronline  bool   `redis:"monitoronline" json:"monitoronline" gorm:"tinyint(1)"`
-	Allowappadd         bool   `redis:"appadd" json:"appadd" gorm:"tinyint(1)"`
-	Allowappdel         bool   `redis:"appdel" json:"appdel" gorm:"tinyint(1)"`
-	Allowzoneadd        bool   `redis:"zoneadd" json:"zoneadd" gorm:"tinyint(1)"`
-	Allowzonedel        bool   `redis:"zonedel" json:"zonedel" gorm:"tinyint(1)"`
-	Allowmonitorappdata bool   `redis:"monitorappdata" json:"monitorappdata" gorm:"tinyint(1)"`
+	Account      string `redis:"account" json:"account" gorm:"primary_key"`
+	Adminuser    bool   `redis:"adminuser" json:"adminuser" gorm:"tinyint(1)"`
+	Adminapp     bool   `redis:"adminapp" json:"adminapp" gorm:"tinyint(1)"`
+	Adminonline  bool   `redis:"adminonline" json:"adminonline" gorm:"tinyint(1)"`
+	Adminmessage bool   `redis:"adminmessage" json:"adminmessage" gorm:"tinyint(1)"`
+
+	AdminApps []AdminApp `json:"_" gorm:"foreignkey:Owner;association_foreignkey:Account"`
+}
+
+type AdminApp struct {
+	Owner   string `redis:"owner" json:"owner"`
+	Appname string `redis:"appname" json:"appname"`
 }
 
 type Account struct {

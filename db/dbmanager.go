@@ -92,6 +92,7 @@ func (mdm *Mysql) Initialize(saddr, user_pass, defaultdb, prefix string) error {
 
 	db.DB().SetMaxIdleConns(10)
 	db.LogMode(true)
+	//db.SingularTable(true)// 全局禁用表名复数
 
 	mdm.DB = db
 	return err
