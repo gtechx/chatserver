@@ -158,17 +158,36 @@ func (db *DBManager) Install() error {
 
 	tx := db.sql.Begin()
 	for _, dbtable := range db_tables {
-		tx.DropTableIfExists(dbtable)
-		if db.sql.Error != nil {
+		if err = tx.DropTableIfExists(dbtable).Error; err != nil {
 			tx.Rollback()
-			return db.sql.Error
+			return err
 		}
-		tx.CreateTable(dbtable)
-		if db.sql.Error != nil {
+		if err = tx.CreateTable(dbtable).Error; err != nil {
 			tx.Rollback()
-			return db.sql.Error
+			return err
 		}
 	}
+
+	//create test data
+	tbl_account := &Account{Account: "wyq", Password: "edf06a849c9ec19ea725bd3c6c4ce225", Salt: "p99U86", Regip: "127.0.0.1"}
+	if err = tx.Create(tbl_account).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tbl_app := &App{Name: "test1", Owner: "wyq", Desc: "ddddd", Share: ""}
+	if err = tx.Create(tbl_app).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tbl_zone := &AppZone{Name: "aaa", Owner: "test1"}
+	if err = tx.Create(tbl_zone).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	//end
+
 	tx.Commit()
-	return db.sql.Error
+	return err
 }

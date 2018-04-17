@@ -18,7 +18,7 @@ func (db *DBManager) CreateApp(tbl_app *App) error {
 }
 
 func (db *DBManager) DeleteApp(appname string) error {
-	retdb := db.sql.Delete(app_table, "name = ?", appname)
+	retdb := db.sql.Delete(&App{Name: appname}, "name = ?", appname)
 	return retdb.Error
 }
 
