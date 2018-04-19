@@ -17,6 +17,28 @@ func (db *DBManager) CreateAccount(tbl_account *Account) error {
 	return retdb.Error
 }
 
+func (db *DBManager) UpdateAccount(tbl_account *Account) error {
+	retdb := db.sql.Save(tbl_account)
+	return retdb.Error
+}
+
+func (db *DBManager) DeleteAccount(account string) error {
+	retdb := db.sql.Delete(&Account{Account: account}, "Account = ?", account)
+	return retdb.Error
+}
+
+func (db *DBManager) DeleteAccounts(accounts []string) error {
+	tx := db.sql.Begin()
+	for _, account := range accounts {
+		if err := tx.Delete(&Account{Account: account}, "Account = ?", account).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	tx.Commit()
+	return nil
+}
+
 func (db *DBManager) IsAccountExists(account string) (bool, error) {
 	var count uint64
 	retdb := db.sql.Model(account_table).Where("account = ?", account).Count(&count)

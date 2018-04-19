@@ -1,6 +1,7 @@
 package gtdb
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -110,18 +111,20 @@ func (datakey *DataKey) SetZonename(zonename string) {
 }
 
 type Admin struct {
-	Account      string `redis:"account" json:"account" gorm:"primary_key"`
-	Adminuser    bool   `redis:"adminuser" json:"adminuser" gorm:"tinyint(1)"`
-	Adminapp     bool   `redis:"adminapp" json:"adminapp" gorm:"tinyint(1)"`
-	Adminonline  bool   `redis:"adminonline" json:"adminonline" gorm:"tinyint(1)"`
-	Adminmessage bool   `redis:"adminmessage" json:"adminmessage" gorm:"tinyint(1)"`
+	Account string `redis:"account" json:"account" gorm:"unique;not null"`
+	//Adminpriv    bool   `redis:"adminpriv" json:"adminpriv" gorm:"tinyint(1)"`
+	Adminuser    bool   `redis:"adminuser" json:"adminuser" gorm:"tinyint(1);default:0"`
+	Adminapp     bool   `redis:"adminapp" json:"adminapp" gorm:"tinyint(1);default:0"`
+	Adminonline  bool   `redis:"adminonline" json:"adminonline" gorm:"tinyint(1);default:0"`
+	Adminmessage bool   `redis:"adminmessage" json:"adminmessage" gorm:"tinyint(1);default:0"`
+	Appcount     uint32 `redis:"appcount" json:"appcount" gorm:"default:0"`
 
-	AdminApps []AdminApp `json:"_" gorm:"foreignkey:Owner;association_foreignkey:Account"`
+	AdminApps []AdminApp `json:"_" gorm:"foreignkey:Adminaccount;association_foreignkey:Account"`
 }
 
 type AdminApp struct {
-	Owner   string `redis:"owner" json:"owner"`
-	Appname string `redis:"appname" json:"appname"`
+	Adminaccount string `redis:"adminaccount" json:"adminaccount"`
+	Appname      string `redis:"appname" json:"appname"`
 }
 
 type Account struct {
@@ -130,9 +133,50 @@ type Account struct {
 	Email     string    `redis:"email" json:"email"`
 	Salt      string    `redis:"salt" json:"_" gorm:"type:varchar(6);not null;default:''"`
 	Regip     string    `redis:"regip" json:"regip"`
-	CreatedAt time.Time `redis:"createdate" json:"createdate"`
+	Isbaned   bool      `redis:"isbaned" json:"isbaned" gorm:"tinyint(1);default:0"`
+	CreatedAt time.Time `redis:"createdate" json:"_"`
 
 	Apps []App `json:"_" gorm:"foreignkey:Owner;association_foreignkey:Account"`
+}
+
+func (acc *Account) MarshalJSON() ([]byte, error) {
+	// 定义一个该结构体的别名
+	type Alias Account
+	// 定义一个新的结构体
+	tmpSt := struct {
+		Alias
+		CreateDate string `json:"createdate"`
+	}{
+		Alias:      (Alias)(*acc),
+		CreateDate: acc.CreatedAt.Format("2006-01-02 15:04:05"),
+	}
+	return json.Marshal(tmpSt)
+}
+
+func (acc *Account) BeforeDelete(tx *gorm.DB) error {
+	fmt.Println("BeforeDelete Account", acc)
+
+	var apps []App
+	for {
+		if err := tx.Model(acc).Limit(100).Related(&apps, "Apps").Error; err != nil {
+			return err
+		}
+		if len(apps) == 0 {
+			break
+		}
+		for _, app := range apps {
+			if err := tx.Delete(&app).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+type AccountAdminApp struct {
+	Account string `redis:"account" json:"account"`
+	Appname string `redis:"appname" json:"appname"`
 }
 
 type App struct {
@@ -141,11 +185,25 @@ type App struct {
 	Owner     string    `redis:"owner" json:"owner"`
 	Desc      string    `redis:"desc" json:"desc"`
 	Share     string    `redis:"share" json:"share"`
-	CreatedAt time.Time `redis:"createdate" json:"createdate"`
+	CreatedAt time.Time `redis:"createdate" json:"_"`
 
 	AppZones  []AppZone  `json:"_" gorm:"foreignkey:Owner;association_foreignkey:Name"`
 	AppShares []AppShare `json:"_" gorm:"foreignkey:Name;association_foreignkey:Name"`
 	AppDatas  []AppData  `json:"_" gorm:"foreignkey:Appname;association_foreignkey:Name"`
+}
+
+func (app *App) MarshalJSON() ([]byte, error) {
+	// 定义一个该结构体的别名
+	type Alias App
+	// 定义一个新的结构体
+	tmpSt := struct {
+		Alias
+		CreateDate string `json:"createdate"`
+	}{
+		Alias:      (Alias)(*app),
+		CreateDate: app.CreatedAt.Format("2006-01-02 15:04:05"),
+	}
+	return json.Marshal(tmpSt)
 }
 
 func (app *App) BeforeDelete(tx *gorm.DB) error {
@@ -167,7 +225,9 @@ func (app *App) BeforeDelete(tx *gorm.DB) error {
 	//delete appdatas of this app
 	var appdatas []AppData
 	for {
-		tx.Model(app).Limit(1000).Related(&appdatas, "AppDatas")
+		if err := tx.Model(app).Limit(1000).Related(&appdatas, "AppDatas").Error; err != nil {
+			return err
+		}
 		if len(appdatas) == 0 {
 			break
 		}
@@ -252,7 +312,7 @@ func (appdata *AppData) BeforeDelete(tx *gorm.DB) error {
 }
 
 type Online struct {
-	Dataid uint64 `redis:"dataid" json:"dataid"`
+	Dataid uint64 `redis:"dataid" json:"dataid" gorm:"unique;not null"`
 	// Account    string    `redis:"account" json:"account"`
 	// Appname    string    `redis:"appname" json:"appname"`
 	// Zonename   string    `redis:"zonename" json:"zonename"`
@@ -292,9 +352,29 @@ type Group struct {
 	// Zonename string `redis:"zonename" json:"zonename"`
 }
 
+type AccountBaned struct {
+	Account  string    `redis:"account" json:"account" gorm:"unique;not null"`
+	Desc     string    `redis:"desc" json:"desc"`
+	Dateline time.Time `redis:"dateline" json:"dateline"`
+}
+
+type AppBaned struct {
+	Appname  string    `redis:"appname" json:"appname" gorm:"unique;not null"`
+	Desc     string    `redis:"desc" json:"desc"`
+	Dateline time.Time `redis:"dateline" json:"dateline"`
+}
+
+type AppDataBaned struct {
+	Dataid   uint64    `redis:"dataid" json:"dataid" gorm:"unique;not null"`
+	Desc     string    `redis:"desc" json:"desc"`
+	Dateline time.Time `redis:"dateline" json:"dateline"`
+}
+
 var db_tables []interface{} = []interface{}{
 	&Admin{},
+	&AdminApp{},
 	&Account{},
+	&AccountAdminApp{},
 	&App{},
 	&AppZone{},
 	&AppShare{},
@@ -303,4 +383,7 @@ var db_tables []interface{} = []interface{}{
 	&Friend{},
 	&Black{},
 	&Group{},
+	&AccountBaned{},
+	&AppBaned{},
+	&AppDataBaned{},
 }

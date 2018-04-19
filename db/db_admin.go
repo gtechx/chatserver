@@ -24,7 +24,7 @@ func (db *DBManager) RemoveAdmin(account string) error {
 
 func (db *DBManager) GetAdmin(account string) (*Admin, error) {
 	admin := &Admin{}
-	retdb := db.sql.First(admin, account)
+	retdb := db.sql.First(admin, "account = ?", account)
 	return admin, retdb.Error
 }
 
@@ -37,6 +37,54 @@ func (db *DBManager) GetAdminList(offset, count int) ([]*Admin, error) {
 	adminlist := []*Admin{}
 	retdb := db.sql.Offset(offset).Limit(count).Find(&adminlist)
 	return adminlist, retdb.Error
+}
+
+func (db *DBManager) GetAccountCount() (uint64, error) {
+	var count uint64
+	retdb := db.sql.Find(&account_tablelist).Count(&count)
+	return count, retdb.Error
+}
+
+func (db *DBManager) BanAccounts(accounts []string) error {
+	tx := db.sql.Begin()
+	accdb := tx.Model(account_table)
+	for _, account := range accounts {
+		if err := accdb.Where("account = ?", account).Update("isbaned", true).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	tx.Commit()
+	return nil
+}
+
+func (db *DBManager) UnbanAccounts(accounts []string) error {
+	tx := db.sql.Begin()
+	accdb := tx.Model(account_table)
+	for _, account := range accounts {
+		if err := accdb.Where("account = ?", account).Update("isbaned", false).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	tx.Commit()
+	return nil
+}
+
+func (db *DBManager) BanAccount(account string) error {
+	retdb := db.sql.Model(account_table).Where("account = ?", account).Update("isbaned", 1)
+	return retdb.Error
+}
+
+func (db *DBManager) UnbanAccount(account string) error {
+	retdb := db.sql.Model(account_table).Where("account = ?", account).Update("isbaned", 0)
+	return retdb.Error
+}
+
+func (db *DBManager) GetAccountList(offset, count int) ([]*Account, error) {
+	accountlist := []*Account{}
+	retdb := db.sql.Offset(offset).Limit(count).Where("account != ?", "admin").Find(&accountlist)
+	return accountlist, retdb.Error
 }
 
 func (db *DBManager) GetUserOnline(offset, count int) ([]*Online, error) {

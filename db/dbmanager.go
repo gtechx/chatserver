@@ -169,8 +169,21 @@ func (db *DBManager) Install() error {
 		}
 	}
 
+	//add admin
+	tbl_account := &Account{Account: "admin", Password: "4778b745f8a3303f7d194c739df93077", Salt: "3MWYuR", Regip: "127.0.0.1"}
+	if err = tx.Create(tbl_account).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tbl_admin := &Admin{Account: "admin", Adminuser: true, Adminapp: true, Adminonline: true, Adminmessage: true}
+	if err = tx.Create(tbl_admin).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	//create test data
-	tbl_account := &Account{Account: "wyq", Password: "edf06a849c9ec19ea725bd3c6c4ce225", Salt: "p99U86", Regip: "127.0.0.1"}
+	tbl_account = &Account{Account: "wyq", Password: "edf06a849c9ec19ea725bd3c6c4ce225", Salt: "p99U86", Regip: "127.0.0.1"}
 	if err = tx.Create(tbl_account).Error; err != nil {
 		tx.Rollback()
 		return err
