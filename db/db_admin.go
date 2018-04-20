@@ -1,5 +1,7 @@
 package gtdb
 
+import "time"
+
 //. "github.com/gtechx/base/common"
 
 //[hashes]admin pair(uid, privilege) --管理员权限
@@ -41,7 +43,7 @@ func (db *DBManager) GetAdminList(offset, count int) ([]*Admin, error) {
 
 func (db *DBManager) GetAccountCount() (uint64, error) {
 	var count uint64
-	retdb := db.sql.Find(&account_tablelist).Count(&count)
+	retdb := db.sql.Where("account != ?", "admin").Find(&account_tablelist).Count(&count)
 	return count, retdb.Error
 }
 
@@ -84,6 +86,28 @@ func (db *DBManager) UnbanAccount(account string) error {
 func (db *DBManager) GetAccountList(offset, count int) ([]*Account, error) {
 	accountlist := []*Account{}
 	retdb := db.sql.Offset(offset).Limit(count).Where("account != ?", "admin").Find(&accountlist)
+	return accountlist, retdb.Error
+}
+
+func (db *DBManager) GetAccountListByFilter(offset, count int, accountfilter, emailfilter, ipfilter string, begindate, enddate *time.Time) ([]*Account, error) {
+	accountlist := []*Account{}
+	retdb := db.sql.Offset(offset).Limit(count).Where("account != ?", "admin")
+	if accountfilter != "" {
+		retdb = retdb.Where("account LIKE ?", "%"+accountfilter+"%")
+	}
+	if emailfilter != "" {
+		retdb = retdb.Where("email LIKE ?", "%"+emailfilter+"%")
+	}
+	if ipfilter != "" {
+		retdb = retdb.Where("regip LIKE ?", "%"+ipfilter+"%")
+	}
+	if begindate != nil {
+		retdb = retdb.Where("created_at >= ?", *begindate)
+	}
+	if enddate != nil {
+		retdb = retdb.Where("created_at <= ?", *enddate)
+	}
+	retdb.Find(&accountlist)
 	return accountlist, retdb.Error
 }
 
