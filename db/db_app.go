@@ -22,6 +22,18 @@ func (db *DBManager) DeleteApp(appname string) error {
 	return retdb.Error
 }
 
+func (db *DBManager) DeleteApps(appnames []string) error {
+	tx := db.sql.Begin()
+	for _, appname := range appnames {
+		if err := tx.Delete(&App{Name: appname}, "name = ?", appname).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	tx.Commit()
+	return nil
+}
+
 func (db *DBManager) IsAppExists(appname string) (bool, error) {
 	var count uint64
 	retdb := db.sql.Model(app_table).Where("name = ?", appname).Count(&count)
@@ -63,7 +75,7 @@ func (db *DBManager) GetAppList(offset, count int) ([]*App, error) {
 	return applist, retdb.Error
 }
 
-func (db *DBManager) GetAppByAccount(account string, offset, count int) ([]*App, error) {
+func (db *DBManager) GetAppListByAccount(account string, offset, count int) ([]*App, error) {
 	applist := []*App{}
 	retdb := db.sql.Offset(offset).Limit(count).Where("owner = ?", account).Find(&applist)
 	return applist, retdb.Error

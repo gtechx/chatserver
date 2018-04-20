@@ -1,6 +1,10 @@
 package gtdb
 
-import "time"
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 
 //. "github.com/gtechx/base/common"
 
@@ -41,12 +45,6 @@ func (db *DBManager) GetAdminList(offset, count int) ([]*Admin, error) {
 	return adminlist, retdb.Error
 }
 
-func (db *DBManager) GetAccountCount() (uint64, error) {
-	var count uint64
-	retdb := db.sql.Where("account != ?", "admin").Find(&account_tablelist).Count(&count)
-	return count, retdb.Error
-}
-
 func (db *DBManager) BanAccounts(accounts []string) error {
 	tx := db.sql.Begin()
 	accdb := tx.Model(account_table)
@@ -74,40 +72,74 @@ func (db *DBManager) UnbanAccounts(accounts []string) error {
 }
 
 func (db *DBManager) BanAccount(account string) error {
-	retdb := db.sql.Model(account_table).Where("account = ?", account).Update("isbaned", 1)
+	retdb := db.sql.Model(account_table).Where("account = ?", account).Update("isbaned", true)
 	return retdb.Error
 }
 
 func (db *DBManager) UnbanAccount(account string) error {
-	retdb := db.sql.Model(account_table).Where("account = ?", account).Update("isbaned", 0)
+	retdb := db.sql.Model(account_table).Where("account = ?", account).Update("isbaned", false)
 	return retdb.Error
 }
 
-func (db *DBManager) GetAccountList(offset, count int) ([]*Account, error) {
-	accountlist := []*Account{}
-	retdb := db.sql.Offset(offset).Limit(count).Where("account != ?", "admin").Find(&accountlist)
-	return accountlist, retdb.Error
+// func (db *DBManager) GetAccountList(offset, count int) ([]*Account, error) {
+// 	accountlist := []*Account{}
+// 	retdb := db.sql.Offset(offset).Limit(count).Where("account != ?", "admin").Find(&accountlist)
+// 	return accountlist, retdb.Error
+// }
+
+type AccountFilter struct {
+	Account         string
+	Email           string
+	Regip           string
+	Createbegindate *time.Time
+	Createenddate   *time.Time
 }
 
-func (db *DBManager) GetAccountListByFilter(offset, count int, accountfilter, emailfilter, ipfilter string, begindate, enddate *time.Time) ([]*Account, error) {
+func (filter *AccountFilter) apply(db *gorm.DB) *gorm.DB {
+	retdb := db
+	if filter.Account != "" {
+		retdb = retdb.Where("account LIKE ?", "%"+filter.Account+"%")
+	}
+	if filter.Email != "" {
+		retdb = retdb.Where("email LIKE ?", "%"+filter.Email+"%")
+	}
+	if filter.Regip != "" {
+		retdb = retdb.Where("regip LIKE ?", "%"+filter.Regip+"%")
+	}
+	if filter.Createbegindate != nil {
+		retdb = retdb.Where("created_at >= ?", *filter.Createbegindate)
+	}
+	if filter.Createenddate != nil {
+		retdb = retdb.Where("created_at <= ?", *filter.Createenddate)
+	}
+	return retdb
+}
+
+func (db *DBManager) GetAccountCount(args ...*AccountFilter) (uint64, error) {
+	var count uint64
+	retdb := db.sql.Model(account_table).Where("account != ?", "admin")
+	if len(args) > 0 {
+		filter := args[0]
+		if filter != nil {
+			retdb = filter.apply(retdb)
+		}
+	}
+	retdb = retdb.Count(&count)
+	return count, retdb.Error
+}
+
+func (db *DBManager) GetAccountList(offset, count int, args ...*AccountFilter) ([]*Account, error) {
 	accountlist := []*Account{}
 	retdb := db.sql.Offset(offset).Limit(count).Where("account != ?", "admin")
-	if accountfilter != "" {
-		retdb = retdb.Where("account LIKE ?", "%"+accountfilter+"%")
+
+	if len(args) > 0 {
+		filter := args[0]
+		if filter != nil {
+			retdb = filter.apply(retdb)
+		}
 	}
-	if emailfilter != "" {
-		retdb = retdb.Where("email LIKE ?", "%"+emailfilter+"%")
-	}
-	if ipfilter != "" {
-		retdb = retdb.Where("regip LIKE ?", "%"+ipfilter+"%")
-	}
-	if begindate != nil {
-		retdb = retdb.Where("created_at >= ?", *begindate)
-	}
-	if enddate != nil {
-		retdb = retdb.Where("created_at <= ?", *enddate)
-	}
-	retdb.Find(&accountlist)
+
+	retdb = retdb.Find(&accountlist)
 	return accountlist, retdb.Error
 }
 

@@ -277,8 +277,10 @@ type AppData struct {
 	Nickname  string    `redis:"nickname" json:"nickname"`
 	Desc      string    `redis:"desc" json:"desc"`
 	Sex       string    `redis:"sex" json:"sex"`
-	Birthday  string    `redis:"birthday" json:"birthday"`
+	Birthday  time.Time `redis:"birthday" json:"birthday"`
 	Country   string    `redis:"country" json:"country"`
+	Isbaned   bool      `redis:"isbaned" json:"isbaned" gorm:"tinyint(1);default:0"`
+	Regip     string    `redis:"regip" json:"regip"`
 	Lastip    string    `redis:"lastip" json:"lastip"`
 	Lastlogin time.Time `redis:"lastlogin" json:"lastlogin"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`

@@ -5,9 +5,6 @@ package gtdb
 var account_table = &Account{}
 var account_tablelist = []*Account{}
 
-var appdata_table = &AppData{}
-var appdata_tablelist = []*AppData{}
-
 var online_table = &Online{}
 var online_tablelist = []*Online{}
 
@@ -53,22 +50,6 @@ func (db *DBManager) IsAccountExists(account string) (bool, error) {
 func (db *DBManager) UpdatePassword(account, password string) error {
 	retdb := db.sql.Model(account_table).Where("account = ?", account).Update("password", password)
 	return retdb.Error
-}
-
-func (db *DBManager) CreateAppData(tbl_appdata *AppData) error {
-	retdb := db.sql.Create(tbl_appdata)
-	return retdb.Error
-}
-
-func (db *DBManager) DeleteAppData(id uint64) error {
-	retdb := db.sql.Delete(appdata_table, "id = ?", id)
-	return retdb.Error
-}
-
-func (db *DBManager) IsAppDataExists(id uint64) (bool, error) {
-	var count uint64
-	retdb := db.sql.Model(appdata_table).Where("id = ?", id).Count(&count)
-	return count > 0, retdb.Error
 }
 
 // func (db *DBManager) SetAppDataField(datakey *DataKey, fieldname string, value interface{}) error {
