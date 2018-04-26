@@ -247,6 +247,14 @@ func (app *App) BeforeDelete(tx *gorm.DB) error {
 		return err
 	}
 
+	if err := tx.Delete(&AccountApp{}, "appname = ?", app.Name).Error; err != nil {
+		return err
+	}
+
+	if err := tx.Delete(&AccountZone{}, "appname = ?", app.Name).Error; err != nil {
+		return err
+	}
+
 	// for _, zone := range zones {
 	// 	tx.Delete(&zone, "name = ? AND owner = ?", zone.Name, zone.Owner)
 	// }
@@ -262,6 +270,14 @@ type AppZone struct {
 	Name string `redis:"name" json:"name"`
 	//App   App    `json:"_" gorm:"ForeignKey:Name;AssociationForeignKey:Owner"`
 	Owner string `redis:"owner" json:"owner"`
+}
+
+func (appzone *AppZone) BeforeDelete(tx *gorm.DB) error {
+	if err := tx.Delete(&AccountZone{}, "zonename = ?", appzone.Name).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type AppShare struct {
@@ -289,6 +305,25 @@ type AppData struct {
 	Friends []Friend `json:"_" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
 	Blacks  []Black  `json:"_" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
 	Groups  []Group  `json:"_" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
+}
+
+func (appdata *AppData) toAccountApp() *AccountApp {
+	return &AccountApp{Account: appdata.Account, Appname: appdata.Appname}
+}
+
+func (appdata *AppData) toAccountZone() *AccountZone {
+	return &AccountZone{Account: appdata.Account, Appname: appdata.Appname, Zonename: appdata.Zonename}
+}
+
+type AccountApp struct {
+	Account string `redis:"account" json:"account"`
+	Appname string `redis:"appname" json:"appname"`
+}
+
+type AccountZone struct {
+	Account  string `redis:"account" json:"account"`
+	Appname  string `redis:"appname" json:"appname"`
+	Zonename string `redis:"zonename" json:"zonename"`
 }
 
 func (appdata *AppData) BeforeDelete(tx *gorm.DB) error {
@@ -381,6 +416,8 @@ var db_tables []interface{} = []interface{}{
 	&AppZone{},
 	&AppShare{},
 	&AppData{},
+	&AccountApp{},
+	&AccountZone{},
 	&Online{},
 	&Friend{},
 	&Black{},

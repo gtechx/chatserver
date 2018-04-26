@@ -9,8 +9,36 @@ var appdata_table = &AppData{}
 var appdata_tablelist = []*AppData{}
 
 func (db *DBManager) CreateAppData(tbl_appdata *AppData) error {
-	retdb := db.sql.Create(tbl_appdata)
-	return retdb.Error
+	tx := db.sql.Begin()
+	if err := tx.Create(tbl_appdata).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	var count uint64
+	if err := tx.Model(&AccountApp{}).Where("account = ?", tbl_appdata.Account).Where("appname = ?", tbl_appdata.Appname).Count(&count).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if count == 0 {
+		if err := tx.Create(tbl_appdata.toAccountApp()).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err := tx.Model(&AccountZone{}).Where("account = ?", tbl_appdata.Account).Where("appname = ?", tbl_appdata.Appname).Where("zonename = ?", tbl_appdata.Zonename).Count(&count).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if count == 0 {
+		if err := tx.Create(tbl_appdata.toAccountZone()).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	tx.Commit()
+	return nil
 }
 
 func (db *DBManager) UpdateAppData(tbl_appdata *AppData) error {
@@ -102,6 +130,8 @@ type AppDataFilter struct {
 	Country            string
 	Regip              string
 	Lastip             string
+	Birthdaybegindate  *time.Time
+	Birthdayenddate    *time.Time
 	Lastloginbegindate *time.Time
 	Lastloginenddate   *time.Time
 	Createbegindate    *time.Time
@@ -129,6 +159,12 @@ func (filter *AppDataFilter) apply(db *gorm.DB) *gorm.DB {
 		retdb = retdb.Where("lastip LIKE ?", "%"+filter.Lastip+"%")
 	}
 
+	if filter.Birthdaybegindate != nil {
+		retdb = retdb.Where("birthday >= ?", *filter.Birthdaybegindate)
+	}
+	if filter.Birthdayenddate != nil {
+		retdb = retdb.Where("birthday <= ?", *filter.Birthdayenddate)
+	}
 	if filter.Lastloginbegindate != nil {
 		retdb = retdb.Where("lastlogin >= ?", *filter.Lastloginbegindate)
 	}
@@ -187,6 +223,18 @@ func (db *DBManager) GetAppDataList(appname, zonename, account string, offset, c
 
 	retdb = retdb.Find(&appdatalist)
 	return appdatalist, retdb.Error
+}
+
+func (db *DBManager) GetAccountAppList(account string) ([]*AccountApp, error) {
+	accountapplist := []*AccountApp{}
+	retdb := db.sql.Where("account = ?", account).Find(&accountapplist)
+	return accountapplist, retdb.Error
+}
+
+func (db *DBManager) GetAccountZoneList(account, appname string) ([]*AccountZone, error) {
+	accountzonelist := []*AccountZone{}
+	retdb := db.sql.Where("account = ?", account).Where("appname = ?", appname).Find(&accountzonelist)
+	return accountzonelist, retdb.Error
 }
 
 func (db *DBManager) BanAppDatas(ids []uint64) error {

@@ -114,11 +114,11 @@ func (db *DBManager) AddAppZone(tbl_appzone *AppZone) error {
 }
 
 func (db *DBManager) RemoveAppZone(appname, zonename string) error {
-	retdb := db.sql.Delete(appzone_table, "name = ? AND owner = ?", zonename, appname)
+	retdb := db.sql.Delete(&AppZone{Name: zonename}, "name = ? AND owner = ?", zonename, appname)
 	return retdb.Error
 }
 
-func (db *DBManager) GetAppZones(appname string) ([]*AppZone, error) {
+func (db *DBManager) GetAppZoneList(appname string) ([]*AppZone, error) {
 	zonelist := []*AppZone{}
 	retdb := db.sql.Where("owner = ?", appname).Find(&zonelist)
 	return zonelist, retdb.Error
