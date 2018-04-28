@@ -28,7 +28,7 @@ func (rdm *RedisDataManager) CreateApp(account, appname string) error {
 	conn.Send("MULTI")
 	conn.Send("SADD", "set:app", appname)
 	conn.Send("SADD", "set:app:account:"+account, appname) //添加uid防止app:appid和app:uid重复
-	conn.Send("HMSET", "hset:app:appname:"+appname, "appid", appid, "name", appname, "owner", account, "desc", "", "iconurl", "", "regdate", regdate)
+	conn.Send("HMSET", "hset:app:appname:"+appname, "appid", appid, "appname", appname, "owner", account, "desc", "", "iconurl", "", "regdate", regdate)
 	conn.Send("ZADD", "zset:app:regdate:account:"+account, regdate, appname) //create index of app regdate
 
 	_, err = conn.Do("EXEC")

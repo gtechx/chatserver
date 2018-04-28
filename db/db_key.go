@@ -181,15 +181,15 @@ type AccountAdminApp struct {
 
 type App struct {
 	ID        uint64    `redis:"id" json:"id" gorm:"primary_key;AUTO_INCREMENT"`
-	Name      string    `redis:"name" json:"name" gorm:"primary_key"`
+	Appname   string    `redis:"appname" json:"appname" gorm:"primary_key"`
 	Owner     string    `redis:"owner" json:"owner"`
 	Desc      string    `redis:"desc" json:"desc"`
 	Share     string    `redis:"share" json:"share"`
 	CreatedAt time.Time `redis:"createdate" json:"_"`
 
-	AppZones  []AppZone  `json:"_" gorm:"foreignkey:Owner;association_foreignkey:Name"`
-	AppShares []AppShare `json:"_" gorm:"foreignkey:Name;association_foreignkey:Name"`
-	AppDatas  []AppData  `json:"_" gorm:"foreignkey:Appname;association_foreignkey:Name"`
+	AppZones  []AppZone  `json:"_" gorm:"foreignkey:Owner;association_foreignkey:Appname"`
+	AppShares []AppShare `json:"_" gorm:"foreignkey:Appname;association_foreignkey:Appname"`
+	AppDatas  []AppData  `json:"_" gorm:"foreignkey:Appname;association_foreignkey:Appname"`
 }
 
 func (app *App) MarshalJSON() ([]byte, error) {
@@ -213,12 +213,12 @@ func (app *App) BeforeDelete(tx *gorm.DB) error {
 	//tx.Model(app).Related(&zones, "AppZones")
 	//fmt.Println(zones)
 	//delete zones of this app
-	if err := tx.Delete(&AppZone{}, "owner = ?", app.Name).Error; err != nil {
+	if err := tx.Delete(&AppZone{}, "owner = ?", app.Appname).Error; err != nil {
 		return err
 	}
 
 	//delete appshare of this app
-	if err := tx.Delete(&AppShare{}, "name = ? OR othername = ?", app.Name, app.Name).Error; err != nil {
+	if err := tx.Delete(&AppShare{}, "appname = ? OR othername = ?", app.Appname, app.Appname).Error; err != nil {
 		return err
 	}
 
@@ -238,20 +238,16 @@ func (app *App) BeforeDelete(tx *gorm.DB) error {
 		}
 	}
 
-	// if err := tx.Delete(&AppData{}, "appname = ?", app.Name).Error; err != nil {
-	// 	return err
-	// }
-
 	//update share colomn who share with me
-	if err := tx.Model(&App{}).Where("share = ?", app.Name).Update("share", "").Error; err != nil {
+	if err := tx.Model(&App{}).Where("share = ?", app.Appname).Update("share", "").Error; err != nil {
 		return err
 	}
 
-	if err := tx.Delete(&AccountApp{}, "appname = ?", app.Name).Error; err != nil {
+	if err := tx.Delete(&AccountApp{}, "appname = ?", app.Appname).Error; err != nil {
 		return err
 	}
 
-	if err := tx.Delete(&AccountZone{}, "appname = ?", app.Name).Error; err != nil {
+	if err := tx.Delete(&AccountZone{}, "appname = ?", app.Appname).Error; err != nil {
 		return err
 	}
 
@@ -267,13 +263,12 @@ func (app *App) AfterDelete(tx *gorm.DB) error {
 }
 
 type AppZone struct {
-	Name string `redis:"name" json:"name"`
-	//App   App    `json:"_" gorm:"ForeignKey:Name;AssociationForeignKey:Owner"`
-	Owner string `redis:"owner" json:"owner"`
+	Zonename string `redis:"zonename" json:"zonename"`
+	Owner    string `redis:"owner" json:"owner"`
 }
 
 func (appzone *AppZone) BeforeDelete(tx *gorm.DB) error {
-	if err := tx.Delete(&AccountZone{}, "zonename = ?", appzone.Name).Error; err != nil {
+	if err := tx.Delete(&AccountZone{}, "zonename = ?", appzone.Zonename).Error; err != nil {
 		return err
 	}
 
@@ -281,7 +276,7 @@ func (appzone *AppZone) BeforeDelete(tx *gorm.DB) error {
 }
 
 type AppShare struct {
-	Name      string `redis:"name" json:"name"`
+	Appname   string `redis:"appname" json:"appname"`
 	Othername string `redis:"othername" json:"othername"`
 }
 
@@ -308,7 +303,7 @@ type AppData struct {
 }
 
 func (appdata *AppData) toAccountApp() *AccountApp {
-	return &AccountApp{Account: appdata.Account, Name: appdata.Appname}
+	return &AccountApp{Account: appdata.Account, Appname: appdata.Appname}
 }
 
 func (appdata *AppData) toAccountZone() *AccountZone {
@@ -317,13 +312,31 @@ func (appdata *AppData) toAccountZone() *AccountZone {
 
 type AccountApp struct {
 	Account string `redis:"account" json:"account"`
-	Name    string `redis:"name" json:"name"`
+	Appname string `redis:"appname" json:"appname"`
 }
 
 type AccountZone struct {
 	Account  string `redis:"account" json:"account"`
 	Appname  string `redis:"appname" json:"appname"`
 	Zonename string `redis:"zonename" json:"zonename"`
+}
+
+func (appdata *AppData) MarshalJSON() ([]byte, error) {
+	// 定义一个该结构体的别名
+	type Alias AppData
+	// 定义一个新的结构体
+	tmpSt := struct {
+		Alias
+		Birthday   string `json:"birthday"`
+		Lastlogin  string `json:"lastlogin"`
+		CreateDate string `json:"createdate"`
+	}{
+		Alias:      (Alias)(*appdata),
+		Birthday:   appdata.Birthday.Format("2006-01-02"),
+		Lastlogin:  appdata.Lastlogin.Format("2006-01-02 15:04:05"),
+		CreateDate: appdata.CreatedAt.Format("2006-01-02 15:04:05"),
+	}
+	return json.Marshal(tmpSt)
 }
 
 func (appdata *AppData) BeforeDelete(tx *gorm.DB) error {
@@ -381,7 +394,7 @@ type Black struct {
 }
 
 type Group struct {
-	Name        string `redis:"name" json:"name"`
+	Groupname   string `redis:"groupname" json:"groupname"`
 	Dataid      uint64 `redis:"dataid" json:"dataid"`
 	Otherdataid uint64 `redis:"otherdataid" json:"otherdataid"`
 	// Account  string `redis:"account" json:"account"`

@@ -18,14 +18,14 @@ func (db *DBManager) CreateApp(tbl_app *App) error {
 }
 
 func (db *DBManager) DeleteApp(appname string) error {
-	retdb := db.sql.Delete(&App{Name: appname}, "name = ?", appname)
+	retdb := db.sql.Delete(&App{Appname: appname}, "appname = ?", appname)
 	return retdb.Error
 }
 
 func (db *DBManager) DeleteApps(appnames []string) error {
 	tx := db.sql.Begin()
 	for _, appname := range appnames {
-		if err := tx.Delete(&App{Name: appname}, "name = ?", appname).Error; err != nil {
+		if err := tx.Delete(&App{Appname: appname}, "appname = ?", appname).Error; err != nil {
 			tx.Rollback()
 			return err
 		}
@@ -36,18 +36,18 @@ func (db *DBManager) DeleteApps(appnames []string) error {
 
 func (db *DBManager) IsAppExists(appname string) (bool, error) {
 	var count uint64
-	retdb := db.sql.Model(app_table).Where("name = ?", appname).Count(&count)
+	retdb := db.sql.Model(app_table).Where("appname = ?", appname).Count(&count)
 	return count > 0, retdb.Error
 }
 
 func (db *DBManager) SetAppField(appname, fieldname string, val interface{}) error {
-	retdb := db.sql.Model(app_table).Where("name = ?", appname).Update(fieldname, val)
+	retdb := db.sql.Model(app_table).Where("appname = ?", appname).Update(fieldname, val)
 	return retdb.Error
 }
 
 func (db *DBManager) GetAppField(appname, fieldname string) (*App, error) {
 	app := &App{}
-	retdb := db.sql.Select(fieldname).Where("name = ?", appname).First(app)
+	retdb := db.sql.Select(fieldname).Where("appname = ?", appname).First(app)
 	return app, retdb.Error
 }
 
@@ -65,7 +65,7 @@ func (db *DBManager) GetAppCountByAccount(account string) (uint64, error) {
 
 func (db *DBManager) GetApp(appname string) (*App, error) {
 	app := &App{}
-	retdb := db.sql.First(app, "name = ?", appname)
+	retdb := db.sql.First(app, "appname = ?", appname)
 	return app, retdb.Error
 }
 
@@ -83,7 +83,7 @@ func (db *DBManager) GetAppListByAccount(account string, offset, count int) ([]*
 
 func (db *DBManager) GetAppOwner(appname string) (string, error) {
 	app := &App{}
-	retdb := db.sql.First(app, "name = ?", appname)
+	retdb := db.sql.First(app, "appname = ?", appname)
 	return app.Owner, retdb.Error
 }
 
@@ -114,7 +114,7 @@ func (db *DBManager) AddAppZone(tbl_appzone *AppZone) error {
 }
 
 func (db *DBManager) RemoveAppZone(appname, zonename string) error {
-	retdb := db.sql.Delete(&AppZone{Name: zonename}, "name = ? AND owner = ?", zonename, appname)
+	retdb := db.sql.Delete(&AppZone{Zonename: zonename}, "zonename = ? AND owner = ?", zonename, appname)
 	return retdb.Error
 }
 
@@ -126,7 +126,7 @@ func (db *DBManager) GetAppZoneList(appname string) ([]*AppZone, error) {
 
 func (db *DBManager) IsAppZoneExists(appname, zonename string) (bool, error) {
 	var count uint64
-	retdb := db.sql.Model(appzone_table).Where("name = ? AND owner = ?", zonename, appname).Count(&count)
+	retdb := db.sql.Model(appzone_table).Where("zonename = ? AND owner = ?", zonename, appname).Count(&count)
 	return count > 0, retdb.Error
 }
 
@@ -138,30 +138,30 @@ func (db *DBManager) IsAppZoneExists(appname, zonename string) (bool, error) {
 // }
 
 func (db *DBManager) SetShareApp(appname, otherappname string) error {
-	retdb := db.sql.Model(app_table).Where("name = ?", appname).Update("share", otherappname)
+	retdb := db.sql.Model(app_table).Where("appname = ?", appname).Update("share", otherappname)
 	return retdb.Error
 }
 
 func (db *DBManager) RemoveShareApp(appname string) error {
-	retdb := db.sql.Model(app_table).Where("name = ?", appname).Update("share", "")
+	retdb := db.sql.Model(app_table).Where("appname = ?", appname).Update("share", "")
 	return retdb.Error
 }
 
 func (db *DBManager) IsShareWithOtherApp(appname string) (bool, error) {
 	app := &App{}
-	retdb := db.sql.First(app, "name = ?", appname)
+	retdb := db.sql.First(app, "appname = ?", appname)
 	return app.Share != "", retdb.Error
 }
 
 func (db *DBManager) GetShareApp(appname string) (string, error) {
 	app := &App{}
-	retdb := db.sql.First(app, "name = ?", appname)
+	retdb := db.sql.First(app, "appname = ?", appname)
 	return app.Share, retdb.Error
 }
 
 func (db *DBManager) GetShareAppList(appname string) ([]string, error) {
 	sharelist := []*AppShare{}
-	retdb := db.sql.Select("other_name").Where("name = ?", appname).Find(&sharelist)
+	retdb := db.sql.Select("other_name").Where("appname = ?", appname).Find(&sharelist)
 
 	slist := make([]string, len(sharelist))
 	for i, share := range sharelist {
