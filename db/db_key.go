@@ -308,7 +308,7 @@ type AppData struct {
 }
 
 func (appdata *AppData) toAccountApp() *AccountApp {
-	return &AccountApp{Account: appdata.Account, Appname: appdata.Appname}
+	return &AccountApp{Account: appdata.Account, Name: appdata.Appname}
 }
 
 func (appdata *AppData) toAccountZone() *AccountZone {
@@ -317,7 +317,7 @@ func (appdata *AppData) toAccountZone() *AccountZone {
 
 type AccountApp struct {
 	Account string `redis:"account" json:"account"`
-	Appname string `redis:"appname" json:"appname"`
+	Name    string `redis:"name" json:"name"`
 }
 
 type AccountZone struct {

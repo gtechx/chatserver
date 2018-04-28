@@ -15,7 +15,7 @@ func (db *DBManager) CreateAppData(tbl_appdata *AppData) error {
 		return err
 	}
 	var count uint64
-	if err := tx.Model(&AccountApp{}).Where("account = ?", tbl_appdata.Account).Where("appname = ?", tbl_appdata.Appname).Count(&count).Error; err != nil {
+	if err := tx.Model(&AccountApp{}).Where("account = ?", tbl_appdata.Account).Where("name = ?", tbl_appdata.Appname).Count(&count).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
