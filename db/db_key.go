@@ -148,7 +148,7 @@ func (acc *Account) MarshalJSON() ([]byte, error) {
 		CreateDate string `json:"createdate"`
 	}{
 		Alias:      (Alias)(*acc),
-		CreateDate: acc.CreatedAt.Format("2006-01-02 15:04:05"),
+		CreateDate: acc.CreatedAt.Format("01/02/2006 15:04:05"),
 	}
 	return json.Marshal(tmpSt)
 }
@@ -201,7 +201,7 @@ func (app *App) MarshalJSON() ([]byte, error) {
 		CreateDate string `json:"createdate"`
 	}{
 		Alias:      (Alias)(*app),
-		CreateDate: app.CreatedAt.Format("2006-01-02 15:04:05"),
+		CreateDate: app.CreatedAt.Format("01/02/2006 15:04:05"),
 	}
 	return json.Marshal(tmpSt)
 }
@@ -332,9 +332,9 @@ func (appdata *AppData) MarshalJSON() ([]byte, error) {
 		CreateDate string `json:"createdate"`
 	}{
 		Alias:      (Alias)(*appdata),
-		Birthday:   appdata.Birthday.Format("2006-01-02"),
-		Lastlogin:  appdata.Lastlogin.Format("2006-01-02 15:04:05"),
-		CreateDate: appdata.CreatedAt.Format("2006-01-02 15:04:05"),
+		Birthday:   appdata.Birthday.Format("01/02/2006"),
+		Lastlogin:  appdata.Lastlogin.Format("01/02/2006 15:04:05"),
+		CreateDate: appdata.CreatedAt.Format("01/02/2006 15:04:05"),
 	}
 	return json.Marshal(tmpSt)
 }
