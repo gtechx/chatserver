@@ -1,5 +1,11 @@
 package gtdb
 
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
+
 //. "github.com/gtechx/base/common"
 
 //[set]app aid set
@@ -10,6 +16,35 @@ var app_tablelist = []*App{}
 
 var appzone_table = &AppZone{}
 var appzone_tablelist = []*AppZone{}
+
+type AppFilter struct {
+	Appname         string
+	Desc            string
+	Share           string
+	Createbegindate *time.Time
+	Createenddate   *time.Time
+}
+
+func (filter *AppFilter) apply(db *gorm.DB) *gorm.DB {
+	retdb := db
+	if filter.Appname != "" {
+		retdb = retdb.Where("appname LIKE ?", "%"+filter.Appname+"%")
+	}
+	if filter.Desc != "" {
+		retdb = retdb.Where("desc LIKE ?", "%"+filter.Desc+"%")
+	}
+	if filter.Share != "" {
+		retdb = retdb.Where("share = ?", filter.Share)
+	}
+
+	if filter.Createbegindate != nil {
+		retdb = retdb.Where("created_at >= ?", *filter.Createbegindate)
+	}
+	if filter.Createenddate != nil {
+		retdb = retdb.Where("created_at <= ?", *filter.Createenddate)
+	}
+	return retdb
+}
 
 //app op
 func (db *DBManager) CreateApp(tbl_app *App) error {
@@ -51,15 +86,29 @@ func (db *DBManager) GetAppField(appname, fieldname string) (*App, error) {
 	return app, retdb.Error
 }
 
-func (db *DBManager) GetAppCount() (uint64, error) {
+func (db *DBManager) GetAppCount(args ...*AppFilter) (uint64, error) {
 	var count uint64
-	retdb := db.sql.Find(&app_tablelist).Count(&count)
+	retdb := db.sql.Model(app_table)
+	if len(args) > 0 {
+		filter := args[0]
+		if filter != nil {
+			retdb = filter.apply(retdb)
+		}
+	}
+	retdb.Count(&count)
 	return count, retdb.Error
 }
 
-func (db *DBManager) GetAppCountByAccount(account string) (uint64, error) {
+func (db *DBManager) GetAppCountByAccount(account string, args ...*AppFilter) (uint64, error) {
 	var count uint64
-	retdb := db.sql.Find(&app_tablelist).Where("owner = ?", account).Count(&count)
+	retdb := db.sql.Model(app_table).Where("owner = ?", account)
+	if len(args) > 0 {
+		filter := args[0]
+		if filter != nil {
+			retdb = filter.apply(retdb)
+		}
+	}
+	retdb.Count(&count)
 	return count, retdb.Error
 }
 
@@ -69,15 +118,29 @@ func (db *DBManager) GetApp(appname string) (*App, error) {
 	return app, retdb.Error
 }
 
-func (db *DBManager) GetAppList(offset, count int) ([]*App, error) {
+func (db *DBManager) GetAppList(offset, count int, args ...*AppFilter) ([]*App, error) {
 	applist := []*App{}
-	retdb := db.sql.Offset(offset).Limit(count).Find(&applist)
+	retdb := db.sql.Offset(offset).Limit(count)
+	if len(args) > 0 {
+		filter := args[0]
+		if filter != nil {
+			retdb = filter.apply(retdb)
+		}
+	}
+	retdb.Find(&applist)
 	return applist, retdb.Error
 }
 
-func (db *DBManager) GetAppListByAccount(account string, offset, count int) ([]*App, error) {
+func (db *DBManager) GetAppListByAccount(account string, offset, count int, args ...*AppFilter) ([]*App, error) {
 	applist := []*App{}
-	retdb := db.sql.Offset(offset).Limit(count).Where("owner = ?", account).Find(&applist)
+	retdb := db.sql.Offset(offset).Limit(count).Where("owner = ?", account)
+	if len(args) > 0 {
+		filter := args[0]
+		if filter != nil {
+			retdb = filter.apply(retdb)
+		}
+	}
+	retdb.Find(&applist)
 	return applist, retdb.Error
 }
 
