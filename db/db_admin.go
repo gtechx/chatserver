@@ -12,20 +12,74 @@ import (
 //[sets]online uid --在线用户uid
 var admin_table = &Admin{}
 
+type AdminFilter struct {
+	Account      string
+	Adminadmin   bool
+	Adminuser    bool
+	Adminapp     bool
+	Adminappdata bool
+	Adminonline  bool
+	Adminmessage bool
+	Expire       *time.Time
+}
+
+func (filter *AdminFilter) apply(db *gorm.DB) *gorm.DB {
+	retdb := db
+	if filter.Account != "" {
+		retdb = retdb.Where("account LIKE ?", "%"+filter.Account+"%")
+	}
+	if filter.Adminadmin != false {
+		retdb = retdb.Where("adminadmin = ?", filter.Adminadmin)
+	}
+	if filter.Adminuser != false {
+		retdb = retdb.Where("adminuser = ?", filter.Adminuser)
+	}
+	if filter.Adminapp != false {
+		retdb = retdb.Where("adminapp = ?", filter.Adminapp)
+	}
+	if filter.Adminappdata != false {
+		retdb = retdb.Where("adminappdata = ?", filter.Adminappdata)
+	}
+	if filter.Adminonline != false {
+		retdb = retdb.Where("adminonline = ?", filter.Adminonline)
+	}
+	if filter.Adminmessage != false {
+		retdb = retdb.Where("adminmessage = ?", filter.Adminmessage)
+	}
+
+	if filter.Expire != nil {
+		retdb = retdb.Where("expire >= ?", *filter.Expire)
+	}
+
+	return retdb
+}
+
 func (db *DBManager) IsAdmin(account string) (bool, error) {
 	var count uint64
 	retdb := db.sql.Model(admin_table).Where("account = ?", account).Count(&count)
 	return count > 0, retdb.Error
 }
 
-func (db *DBManager) AddAdmin(tbl_admin *Admin) error {
+func (db *DBManager) CreateAdmin(tbl_admin *Admin) error {
 	retdb := db.sql.Create(tbl_admin)
 	return retdb.Error
 }
 
-func (db *DBManager) RemoveAdmin(account string) error {
+func (db *DBManager) DelAdmin(account string) error {
 	retdb := db.sql.Delete(admin_table, "account = ?", account)
 	return retdb.Error
+}
+
+func (db *DBManager) DelAdmins(accounts []string) error {
+	tx := db.sql.Begin()
+	for _, account := range accounts {
+		if err := tx.Delete(&Admin{Account: account}, "account = ?", account).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	tx.Commit()
+	return nil
 }
 
 func (db *DBManager) GetAdmin(account string) (*Admin, error) {
@@ -39,9 +93,29 @@ func (db *DBManager) UpdateAdmin(tbl_admin *Admin) error {
 	return retdb.Error
 }
 
-func (db *DBManager) GetAdminList(offset, count int) ([]*Admin, error) {
+func (db *DBManager) GetAdminCount(args ...*AdminFilter) (uint64, error) {
+	var count uint64
+	retdb := db.sql.Model(admin_table)
+	if len(args) > 0 {
+		filter := args[0]
+		if filter != nil {
+			retdb = filter.apply(retdb)
+		}
+	}
+	retdb = retdb.Count(&count)
+	return count, retdb.Error
+}
+
+func (db *DBManager) GetAdminList(offset, count int, args ...*AdminFilter) ([]*Admin, error) {
 	adminlist := []*Admin{}
-	retdb := db.sql.Offset(offset).Limit(count).Find(&adminlist)
+	retdb := db.sql.Offset(offset).Limit(count).Where("account != ?", "admin")
+	if len(args) > 0 {
+		filter := args[0]
+		if filter != nil {
+			retdb = filter.apply(retdb)
+		}
+	}
+	retdb = retdb.Find(&adminlist)
 	return adminlist, retdb.Error
 }
 

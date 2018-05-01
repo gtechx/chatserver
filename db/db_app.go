@@ -100,7 +100,7 @@ func (db *DBManager) GetAppCount(args ...*AppFilter) (uint64, error) {
 			retdb = filter.apply(retdb)
 		}
 	}
-	retdb.Count(&count)
+	retdb = retdb.Count(&count)
 	return count, retdb.Error
 }
 
@@ -113,7 +113,7 @@ func (db *DBManager) GetAppCountByAccount(account string, args ...*AppFilter) (u
 			retdb = filter.apply(retdb)
 		}
 	}
-	retdb.Count(&count)
+	retdb = retdb.Count(&count)
 	return count, retdb.Error
 }
 
@@ -132,7 +132,7 @@ func (db *DBManager) GetAppList(offset, count int, args ...*AppFilter) ([]*App, 
 			retdb = filter.apply(retdb)
 		}
 	}
-	retdb.Find(&applist)
+	retdb = retdb.Find(&applist)
 	return applist, retdb.Error
 }
 
@@ -145,7 +145,7 @@ func (db *DBManager) GetAppListByAccount(account string, offset, count int, args
 			retdb = filter.apply(retdb)
 		}
 	}
-	retdb.Find(&applist)
+	retdb = retdb.Find(&applist)
 	return applist, retdb.Error
 }
 

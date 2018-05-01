@@ -111,15 +111,31 @@ func (datakey *DataKey) SetZonename(zonename string) {
 }
 
 type Admin struct {
-	Account string `redis:"account" json:"account" gorm:"unique;not null"`
-	//Adminpriv    bool   `redis:"adminpriv" json:"adminpriv" gorm:"tinyint(1)"`
-	Adminuser    bool   `redis:"adminuser" json:"adminuser" gorm:"tinyint(1);default:0"`
-	Adminapp     bool   `redis:"adminapp" json:"adminapp" gorm:"tinyint(1);default:0"`
-	Adminonline  bool   `redis:"adminonline" json:"adminonline" gorm:"tinyint(1);default:0"`
-	Adminmessage bool   `redis:"adminmessage" json:"adminmessage" gorm:"tinyint(1);default:0"`
-	Appcount     uint32 `redis:"appcount" json:"appcount" gorm:"default:0"`
+	Account      string    `redis:"account" json:"account" gorm:"primary_key"`
+	Adminadmin   bool      `redis:"adminadmin" json:"adminadmin" gorm:"tinyint(1);default:0"`
+	Adminuser    bool      `redis:"adminuser" json:"adminuser" gorm:"tinyint(1);default:0"`
+	Adminapp     bool      `redis:"adminapp" json:"adminapp" gorm:"tinyint(1);default:0"`
+	Adminappdata bool      `redis:"adminappdata" json:"adminappdata" gorm:"tinyint(1);default:0"`
+	Adminonline  bool      `redis:"adminonline" json:"adminonline" gorm:"tinyint(1);default:0"`
+	Adminmessage bool      `redis:"adminmessage" json:"adminmessage" gorm:"tinyint(1);default:0"`
+	Appcount     uint32    `redis:"appcount" json:"appcount" gorm:"default:0"`
+	Expire       time.Time `redis:"expire" json:"_"`
 
 	AdminApps []AdminApp `json:"_" gorm:"foreignkey:Adminaccount;association_foreignkey:Account"`
+}
+
+func (admin *Admin) MarshalJSON() ([]byte, error) {
+	// 定义一个该结构体的别名
+	type Alias Admin
+	// 定义一个新的结构体
+	tmpSt := struct {
+		Alias
+		Expire string `json:"expire"`
+	}{
+		Alias:  (Alias)(*admin),
+		Expire: admin.Expire.Format("01/02/2006"),
+	}
+	return json.Marshal(tmpSt)
 }
 
 type AdminApp struct {
