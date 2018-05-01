@@ -186,6 +186,18 @@ func (db *DBManager) RemoveAppZone(appname, zonename string) error {
 	return retdb.Error
 }
 
+func (db *DBManager) RemoveAppZones(appname string, zonenames []string) error {
+	tx := db.sql.Begin()
+	for _, zonename := range zonenames {
+		if err := tx.Delete(&AppZone{Zonename: zonename}, "zonename = ? AND owner = ?", zonename, appname).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	tx.Commit()
+	return nil
+}
+
 func (db *DBManager) GetAppZoneList(appname string) ([]*AppZone, error) {
 	zonelist := []*AppZone{}
 	retdb := db.sql.Where("owner = ?", appname).Find(&zonelist)
