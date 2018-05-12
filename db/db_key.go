@@ -196,11 +196,13 @@ type AccountAdminApp struct {
 }
 
 type App struct {
-	ID        uint64    `redis:"id" json:"id" gorm:"primary_key;AUTO_INCREMENT"`
-	Appname   string    `redis:"appname" json:"appname" gorm:"primary_key"`
-	Owner     string    `redis:"owner" json:"owner"`
-	Desc      string    `redis:"desc" json:"desc"`
-	Share     string    `redis:"share" json:"share"`
+	ID      uint64 `redis:"id" json:"id" gorm:"primary_key;AUTO_INCREMENT"`
+	Appname string `redis:"appname" json:"appname" gorm:"primary_key"`
+	Owner   string `redis:"owner" json:"owner"`
+	Desc    string `redis:"desc" json:"desc"`
+	Share   string `redis:"share" json:"share"`
+	//Channelmax uint8     `redis:"channelmax" json:"channelmax"`
+	//Friendmax  uint8     `redis:"friendmax" json:"friendmax"`
 	CreatedAt time.Time `redis:"createdate" json:"_"`
 
 	AppZones  []AppZone  `json:"_" gorm:"foreignkey:Owner;association_foreignkey:Appname"`
@@ -296,6 +298,11 @@ type AppShare struct {
 	Othername string `redis:"othername" json:"othername"`
 }
 
+type AppChatChannel struct {
+	Appname     string `redis:"appname" json:"appname"`
+	Channelname string `redis:"channelname" json:"channelname"`
+}
+
 type AppData struct {
 	ID        uint64    `redis:"id" json:"id" gorm:"primary_key;AUTO_INCREMENT"`
 	Account   string    `redis:"account" json:"account"`
@@ -326,11 +333,13 @@ func (appdata *AppData) toAccountZone() *AccountZone {
 	return &AccountZone{Account: appdata.Account, Appname: appdata.Appname, Zonename: appdata.Zonename}
 }
 
+//AccountApp 账号所登录过的APP记录
 type AccountApp struct {
 	Account string `redis:"account" json:"account"`
 	Appname string `redis:"appname" json:"appname"`
 }
 
+//AccountZone 账号所登录过的app区记录
 type AccountZone struct {
 	Account  string `redis:"account" json:"account"`
 	Appname  string `redis:"appname" json:"appname"`
