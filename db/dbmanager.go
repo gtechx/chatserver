@@ -170,13 +170,13 @@ func (db *DBManager) Install() error {
 	}
 
 	//add admin
-	tbl_account := &Account{Account: "admin", Password: "4778b745f8a3303f7d194c739df93077", Salt: "3MWYuR", Regip: "127.0.0.1"}
+	tbl_account := &Account{Account: "admin", Password: "20ff31d485cf6f5cf2d3f5becaa4d0e8", Salt: "gXdqyk", Regip: "127.0.0.1"}
 	if err = tx.Create(tbl_account).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	tbl_admin := &Admin{Account: "admin", Adminuser: true, Adminapp: true, Adminonline: true, Adminmessage: true}
+	tbl_admin := &Admin{Account: "admin", Adminadmin: true, Adminuser: true, Adminapp: true, Adminappdata: true, Adminonline: true, Adminmessage: true, Expire: time.Date(2099, 1, 1, 0, 0, 0, 0, time.Local)}
 	if err = tx.Create(tbl_admin).Error; err != nil {
 		tx.Rollback()
 		return err
@@ -189,13 +189,13 @@ func (db *DBManager) Install() error {
 		return err
 	}
 
-	tbl_app := &App{Name: "test1", Owner: "wyq", Desc: "ddddd", Share: ""}
+	tbl_app := &App{Appname: "test1", Owner: "wyq", Desc: "ddddd", Share: ""}
 	if err = tx.Create(tbl_app).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	tbl_zone := &AppZone{Name: "aaa", Owner: "test1"}
+	tbl_zone := &AppZone{Zonename: "aaa", Owner: "test1"}
 	if err = tx.Create(tbl_zone).Error; err != nil {
 		tx.Rollback()
 		return err

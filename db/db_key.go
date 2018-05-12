@@ -119,7 +119,7 @@ type Admin struct {
 	Adminonline  bool      `redis:"adminonline" json:"adminonline" gorm:"tinyint(1);default:0"`
 	Adminmessage bool      `redis:"adminmessage" json:"adminmessage" gorm:"tinyint(1);default:0"`
 	Appcount     uint32    `redis:"appcount" json:"appcount" gorm:"default:0"`
-	Expire       time.Time `redis:"expire" json:"_"`
+	Expire       time.Time `redis:"expire" json:"_" gorm:"type:datetime"`
 
 	AdminApps []AdminApp `json:"_" gorm:"foreignkey:Adminaccount;association_foreignkey:Account"`
 }
