@@ -1,7 +1,7 @@
 package config
 
 var ServerAddr string = "127.0.0.1:9090"
-var ServerNet string = "tcp"
+var ServerNet string = "ws"
 
 var RedisAddr string = "127.0.0.1:6379"
 var RedisPassword string = ""
