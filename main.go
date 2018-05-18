@@ -104,3 +104,9 @@ func main() {
 func onNewConn(conn gtnet.IConn) {
 	EntityManager().CreateNullEntity(conn)
 }
+
+//first, login with account,appname and zonename
+//server will return all appdataid in the zone of app
+//client need to use one of the appdataid to enter chat.
+
+//before receive chat server chat msg, client need send ready msg to server.
