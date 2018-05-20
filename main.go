@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	//. "github.com/gtechx/Chat/common"
@@ -11,7 +12,6 @@ import (
 	"github.com/gtechx/base/gtnet"
 	"github.com/gtechx/chatserver/config"
 	"github.com/gtechx/chatserver/data"
-	"github.com/gtechx/chatserver/service"
 )
 
 var quit chan os.Signal
@@ -74,13 +74,13 @@ func main() {
 	// 	fmt.Println("chat server init failed!!!")
 	// 	return
 	// }
-	service := gtservice.NewService("chatserver", config.ServerNet, config.ServerAddr, onNewConn)
-	err = service.Start()
+	server := gtnet.NewServer(config.ServerNet, config.ServerAddr, onNewConn)
+	err = server.Start()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	defer service.Stop()
+	defer server.Stop()
 
 	//keep live init
 	keepLiveInit()
@@ -101,7 +101,7 @@ func main() {
 	EntityManager().CleanOnlineUsers()
 }
 
-func onNewConn(conn gtnet.IConn) {
+func onNewConn(conn net.Conn) {
 	EntityManager().CreateNullEntity(conn)
 }
 
