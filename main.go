@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"time"
 	//. "github.com/gtechx/Chat/common"
 	//"github.com/gtechx/base/gtnet"
 
@@ -102,7 +103,65 @@ func main() {
 }
 
 func onNewConn(conn net.Conn) {
-	EntityManager().CreateNullEntity(conn)
+	//EntityManager().CreateNullEntity(conn)
+	fmt.Println("new conn:", conn.RemoteAddr().String())
+	isok := false
+	time.AfterFunc(5*time.Second, func() {
+		if !isok {
+			conn.Close()
+		}
+	})
+
+	typebuff := make([]byte, 1)
+	idbuff := make([]byte, 2)
+	sizebuff := make([]byte, 2)
+
+	_, err := conn.Read(typebuff)
+	if err != nil {
+		fmt.Println(err.Error())
+		conn.Close()
+		return
+	}
+
+	fmt.Println("data type:", typebuff[0])
+
+	_, err = conn.Read(idbuff)
+	if err != nil {
+		fmt.Println(err.Error())
+		conn.Close()
+		return
+	}
+	id := Int(idbuff)
+
+	fmt.Println("id:", id)
+
+	_, err = conn.Read(sizebuff)
+	if err != nil {
+		fmt.Println(err.Error())
+		conn.Close()
+		return
+	}
+	size := Int(sizebuff)
+
+	fmt.Println("data size:", size)
+
+	databuff := make([]byte, size)
+
+	_, err = conn.Read(databuff)
+	if err != nil {
+		fmt.Println(err.Error())
+		conn.Close()
+		return
+	}
+
+	fmt.Println("recv data:", String(databuff), " from "+conn.RemoteAddr().String())
+
+	if String(databuff) != "wyq" {
+		conn.Close()
+		return
+	}
+
+	isok = true
 }
 
 //first, login with account,appname and zonename

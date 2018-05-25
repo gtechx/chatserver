@@ -1,12 +1,15 @@
-package main
+package gtmsg
 
-import "errors"
-import . "github.com/gtechx/base/common"
+import (
+	"errors"
 
-const (
-	MSG_ID_LOGIN uint16 = iota
-	MSG_ID_LOGIN_SUCCESS
+	. "github.com/gtechx/base/common"
 )
+
+func RegisterUserMsg() {
+	registerMsgHandler(MsgId_ReqLogin, HandlerReqLogin)
+	registerMsgHandler(MsgId_EnterChat, HandlerEnterChat)
+}
 
 func HandlerReqLogin(buff []byte) (interface{}, error) {
 	slen := int(buff[0])
