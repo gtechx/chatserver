@@ -4,6 +4,8 @@ import (
 	"errors"
 
 	. "github.com/gtechx/base/common"
+	"github.com/gtechx/chatserver/db"
+	"github.com/satori/go.uuid"
 )
 
 func RegisterUserMsg() {
@@ -13,36 +15,54 @@ func RegisterUserMsg() {
 
 func HandlerReqLogin(buff []byte) (interface{}, error) {
 	slen := int(buff[0])
-	account := String(buff[1 : 1+alen])
-	buff = buff[1+alen:]
+	account := String(buff[1 : 1+slen])
+	buff = buff[1+slen:]
 	slen = int(buff[0])
-	password := String(buff[1 : 1+alen])
+	password := String(buff[1 : 1+slen])
 
 	dbmgr := gtdb.Manager()
 
-	if !dbmgr.IsAccountExists(account) {
-		return "", errors.New("account not exists")
+	ok, err := dbmgr.IsAccountExists(account)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !ok {
+		return nil, errors.New("account not exists")
 	}
 
 	tbl_account, err := dbmgr.GetAccount(account)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	md5password := GetSaltedPassword(password, tbl_account.Salt)
 	if md5password != tbl_account.Password {
-		return "", errors.New("password wrong")
+		return nil, errors.New("password wrong")
 	}
 
-	return account, nil
+	token, err := uuid.NewV4()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return token.Bytes(), nil
 }
 
 func HandlerEnterChat(buff []byte) (interface{}, error) {
 	appdataid := Uint64(buff)
 	dbmgr := gtdb.Manager()
 
-	if !dbmgr.IsAppDataExists(appdataid) {
+	ok, err := dbmgr.IsAppDataExists(appdataid)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !ok {
 		return false, errors.New("id not exists")
 	}
 
