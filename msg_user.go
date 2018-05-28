@@ -1,11 +1,9 @@
 package main
 
 import (
-	"errors"
-
 	. "github.com/gtechx/base/common"
+	"github.com/gtechx/chatserver/config"
 	"github.com/gtechx/chatserver/db"
-	"github.com/satori/go.uuid"
 )
 
 func RegisterUserMsg() {
@@ -13,7 +11,7 @@ func RegisterUserMsg() {
 	registerMsgHandler(MsgId_EnterChat, HandlerEnterChat)
 }
 
-func HandlerReqLogin(buff []byte) (interface{}, error) {
+func HandlerReqLogin(sess ISession, buff []byte) {
 	slen := int(buff[0])
 	account := String(buff[1 : 1+slen])
 	buff = buff[1+slen:]
@@ -21,50 +19,87 @@ func HandlerReqLogin(buff []byte) (interface{}, error) {
 	password := String(buff[1 : 1+slen])
 
 	dbmgr := gtdb.Manager()
+	errcode := ERR_NONE
+	var tokenbytes []byte
 
 	ok, err := dbmgr.IsAccountExists(account)
 
 	if err != nil {
-		return nil, err
+		errcode = ERR_DB
+	} else {
+		if !ok {
+			errcode = ERR_ACCOUNT_NOT_EXISTS
+		} else {
+			tbl_account, err := dbmgr.GetAccount(account)
+
+			if err != nil {
+				errcode = ERR_DB
+			} else {
+				md5password := GetSaltedPassword(password, tbl_account.Salt)
+				if md5password != tbl_account.Password {
+					errcode = ERR_PASSWORD_INVALID
+				} else {
+					token, err := uuid.NewV4()
+
+					if err != nil {
+						errcode = ERR_UNKNOWN
+					} else {
+						tokenbytes = token.Bytes()
+					}
+				}
+			}
+		}
 	}
 
-	if !ok {
-		return nil, errors.New("account not exists")
-	}
-
-	tbl_account, err := dbmgr.GetAccount(account)
-
-	if err != nil {
-		return nil, err
-	}
-
-	md5password := GetSaltedPassword(password, tbl_account.Salt)
-	if md5password != tbl_account.Password {
-		return nil, errors.New("password wrong")
-	}
-
-	token, err := uuid.NewV4()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return token.Bytes(), nil
+	ret := &MsgRetLogin{errcode == ERR_NONE, errcode, tokenbytes}
+	sess.Send(ret)
 }
 
-func HandlerEnterChat(buff []byte) (interface{}, error) {
+func HandlerEnterChat(sess ISession, buff []byte) {
 	appdataid := Uint64(buff)
 	dbmgr := gtdb.Manager()
+	errcode := ERR_NONE
 
 	ok, err := dbmgr.IsAppDataExists(appdataid)
 
 	if err != nil {
-		return nil, err
+		errcode = ERR_DB
+	} else {
+		if !ok {
+			errcode = ERR_APPDATAID_NOT_EXISTS
+		} else {
+			tbl_online := &gtdb.Online{appdataid, config.ServerAddr, "available"}
+			err = dbmgr.SetUserOnline(tbl_online)
+			if err != nil {
+				errcode = errcode = ERR_DB
+			}
+		}
 	}
 
-	if !ok {
-		return false, errors.New("id not exists")
+	ret := &MsgRetEnterChat{errcode == ERR_NONE, errcode}
+	sess.Send(ret)
+}
+
+func HandlerQuitChat(sess ISession, buff []byte) {
+	appdataid := Uint64(buff)
+	dbmgr := gtdb.Manager()
+	errcode := ERR_NONE
+
+	ok, err := dbmgr.IsAppDataExists(appdataid)
+
+	if err != nil {
+		errcode = ERR_DB
+	} else {
+		if !ok {
+			errcode = ERR_APPDATAID_NOT_EXISTS
+		} else {
+			err = dbmgr.SetUserOffline(appdataid)
+			if err != nil {
+				errcode = errcode = ERR_DB
+			}
+		}
 	}
 
-	return appdataid, nil
+	ret := &MsgRetQuitChat{errcode == ERR_NONE, errcode}
+	sess.Send(ret)
 }

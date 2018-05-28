@@ -9,8 +9,8 @@ type SessMgr struct {
 	sessMap *sync.Map
 }
 
-func (sm *SessMgr) CreateSess(conn net.Conn, id uint64) *Sess {
-	sess := &Sess{id, conn}
+func (sm *SessMgr) CreateSess(conn net.Conn, appname, zonename string, id uint64) *Sess {
+	sess := &Sess{appname, zonename, id, conn}
 	sm.sessMap.Store(id, sess)
 	return sess
 }

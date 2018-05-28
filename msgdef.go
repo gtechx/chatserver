@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -26,9 +25,9 @@ const (
 	EchoFrame
 )
 
-var msgHandler = map[uint16]func([]byte) (interface{}, error){}
+var msgHandler = map[uint16]func(ISession, []byte){}
 
-func registerMsgHandler(msgid uint16, handler func([]byte) (interface{}, error)) {
+func registerMsgHandler(msgid uint16, handler func(ISession, []byte)) {
 	_, ok := msgHandler[msgid]
 
 	if ok {
@@ -38,14 +37,13 @@ func registerMsgHandler(msgid uint16, handler func([]byte) (interface{}, error))
 	msgHandler[msgid] = handler
 }
 
-func Handle(msgid uint16, buff []byte) (interface{}, error) {
+func Handle(msgid uint16, ISession, buff []byte) {
 	handler, ok := msgHandler[msgid]
 
 	if ok {
-		return handler(buff)
+		handler(buff)
 	}
-
-	return nil, errors.New("msgid handler not exists")
+	//return nil, errors.New("msgid handler not exists")
 }
 
 type myint int
@@ -66,8 +64,9 @@ type MsgReqLogin struct {
 }
 
 type MsgRetLogin struct {
-	Flag         byte
-	TokenOrError []byte
+	Flag      bool
+	ErrorCode uint16
+	Token     []byte
 }
 
 const MsgId_ReqEnterChat uint16 = 1001
@@ -77,6 +76,17 @@ type MsgReqEnterChat struct {
 }
 
 type MsgRetEnterChat struct {
-	Flag  byte
-	Error []byte
+	Flag      bool
+	ErrorCode uint16
+}
+
+const MsgId_ReqEnterChat uint16 = 1002
+
+type MsgReqQuitChat struct {
+	AppdataId uint64
+}
+
+type MsgRetQuitChat struct {
+	Flag      bool
+	ErrorCode uint16
 }
