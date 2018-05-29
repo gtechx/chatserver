@@ -5,21 +5,30 @@ import (
 	"sync"
 )
 
-type SessMgr struct {
+type SessManager struct {
 	sessMap *sync.Map
 }
 
-func (sm *SessMgr) CreateSess(conn net.Conn, appname, zonename string, id uint64) *Sess {
-	sess := &Sess{appname, zonename, id, conn}
+var sessmgr *SessManager
+
+func SessMgr() *SessManager {
+	if sessmgr == nil {
+		sessmgr = &SessManager{sessMap: &sync.Map{}}
+	}
+	return sessmgr
+}
+
+func (sm *SessManager) CreateSess(conn net.Conn, appname, zonename, account string, id uint64) *Sess {
+	sess := &Sess{account, appname, zonename, id, conn}
 	sm.sessMap.Store(id, sess)
 	return sess
 }
 
-func (sm *SessMgr) DelSess(id uint64) {
+func (sm *SessManager) DelSess(id uint64) {
 	sm.sessMap.Delete(id)
 }
 
-func (sm *SessMgr) GetSess(id uint64) *Sess {
+func (sm *SessManager) GetSess(id uint64) *Sess {
 	sess, ok := sm.sessMap.Load(id)
 	if ok {
 		return sess.(*Sess)

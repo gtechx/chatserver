@@ -75,10 +75,26 @@ func (db *DBManager) IsAppDataExists(id uint64) (bool, error) {
 	return count > 0, retdb.Error
 }
 
-func (db *DBManager) IsNicknameExists(appname, zonename, nickname string) (bool, error) {
+func (db *DBManager) IsNicknameExists(appname, zonename, account, nickname string) (bool, error) {
 	var count uint64
-	retdb := db.sql.Model(appdata_table).Where("appname = ?", appname).Where("zonename = ?", zonename).Where("nickname = ?", nickname).Count(&count)
+	retdb := db.sql.Model(appdata_table).Where("appname = ?", appname).Where("zonename = ?", zonename).Where("account = ?", account).Where("nickname = ?", nickname).Count(&count)
 	return count > 0, retdb.Error
+}
+
+func (db *DBManager) GetAppDataIdList(appname, zonename, account string) ([]uint64, error) {
+	appdatalist := []*AppData{}
+	retdb := db.sql.Model(appdata_table).Select("id").Where("appname = ?", appname).Where("zonename = ?", zonename).Where("account = ?", account).Find(&appdatalist)
+
+	if retdb.Error != nil {
+		return nil, retdb.Error
+	}
+
+	idlist := make([]uint64, len(appdatalist))
+	for i, appdata := range appdatalist {
+		idlist[i] = appdata.ID
+	}
+
+	return idlist, retdb.Error
 }
 
 // func (db *DBManager) GetAppDataCountByApp(appname string) (uint64, error) {

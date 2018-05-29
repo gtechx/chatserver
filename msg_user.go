@@ -7,11 +7,11 @@ import (
 )
 
 func RegisterUserMsg() {
-	registerMsgHandler(MsgId_ReqLogin, HandlerReqLogin)
+	//registerMsgHandler(MsgId_ReqLogin, HandlerReqLogin)
 	registerMsgHandler(MsgId_EnterChat, HandlerEnterChat)
 }
 
-func HandlerReqLogin(sess ISession, buff []byte) {
+func HandlerReqLogin(buff []byte) (uint16, interface{}) {
 	slen := int(buff[0])
 	account := String(buff[1 : 1+slen])
 	buff = buff[1+slen:]
@@ -52,10 +52,22 @@ func HandlerReqLogin(sess ISession, buff []byte) {
 	}
 
 	ret := &MsgRetLogin{errcode == ERR_NONE, errcode, tokenbytes}
-	sess.Send(ret)
+	return errcode, ret
+	//sess.Send(ret)
 }
 
-func HandlerEnterChat(sess ISession, buff []byte) {
+func HandlerReqAppDataIdList(sess ISession, buff []byte) (uint16, interface{}) {
+	idlist, err := gtdb.Manager().GetAppDataIdList(sess.AppName(), sess.ZoneName(), sess.Account())
+	errcode := ERR_NONE
+	if err != nil {
+		errcode = ERR_DB
+	}
+	ret := &MsgRetAppDataIdList{errcode, idlist}
+	//sess.Send(ret)
+	return errcode, ret
+}
+
+func HandlerEnterChat(sess ISession, buff []byte) (uint16, interface{}) {
 	appdataid := Uint64(buff)
 	dbmgr := gtdb.Manager()
 	errcode := ERR_NONE
@@ -77,10 +89,11 @@ func HandlerEnterChat(sess ISession, buff []byte) {
 	}
 
 	ret := &MsgRetEnterChat{errcode == ERR_NONE, errcode}
-	sess.Send(ret)
+	//sess.Send(ret)
+	return errcode, ret
 }
 
-func HandlerQuitChat(sess ISession, buff []byte) {
+func HandlerQuitChat(sess ISession, buff []byte) (uint16, interface{}) {
 	appdataid := Uint64(buff)
 	dbmgr := gtdb.Manager()
 	errcode := ERR_NONE
@@ -101,5 +114,6 @@ func HandlerQuitChat(sess ISession, buff []byte) {
 	}
 
 	ret := &MsgRetQuitChat{errcode == ERR_NONE, errcode}
-	sess.Send(ret)
+	//sess.Send(ret)
+	return errcode, ret
 }

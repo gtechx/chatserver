@@ -115,6 +115,7 @@ func onNewConn(conn net.Conn) {
 	typebuff := make([]byte, 1)
 	idbuff := make([]byte, 2)
 	sizebuff := make([]byte, 2)
+	msgidbuff := make([]byte, 2)
 
 	_, err := conn.Read(typebuff)
 	if err != nil {
@@ -145,6 +146,16 @@ func onNewConn(conn net.Conn) {
 
 	fmt.Println("data size:", size)
 
+	_, err = conn.Read(msgidbuff)
+	if err != nil {
+		fmt.Println(err.Error())
+		conn.Close()
+		return
+	}
+	msgid := Uint16(msgidbuff)
+
+	fmt.Println("msgid:", msgid)
+
 	databuff := make([]byte, size)
 
 	_, err = conn.Read(databuff)
@@ -154,14 +165,40 @@ func onNewConn(conn net.Conn) {
 		return
 	}
 
-	fmt.Println("recv data:", String(databuff), " from "+conn.RemoteAddr().String())
+	// fmt.Println("recv data:", String(databuff), " from "+conn.RemoteAddr().String())
 
-	if String(databuff) != "wyq" {
+	// if String(databuff) != "wyq" {
+	// 	conn.Close()
+	// 	return
+	// }
+	isok = true
+	errorcode, ret := HandlerReqLogin(databuff)
+
+	senddata := packageMsg(RetFrame, id, MsgRetLogin, ret)
+	_, err = conn.Write(senddata)
+
+	if err != nil {
 		conn.Close()
 		return
 	}
 
-	isok = true
+	if errorcode == ERR_NONE {
+		SessMgr().CreateSess(conn)
+	}
+}
+
+func packageMsg(msgtype uint8, id uint16, msgid uint16, data interface{}) []byte {
+	ret := []byte{}
+	databuff := Bytes(data)
+	datalen := uint16(len(databuff))
+	ret = append(ret, byte(msgtype))
+	ret = append(ret, Bytes(id)...)
+	ret = append(ret, Bytes(datalen)...)
+	ret = append(ret, Bytes(msgid)...)
+
+	if datalen > 0 {
+		ret = append(ret, databuff...)
+	}
 }
 
 //first, login with account,appname and zonename

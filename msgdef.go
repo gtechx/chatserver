@@ -25,9 +25,9 @@ const (
 	EchoFrame
 )
 
-var msgHandler = map[uint16]func(ISession, []byte){}
+var msgHandler = map[uint16]func(ISession, []byte) (uint16, interface{}){}
 
-func registerMsgHandler(msgid uint16, handler func(ISession, []byte)) {
+func registerMsgHandler(msgid uint16, handler func(ISession, []byte) (uint16, interface{})) {
 	_, ok := msgHandler[msgid]
 
 	if ok {
@@ -37,12 +37,13 @@ func registerMsgHandler(msgid uint16, handler func(ISession, []byte)) {
 	msgHandler[msgid] = handler
 }
 
-func Handle(msgid uint16, ISession, buff []byte) {
+func HandleMsg(msgid uint16, ISession, buff []byte) (uint16, interface{}) {
 	handler, ok := msgHandler[msgid]
 
 	if ok {
-		handler(buff)
+		return handler(buff)
 	}
+	return ERR_MSG_INVALID, nil
 	//return nil, errors.New("msgid handler not exists")
 }
 
@@ -89,4 +90,14 @@ type MsgReqQuitChat struct {
 type MsgRetQuitChat struct {
 	Flag      bool
 	ErrorCode uint16
+}
+
+const MsgId_ReqAppDataIdList uint16 = 1003
+
+type MsgReqAppDataIdList struct {
+}
+
+type MsgRetAppDataIdList struct {
+	ErrorCode     uint16
+	AppDataIdList []uint64
 }
