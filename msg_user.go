@@ -4,6 +4,7 @@ import (
 	. "github.com/gtechx/base/common"
 	"github.com/gtechx/chatserver/config"
 	"github.com/gtechx/chatserver/db"
+	uuid "github.com/satori/go.uuid"
 )
 
 func RegisterUserMsg() {
@@ -83,7 +84,7 @@ func HandlerEnterChat(sess ISession, buff []byte) (uint16, interface{}) {
 			tbl_online := &gtdb.Online{appdataid, config.ServerAddr, "available"}
 			err = dbmgr.SetUserOnline(tbl_online)
 			if err != nil {
-				errcode = errcode = ERR_DB
+				errcode = ERR_DB
 			}
 		}
 	}
@@ -108,7 +109,7 @@ func HandlerQuitChat(sess ISession, buff []byte) (uint16, interface{}) {
 		} else {
 			err = dbmgr.SetUserOffline(appdataid)
 			if err != nil {
-				errcode = errcode = ERR_DB
+				errcode = ERR_DB
 			}
 		}
 	}

@@ -81,7 +81,7 @@ type MsgRetEnterChat struct {
 	ErrorCode uint16
 }
 
-const MsgId_ReqEnterChat uint16 = 1002
+const MsgId_ReqQuitChat uint16 = 1002
 
 type MsgReqQuitChat struct {
 	AppdataId uint64

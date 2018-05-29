@@ -206,3 +206,10 @@ func packageMsg(msgtype uint8, id uint16, msgid uint16, data interface{}) []byte
 //client need to use one of the appdataid to enter chat.
 
 //before receive chat server chat msg, client need send ready msg to server.
+//账号登录的时候发送账号、密码,返回登录成功的token
+//登录聊天有两种情况
+//1.聊天APP应用，没有分区
+//2.游戏带分区聊天应用
+//登录聊天的时候需要发送账号、密码，返回appdataidlist
+//进入聊天发送appdataid, 服务器根据appdataid创建session
+//客户端发送可以接受消息命令，服务器设置玩家在线
