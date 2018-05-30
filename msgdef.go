@@ -65,39 +65,54 @@ type MsgReqLogin struct {
 }
 
 type MsgRetLogin struct {
-	Flag      bool
+	//Flag      bool
 	ErrorCode uint16
 	Token     []byte
 }
 
-const MsgId_ReqEnterChat uint16 = 1001
+const MsgId_ReqChatLogin uint16 = 1001
+
+type MsgReqChatLogin struct {
+	Account  string
+	Password string
+	AppName  string
+	ZoneName string
+}
+
+type MsgRetChatLogin struct {
+	ErrorCode     uint16
+	AppDataIdList []uint64
+}
+
+const MsgId_ReqEnterChat uint16 = 1002
 
 type MsgReqEnterChat struct {
 	AppdataId uint64
 }
 
 type MsgRetEnterChat struct {
-	Flag      bool
+	//Flag      bool
 	ErrorCode uint16
 }
 
-const MsgId_ReqQuitChat uint16 = 1002
+const MsgId_ReqQuitChat uint16 = 1003
 
 type MsgReqQuitChat struct {
 	AppdataId uint64
 }
 
 type MsgRetQuitChat struct {
-	Flag      bool
+	//Flag      bool
 	ErrorCode uint16
 }
 
-const MsgId_ReqAppDataIdList uint16 = 1003
+const MsgId_ReqCreateAppdata uint16 = 1004
 
-type MsgReqAppDataIdList struct {
+type MsgReqCreateAppdata struct {
+	NickName string
 }
 
-type MsgRetAppDataIdList struct {
-	ErrorCode     uint16
-	AppDataIdList []uint64
+type MsgRetCreateAppdata struct {
+	ErrorCode uint16
+	AppdataId uint64
 }

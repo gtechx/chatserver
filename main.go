@@ -106,84 +106,85 @@ func onNewConn(conn net.Conn) {
 	//EntityManager().CreateNullEntity(conn)
 	fmt.Println("new conn:", conn.RemoteAddr().String())
 	isok := false
-	time.AfterFunc(5*time.Second, func() {
+	defer conn.Close()
+	time.AfterFunc(15*time.Second, func() {
 		if !isok {
 			conn.Close()
 		}
 	})
 
-	typebuff := make([]byte, 1)
-	idbuff := make([]byte, 2)
-	sizebuff := make([]byte, 2)
-	msgidbuff := make([]byte, 2)
-
-	_, err := conn.Read(typebuff)
-	if err != nil {
-		fmt.Println(err.Error())
-		conn.Close()
-		return
-	}
-
-	fmt.Println("data type:", typebuff[0])
-
-	_, err = conn.Read(idbuff)
-	if err != nil {
-		fmt.Println(err.Error())
-		conn.Close()
-		return
-	}
-	id := Int(idbuff)
-
-	fmt.Println("id:", id)
-
-	_, err = conn.Read(sizebuff)
-	if err != nil {
-		fmt.Println(err.Error())
-		conn.Close()
-		return
-	}
-	size := Int(sizebuff)
-
-	fmt.Println("data size:", size)
-
-	_, err = conn.Read(msgidbuff)
-	if err != nil {
-		fmt.Println(err.Error())
-		conn.Close()
-		return
-	}
-	msgid := Uint16(msgidbuff)
-
-	fmt.Println("msgid:", msgid)
-
-	databuff := make([]byte, size)
-
-	_, err = conn.Read(databuff)
-	if err != nil {
-		fmt.Println(err.Error())
-		conn.Close()
-		return
-	}
-
-	// fmt.Println("recv data:", String(databuff), " from "+conn.RemoteAddr().String())
-
-	// if String(databuff) != "wyq" {
-	// 	conn.Close()
-	// 	return
-	// }
+	msgtype, id, size, msgid, databuff, err := readMsgHeader(conn)
 	isok = true
-	errorcode, ret := HandlerReqLogin(databuff)
-
-	senddata := packageMsg(RetFrame, id, MsgRetLogin, ret)
-	_, err = conn.Write(senddata)
-
+	fmt.Println(msgtype, id, size, msgid)
 	if err != nil {
-		conn.Close()
 		return
 	}
+	if msgid == MsgId_ReqLogin {
+		//account login
+		errorcode, ret := HandlerReqLogin(databuff)
 
-	if errorcode == ERR_NONE {
-		SessMgr().CreateSess(conn)
+		senddata := packageMsg(RetFrame, id, MsgId_ReqLogin, ret)
+		_, err = conn.Write(senddata)
+
+		if err != nil {
+			return
+		}
+	} else if msgid == MsgId_ReqChatLogin {
+		//chat login
+		buff := databuff
+		slen := int(buff[0])
+		account := String(buff[1 : 1+slen])
+		buff = buff[1+slen:]
+		slen = int(buff[0])
+		password := String(buff[1 : 1+slen])
+		buff = buff[1+slen:]
+		slen = int(buff[0])
+		appname := String(buff[1 : 1+slen])
+		buff = buff[1+slen:]
+		slen = int(buff[0])
+		zonename := String(buff[1 : 1+slen])
+
+		_, ret := HandlerReqChatLogin(account, password, appname, zonename)
+
+		senddata := packageMsg(RetFrame, id, MsgId_ReqChatLogin, ret)
+		_, err = conn.Write(senddata)
+
+		if err != nil {
+			return
+		}
+
+	waitenterchat:
+		msgtype, id, size, msgid, databuff, err = readMsgHeader(conn)
+		//errcode := processEnterChat(conn)
+		fmt.Println(msgtype, id, size, msgid)
+		if err == nil && msgid == MsgId_ReqEnterChat {
+			appdataid := Uint64(databuff)
+			errcode, ret := HandlerReqEnterChat(appdataid)
+			senddata := packageMsg(RetFrame, id, MsgId_ReqEnterChat, ret)
+			_, err = conn.Write(senddata)
+
+			if err != nil {
+				return
+			}
+
+			if errorcode == ERR_NONE {
+				sess := SessMgr().CreateSess(conn, appname, zonename, account, appdataid)
+				sess.start()
+			}
+		} else if err == nil && msgid == MsgId_ReqCreateAppdata {
+			nickname := String(databuff)
+
+			errcode, ret := HandlerReqCreateAppdata(appname, zonename, account, nickname, conn.RemoteAddr().String())
+			senddata := packageMsg(RetFrame, id, MsgId_ReqCreateAppdata, ret)
+			_, err = conn.Write(senddata)
+
+			if err != nil {
+				return
+			}
+			goto waitenterchat
+		} else if err == nil && msgtype == TickFrame {
+			goto waitenterchat
+		}
 	}
 }
 
@@ -198,6 +199,95 @@ func packageMsg(msgtype uint8, id uint16, msgid uint16, data interface{}) []byte
 
 	if datalen > 0 {
 		ret = append(ret, databuff...)
+	}
+}
+
+func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) {
+	typebuff := make([]byte, 1)
+	idbuff := make([]byte, 2)
+	sizebuff := make([]byte, 2)
+	msgidbuff := make([]byte, 2)
+	var id uint16
+	var size uint16
+	var msgid uint16
+	var databuff []byte
+
+	_, err := conn.Read(typebuff)
+	if err != nil {
+		fmt.Println(err.Error())
+		goto end
+	}
+
+	fmt.Println("data type:", typebuff[0])
+
+	_, err = conn.Read(idbuff)
+	if err != nil {
+		fmt.Println(err.Error())
+		goto end
+	}
+	id = Int(idbuff)
+
+	fmt.Println("id:", id)
+
+	_, err = conn.Read(sizebuff)
+	if err != nil {
+		fmt.Println(err.Error())
+		goto end
+	}
+	size = Int(sizebuff)
+
+	fmt.Println("data size:", size)
+
+	_, err = conn.Read(msgidbuff)
+	if err != nil {
+		fmt.Println(err.Error())
+		goto end
+	}
+	msgid = Uint16(msgidbuff)
+
+	fmt.Println("msgid:", msgid)
+
+	databuff = make([]byte, size)
+
+	_, err = conn.Read(databuff)
+	if err != nil {
+		fmt.Println(err.Error())
+		goto end
+	}
+end:
+	return typebuff[0], id, size, msgid, databuff, err
+}
+
+func processEnterChat(conn net.Conn) uint16 {
+	isok := false
+	time.AfterFunc(15*time.Second, func() {
+		if !isok {
+			conn.Close()
+		}
+	})
+
+	msgtype, id, size, msgid, err := readMsgHeader(conn)
+
+	if err != nil {
+		return ERR_UNKNOWN
+	}
+
+	isok = true
+
+	if msgid == MsgId_ReqEnterChat {
+		appdataid := Uint64(databuff)
+		errcode, ret := HandlerReqEnterChat(appdataid)
+		senddata := packageMsg(RetFrame, id, MsgRetLogin, ret)
+		_, err = conn.Write(senddata)
+
+		if err != nil {
+			conn.Close()
+			return ERR_UNKNOWN
+		}
+		return errcode
+	} else {
+		conn.Close()
+		return ERR_MSG_INVALID
 	}
 }
 

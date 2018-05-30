@@ -4,13 +4,13 @@ import (
 	. "github.com/gtechx/base/common"
 	"github.com/gtechx/chatserver/config"
 	"github.com/gtechx/chatserver/db"
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 )
 
-func RegisterUserMsg() {
-	//registerMsgHandler(MsgId_ReqLogin, HandlerReqLogin)
-	registerMsgHandler(MsgId_EnterChat, HandlerEnterChat)
-}
+// func RegisterUserMsg() {
+// 	//registerMsgHandler(MsgId_ReqLogin, HandlerReqLogin)
+// 	//registerMsgHandler(MsgId_EnterChat, HandlerEnterChat)
+// }
 
 func checkAccount(account, password string) uint16 {
 	dbmgr := gtdb.Manager()
