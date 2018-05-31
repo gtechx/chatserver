@@ -222,6 +222,10 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 
 	fmt.Println("data type:", typebuff[0])
 
+	if typebuff[0] == TickFrame {
+		goto end
+	}
+
 	_, err = conn.Read(idbuff)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -248,6 +252,10 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 	msgid = Uint16(msgidbuff)
 
 	fmt.Println("msgid:", msgid)
+
+	if size == 0 {
+		goto end
+	}
 
 	databuff = make([]byte, size)
 
