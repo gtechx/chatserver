@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/gtechx/chatserver/data"
+	"github.com/gtechx/chatserver/db"
 )
 
 func serverMonitorInit() {
@@ -15,6 +15,6 @@ func startServerMonitor() {
 
 	select {
 	case <-timer.C:
-		gtdata.Manager().CheckServerTTL()
+		gtdb.Manager().CheckServerTTL()
 	}
 }

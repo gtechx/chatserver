@@ -48,7 +48,7 @@ func HandlerReqLogin(buff []byte) (uint16, interface{}) {
 	password := String(buff[1 : 1+slen])
 
 	var tokenbytes []byte
-	dbmgr := gtdb.Manager()
+	//dbmgr := gtdb.Manager()
 	errcode := checkAccount(account, password)
 
 	if errcode == ERR_NONE {
@@ -81,7 +81,7 @@ func HandlerReqChatLogin(account, password, appname, zonename string) (uint16, i
 
 func HandlerReqCreateAppdata(appname, zonename, account, nickname, regip string) (uint16, interface{}) {
 	tbl_appdata := &gtdb.AppData{Appname: appname, Zonename: zonename, Account: account, Nickname: nickname, Regip: regip}
-	err := dbManager.CreateAppData(tbl_appdata)
+	err := gtdb.Manager().CreateAppData(tbl_appdata)
 	errcode := ERR_NONE
 
 	if err != nil {
@@ -115,7 +115,7 @@ func HandlerReqEnterChat(appdataid uint64) (uint16, interface{}) {
 		if !ok {
 			errcode = ERR_APPDATAID_NOT_EXISTS
 		} else {
-			tbl_online := &gtdb.Online{appdataid, config.ServerAddr, "available"}
+			tbl_online := &gtdb.Online{Dataid: appdataid, Serveraddr: config.ServerAddr, State: "available"}
 			err = dbmgr.SetUserOnline(tbl_online)
 			if err != nil {
 				errcode = ERR_DB
@@ -123,7 +123,7 @@ func HandlerReqEnterChat(appdataid uint64) (uint16, interface{}) {
 		}
 	}
 
-	ret := &MsgRetEnterChat{errcode == ERR_NONE, errcode}
+	ret := &MsgRetEnterChat{errcode}
 	return errcode, ret
 }
 
@@ -147,7 +147,7 @@ func HandlerReqQuitChat(sess ISession, buff []byte) (uint16, interface{}) {
 		}
 	}
 
-	ret := &MsgRetQuitChat{errcode == ERR_NONE, errcode}
+	ret := &MsgRetQuitChat{errcode}
 	//sess.Send(ret)
 	return errcode, ret
 }

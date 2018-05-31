@@ -37,11 +37,11 @@ func registerMsgHandler(msgid uint16, handler func(ISession, []byte) (uint16, in
 	msgHandler[msgid] = handler
 }
 
-func HandleMsg(msgid uint16, ISession, buff []byte) (uint16, interface{}) {
+func HandleMsg(msgid uint16, sess ISession, buff []byte) (uint16, interface{}) {
 	handler, ok := msgHandler[msgid]
 
 	if ok {
-		return handler(buff)
+		return handler(sess, buff)
 	}
 	return ERR_MSG_INVALID, nil
 	//return nil, errors.New("msgid handler not exists")

@@ -5,7 +5,7 @@ import (
 	//"github.com/gtechx/base/gtnet"
 	"time"
 
-	"github.com/gtechx/chatserver/data"
+	"github.com/gtechx/chatserver/db"
 )
 
 func keepLiveInit() {
@@ -17,6 +17,6 @@ func startServerTTLKeep() {
 
 	select {
 	case <-timer.C:
-		gtdata.Manager().SetServerTTL(serverAddr, 60)
+		gtdb.Manager().SetServerTTL(serverAddr, 60)
 	}
 }

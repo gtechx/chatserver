@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/gtechx/chatserver/data"
+	"github.com/gtechx/chatserver/db"
 	//"github.com/gtechx/base/gtnet"
 )
 
@@ -11,7 +11,7 @@ func messagePullInit() {
 
 func startMessagePull() {
 	for {
-		data, err := gtdata.Manager().PullOnlineMessage(serverAddr, 15)
+		data, err := gtdb.Manager().PullOnlineMessage(serverAddr, 15)
 
 		if err != nil {
 			continue

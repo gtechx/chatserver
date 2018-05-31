@@ -19,7 +19,7 @@ func SessMgr() *SessManager {
 }
 
 func (sm *SessManager) CreateSess(conn net.Conn, appname, zonename, account string, id uint64) ISession {
-	sess := &Sess{account, appname, zonename, id, conn}
+	sess := &Sess{account: account, appname: appname, zonename: zonename, id: id, conn: conn}
 	sm.sessMap.Store(id, sess)
 	return sess
 }

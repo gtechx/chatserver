@@ -10,7 +10,7 @@ type ISession interface {
 	Account() string
 	AppName() string
 	ZoneName() string
-	Send(interface{})
+	Send(buff []byte)
 	Start()
 	Stop()
 }
@@ -46,7 +46,7 @@ func (s *Sess) Start() {
 	s.quitChan = make(chan int, 1)
 	s.sendChan = make(chan []byte, 2)
 	go s.startRecv()
-	startSend()
+	s.startSend()
 }
 
 func (s *Sess) Stop() {
@@ -59,13 +59,14 @@ func (s *Sess) Send(buff []byte) {
 
 func (s *Sess) startRecv() {
 	for {
-		msgtype, id, size, msgid, databuff, err := readMsgHeader(s.conn)
+		msgtype, id, _, msgid, databuff, err := readMsgHeader(s.conn)
 		if err != nil {
 			fmt.Println("readMsgHeader error:" + err.Error())
 			break
 		}
 		switch msgtype {
 		case TickFrame:
+			s.sendChan <- []byte{TickFrame}
 		case EchoFrame:
 			senddata := packageMsg(EchoFrame, id, msgid, databuff)
 			s.sendChan <- senddata
@@ -83,10 +84,10 @@ func (s *Sess) startRecv() {
 func (s *Sess) startSend() {
 	for {
 		select {
-		case <-quitChan:
-			count := len(sendChan)
+		case <-s.quitChan:
+			count := len(s.sendChan)
 			for i := 0; i < count; i++ {
-				databuff := <-sendChan
+				databuff := <-s.sendChan
 				_, err := s.conn.Write(databuff)
 				if err != nil {
 					fmt.Println("err Send:" + err.Error())
@@ -94,7 +95,7 @@ func (s *Sess) startSend() {
 				}
 			}
 			break
-		case databuff := <-sendChan:
+		case databuff := <-s.sendChan:
 			_, err := s.conn.Write(databuff)
 			if err != nil {
 				fmt.Println("err Send:" + err.Error())

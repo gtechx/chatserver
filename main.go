@@ -7,12 +7,13 @@ import (
 	"os"
 	"os/signal"
 	"time"
-	//. "github.com/gtechx/Chat/common"
+
+	. "github.com/gtechx/base/common"
 	//"github.com/gtechx/base/gtnet"
 
 	"github.com/gtechx/base/gtnet"
 	"github.com/gtechx/chatserver/config"
-	"github.com/gtechx/chatserver/data"
+	"github.com/gtechx/chatserver/db"
 )
 
 var quit chan os.Signal
@@ -48,35 +49,35 @@ func main() {
 	// redisNet = *predisnet
 	// redisAddr = *predisaddr
 
-	err := gtdata.Manager().Initialize(config.RedisAddr, config.RedisPassword, config.DefaultDB, config.StartUID, config.StartAPPID)
-
+	defer gtdb.Manager().UnInitialize()
+	err := gtdb.Manager().InitializeRedis(config.RedisAddr, config.RedisPassword, config.RedisDefaultDB)
 	if err != nil {
-		fmt.Println("Initialize gtdata.Manager err:", err)
+		println("InitializeRedis err:", err.Error())
 		return
 	}
 
-	EntityManager().Initialize()
+	err = gtdb.Manager().InitializeMysql(config.MysqlAddr, config.MysqlUserPassword, config.MysqlDefaultDB, config.MysqlTablePrefix)
+	if err != nil {
+		println("InitializeMysql err:", err.Error())
+		return
+	}
+
+	//EntityManager().Initialize()
 
 	//register server
-	err = gtdata.Manager().RegisterServer(config.ServerAddr)
+	err = gtdb.Manager().RegisterServer(config.ServerAddr)
 
 	if err != nil {
 		fmt.Println("register server to gtdata.Manager err:", err)
 		return
 	}
+	defer gtdb.Manager().UnRegisterServer(config.ServerAddr)
 
 	//init loadbalance
 	loadBanlanceInit()
 
-	//init chat server
-	// ok = chatServerStart(nettype, serverAddr)
-
-	// if !ok {
-	// 	fmt.Println("chat server init failed!!!")
-	// 	return
-	// }
-	server := gtnet.NewServer(config.ServerNet, config.ServerAddr, onNewConn)
-	err = server.Start()
+	server := gtnet.NewServer()
+	err = server.Start(config.ServerNet, config.ServerAddr, onNewConn)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -92,14 +93,14 @@ func main() {
 	//msg from other server monitor
 	messagePullInit()
 
-	fmt.Println("server start ok...")
+	fmt.Println(config.ServerNet + " server start on addr " + config.ServerAddr + " ok...")
 
 	<-quit
 
 	//chatServerStop()
-	gtdata.Manager().UnRegisterServer(config.ServerAddr)
-	gtdata.Manager().UnInitialize()
-	EntityManager().CleanOnlineUsers()
+	//gtdb.Manager().UnRegisterServer(config.ServerAddr)
+	//gtdata.Manager().UnInitialize()
+	//EntityManager().CleanOnlineUsers()
 }
 
 func onNewConn(conn net.Conn) {
@@ -121,7 +122,7 @@ func onNewConn(conn net.Conn) {
 	}
 	if msgid == MsgId_ReqLogin {
 		//account login
-		errorcode, ret := HandlerReqLogin(databuff)
+		_, ret := HandlerReqLogin(databuff)
 
 		senddata := packageMsg(RetFrame, id, MsgId_ReqLogin, ret)
 		_, err = conn.Write(senddata)
@@ -167,14 +168,14 @@ func onNewConn(conn net.Conn) {
 				return
 			}
 
-			if errorcode == ERR_NONE {
+			if errcode == ERR_NONE {
 				sess := SessMgr().CreateSess(conn, appname, zonename, account, appdataid)
-				sess.start()
+				sess.Start()
 			}
 		} else if err == nil && msgid == MsgId_ReqCreateAppdata {
 			nickname := String(databuff)
 
-			errcode, ret := HandlerReqCreateAppdata(appname, zonename, account, nickname, conn.RemoteAddr().String())
+			_, ret := HandlerReqCreateAppdata(appname, zonename, account, nickname, conn.RemoteAddr().String())
 			senddata := packageMsg(RetFrame, id, MsgId_ReqCreateAppdata, ret)
 			_, err = conn.Write(senddata)
 
@@ -200,6 +201,7 @@ func packageMsg(msgtype uint8, id uint16, msgid uint16, data interface{}) []byte
 	if datalen > 0 {
 		ret = append(ret, databuff...)
 	}
+	return ret
 }
 
 func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) {
@@ -225,7 +227,7 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 		fmt.Println(err.Error())
 		goto end
 	}
-	id = Int(idbuff)
+	id = Uint16(idbuff)
 
 	fmt.Println("id:", id)
 
@@ -234,7 +236,7 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 		fmt.Println(err.Error())
 		goto end
 	}
-	size = Int(sizebuff)
+	size = Uint16(sizebuff)
 
 	fmt.Println("data size:", size)
 
@@ -258,38 +260,38 @@ end:
 	return typebuff[0], id, size, msgid, databuff, err
 }
 
-func processEnterChat(conn net.Conn) uint16 {
-	isok := false
-	time.AfterFunc(15*time.Second, func() {
-		if !isok {
-			conn.Close()
-		}
-	})
+// func processEnterChat(conn net.Conn) uint16 {
+// 	isok := false
+// 	time.AfterFunc(15*time.Second, func() {
+// 		if !isok {
+// 			conn.Close()
+// 		}
+// 	})
 
-	msgtype, id, size, msgid, err := readMsgHeader(conn)
+// 	msgtype, id, size, msgid, databuff, err := readMsgHeader(conn)
 
-	if err != nil {
-		return ERR_UNKNOWN
-	}
+// 	if err != nil {
+// 		return ERR_UNKNOWN
+// 	}
 
-	isok = true
+// 	isok = true
 
-	if msgid == MsgId_ReqEnterChat {
-		appdataid := Uint64(databuff)
-		errcode, ret := HandlerReqEnterChat(appdataid)
-		senddata := packageMsg(RetFrame, id, MsgRetLogin, ret)
-		_, err = conn.Write(senddata)
+// 	if msgid == MsgId_ReqEnterChat {
+// 		appdataid := Uint64(databuff)
+// 		errcode, ret := HandlerReqEnterChat(appdataid)
+// 		senddata := packageMsg(RetFrame, id, MsgId_ReqEnterChat, ret)
+// 		_, err = conn.Write(senddata)
 
-		if err != nil {
-			conn.Close()
-			return ERR_UNKNOWN
-		}
-		return errcode
-	} else {
-		conn.Close()
-		return ERR_MSG_INVALID
-	}
-}
+// 		if err != nil {
+// 			conn.Close()
+// 			return ERR_UNKNOWN
+// 		}
+// 		return errcode
+// 	} else {
+// 		conn.Close()
+// 		return ERR_MSG_INVALID
+// 	}
+// }
 
 //first, login with account,appname and zonename
 //server will return all appdataid in the zone of app
