@@ -118,6 +118,7 @@ func onNewConn(conn net.Conn) {
 	isok = true
 	fmt.Println(msgtype, id, size, msgid)
 	if err != nil {
+		fmt.Println(err.Error())
 		return
 	}
 	if msgid == MsgId_ReqLogin {
@@ -131,6 +132,7 @@ func onNewConn(conn net.Conn) {
 			return
 		}
 	} else if msgid == MsgId_ReqChatLogin {
+		fmt.Println(len(databuff))
 		//chat login
 		buff := databuff
 		slen := int(buff[0])
@@ -145,6 +147,7 @@ func onNewConn(conn net.Conn) {
 		slen = int(buff[0])
 		zonename := String(buff[1 : 1+slen])
 
+		fmt.Println(account, password, appname, zonename)
 		_, ret := HandlerReqChatLogin(account, password, appname, zonename)
 
 		senddata := packageMsg(RetFrame, id, MsgId_ReqChatLogin, ret)
@@ -160,6 +163,7 @@ func onNewConn(conn net.Conn) {
 		fmt.Println(msgtype, id, size, msgid)
 		if err == nil && msgid == MsgId_ReqEnterChat {
 			appdataid := Uint64(databuff)
+			defer HandlerReqQuitChat(appdataid)
 			errcode, ret := HandlerReqEnterChat(appdataid)
 			senddata := packageMsg(RetFrame, id, MsgId_ReqEnterChat, ret)
 			_, err = conn.Write(senddata)
@@ -169,6 +173,7 @@ func onNewConn(conn net.Conn) {
 			}
 
 			if errcode == ERR_NONE {
+				fmt.Println("sess start:", appdataid)
 				sess := SessMgr().CreateSess(conn, appname, zonename, account, appdataid)
 				sess.Start()
 			}
@@ -187,6 +192,7 @@ func onNewConn(conn net.Conn) {
 			goto waitenterchat
 		}
 	}
+	fmt.Println("conn end")
 }
 
 func packageMsg(msgtype uint8, id uint16, msgid uint16, data interface{}) []byte {

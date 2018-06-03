@@ -79,22 +79,24 @@ func (s *Sess) startRecv() {
 		}
 	}
 	s.quitChan <- 1
+	fmt.Println("sess recv end")
 }
 
 func (s *Sess) startSend() {
 	for {
 		select {
 		case <-s.quitChan:
+			fmt.Println("sess start quit...")
 			count := len(s.sendChan)
 			for i := 0; i < count; i++ {
 				databuff := <-s.sendChan
 				_, err := s.conn.Write(databuff)
 				if err != nil {
 					fmt.Println("err Send:" + err.Error())
-					break
+					goto end
 				}
 			}
-			break
+			goto end
 		case databuff := <-s.sendChan:
 			_, err := s.conn.Write(databuff)
 			if err != nil {
@@ -104,10 +106,11 @@ func (s *Sess) startSend() {
 				// 	//time.Sleep(tempDelay)
 				// 	continue
 				// }
-				break
+				goto end
 			}
 		}
 	}
+end:
 	fmt.Println("remove session from sessmgr..")
 	SessMgr().DelSess(s.id)
 }

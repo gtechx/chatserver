@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	. "github.com/gtechx/base/common"
 	"github.com/gtechx/chatserver/config"
 	"github.com/gtechx/chatserver/db"
@@ -61,6 +63,7 @@ func HandlerReqLogin(buff []byte) (uint16, interface{}) {
 		}
 	}
 
+	fmt.Println("tokenbytes len:", len(tokenbytes))
 	ret := &MsgRetLogin{errcode, tokenbytes}
 	return errcode, ret
 	//sess.Send(ret)
@@ -76,19 +79,32 @@ func HandlerReqChatLogin(account, password, appname, zonename string) (uint16, i
 		ret := &MsgRetChatLogin{errcode, idlist}
 		return errcode, ret
 	}
-	return errcode, nil
+	ret := &MsgRetChatLogin{ErrorCode: errcode}
+	return errcode, ret
 }
 
 func HandlerReqCreateAppdata(appname, zonename, account, nickname, regip string) (uint16, interface{}) {
-	tbl_appdata := &gtdb.AppData{Appname: appname, Zonename: zonename, Account: account, Nickname: nickname, Regip: regip}
-	err := gtdb.Manager().CreateAppData(tbl_appdata)
+	dbMgr := gtdb.Manager()
 	errcode := ERR_NONE
+	id := uint64(0)
 
+	flag, err := dbMgr.IsNicknameExists(appname, zonename, account, nickname)
 	if err != nil {
 		errcode = ERR_DB
+	} else if flag {
+		errcode = ERR_NICKNAME_EXISTS
+	} else {
+		tbl_appdata := &gtdb.AppData{Appname: appname, Zonename: zonename, Account: account, Nickname: nickname, Regip: regip}
+		err = dbMgr.CreateAppData(tbl_appdata)
+
+		if err != nil {
+			errcode = ERR_DB
+		} else {
+			id = tbl_appdata.ID
+		}
 	}
 
-	ret := &MsgRetCreateAppdata{errcode, tbl_appdata.ID}
+	ret := &MsgRetCreateAppdata{errcode, id}
 	return errcode, ret
 }
 
@@ -127,8 +143,7 @@ func HandlerReqEnterChat(appdataid uint64) (uint16, interface{}) {
 	return errcode, ret
 }
 
-func HandlerReqQuitChat(sess ISession, buff []byte) (uint16, interface{}) {
-	appdataid := Uint64(buff)
+func HandlerReqQuitChat(appdataid uint64) (uint16, interface{}) {
 	dbmgr := gtdb.Manager()
 	errcode := ERR_NONE
 
