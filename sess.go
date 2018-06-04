@@ -71,13 +71,18 @@ func (s *Sess) startRecv() {
 			senddata := packageMsg(EchoFrame, id, msgid, databuff)
 			s.sendChan <- senddata
 		default:
-			errcode, ret := HandleMsg(msgid, s, databuff)
-			if errcode != ERR_MSG_INVALID {
-				senddata := packageMsg(RetFrame, id, msgid, ret)
-				s.sendChan <- senddata
+			if msgid != MsgId_ReqQuitChat {
+				errcode, ret := HandleMsg(msgid, s, databuff)
+				if errcode != ERR_MSG_INVALID {
+					senddata := packageMsg(RetFrame, id, msgid, ret)
+					s.sendChan <- senddata
+				}
+			} else {
+				goto end
 			}
 		}
 	}
+end:
 	s.quitChan <- 1
 	fmt.Println("sess recv end")
 }

@@ -98,7 +98,6 @@ type MsgRetEnterChat struct {
 const MsgId_ReqQuitChat uint16 = 1003
 
 type MsgReqQuitChat struct {
-	AppdataId uint64
 }
 
 type MsgRetQuitChat struct {
