@@ -115,3 +115,164 @@ type MsgRetCreateAppdata struct {
 	ErrorCode uint16
 	AppdataId uint64
 }
+
+const MsgId_ReqUserData uint16 = 1005
+
+type MsgReqUserData struct {
+	AppdataId uint64
+}
+
+type MsgRetUserData struct {
+	ErrorCode uint16
+	Json      []byte
+}
+
+const MsgId_ReqFriendList uint16 = 1006
+
+type MsgReqFriendList struct {
+}
+
+type MsgRetFriendList struct {
+	ErrorCode uint16
+	Json      []byte
+}
+
+// const MsgId_ReqUserSubscribe uint16 = 1007
+
+// type MsgReqUserSubscribe struct {
+// }
+
+// type MsgRetUserSubscribe struct {
+// 	ErrorCode uint16
+// 	Json      []byte
+// }
+
+const MsgId_Presence uint16 = 1007
+
+type MsgPresence struct {
+	PresenceType uint8
+	Who          uint64
+	Message      []byte
+}
+
+type MsgPresenceReceipt struct {
+	ErrorCode uint16
+}
+
+const MsgId_Message uint16 = 1008
+
+type MsgMessage struct {
+	//MessageType uint8 //chat, friends, multi
+	Who     uint64 //使用who，表示客户端填充的接收者，服务器转发时会修改为发送者
+	Message []byte
+}
+
+type MsgMessageReceipt struct {
+	ErrorCode uint16
+}
+
+//其它类型的单人消息，服务器收到以后，转发其它人时，都是使用1008的消息格式，但是消息id使用自己的。
+const MsgId_AllFriendsMessage uint16 = 1009
+
+type MsgMsgId_AllFriendsMessage struct {
+	Message []byte
+}
+
+const MsgId_GroupMessage uint16 = 1010
+
+type MsgMsgId_GroupMessage struct {
+	Count     uint8
+	GroupName []byte
+	Message   []byte
+}
+
+const MsgId_MultiUsersMessage uint16 = 1011
+
+type MsgMsgId_MultiUsersMessage struct {
+	Count   uint8
+	To      []uint64
+	Message []byte
+}
+
+const MsgId_RoomMessage uint16 = 1012
+
+type MsgRoomMessage struct {
+	Room    uint64
+	From    uint64
+	Message []byte
+}
+
+const MsgId_RoomUserMessage uint16 = 1013
+
+type MsgRoomUserMessage struct {
+	Room    uint64
+	Who     uint64
+	Message []byte
+}
+
+const MsgId_ReqDataList uint16 = 1014
+
+type MsgReqDataList struct {
+	DataType uint8 //friend, presence,room, black, message, roommessage
+}
+
+type MsgRetDataList struct {
+	ErrorCode uint16
+	Json      []byte
+}
+
+//create/delete user group
+const MsgId_ReqGroupCreate uint16 = 1015
+
+type MsgReqGroupCreate struct {
+	GroupName []byte
+}
+
+type MsgRetGroupCreate struct {
+	ErrorCode uint16
+}
+
+const MsgId_ReqGroupDelete uint16 = 1016
+
+type MsgReqGroupDelete struct {
+	GroupName []byte
+}
+
+type MsgRetGroupDelete struct {
+	ErrorCode uint16
+}
+
+//add/remove black user
+const MsgId_ReqAddBlack uint16 = 1017
+
+type MsgReqAddBlack struct {
+	AppdataId uint64
+}
+
+type MsgRetAddBlack struct {
+	ErrorCode uint16
+}
+
+const MsgId_ReqRemoveBlack uint16 = 1018
+
+type MsgReqRemoveBlack struct {
+	AppdataId uint64
+}
+
+type MsgRetRemoveBlack struct {
+	ErrorCode uint16
+}
+
+//modify user setting
+//search user/room
+//history message ?
+
+//modify room setting
+//create/delete room
+//join/quit room
+//create/delete room group
+//ban/unban room user
+//add/remove room role
+//invite
+
+//define RPC
