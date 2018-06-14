@@ -35,6 +35,17 @@ const (
 	DataType_RoomMessage
 )
 
+available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
+const (
+	PresenceType_Subscribe uint8 = iota
+	PresenceType_Subscribed
+	PresenceType_Unsubscribe
+	PresenceType_Unsubscribed
+	PresenceType_Available
+	PresenceType_Unavailable
+	PresenceType_Invisible
+)
+
 var msgHandler = map[uint16]func(ISession, []byte) (uint16, interface{}){}
 
 func registerMsgHandler(msgid uint16, handler func(ISession, []byte) (uint16, interface{})) {
@@ -160,9 +171,10 @@ type MsgRetFriendList struct {
 const MsgId_Presence uint16 = 1007
 
 type MsgPresence struct {
-	PresenceType uint8 //available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
-	Who          uint64
-	Message      string
+	PresenceType uint8 `json:"presencetype"`//available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
+	Who          uint64 `json:"who"`
+	TimeStamp	int64 `json:"timestamp"`
+	Message      string `json:"message"`
 }
 
 type MsgPresenceReceipt struct {
@@ -174,6 +186,7 @@ const MsgId_Message uint16 = 1008
 type MsgMessage struct {
 	//MessageType uint8 //chat, friends, multi
 	Who     uint64 //使用who，表示客户端填充的接收者，服务器转发时会修改为发送者
+	TimeStamp	int64
 	Message string
 }
 
