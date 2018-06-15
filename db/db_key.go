@@ -419,9 +419,9 @@ type Black struct {
 }
 
 type Group struct {
-	Groupname   string `redis:"groupname" json:"groupname"`
-	Dataid      uint64 `redis:"dataid" json:"dataid"`
-	Otherdataid uint64 `redis:"otherdataid" json:"otherdataid"`
+	Groupname string `redis:"groupname" json:"groupname"`
+	Dataid    uint64 `redis:"dataid" json:"dataid"`
+	//Otherdataid uint64 `redis:"otherdataid" json:"otherdataid"`
 	// Account  string `redis:"account" json:"account"`
 	// Appname  string `redis:"appname" json:"appname"`
 	// Zonename string `redis:"zonename" json:"zonename"`

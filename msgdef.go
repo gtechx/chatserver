@@ -29,13 +29,14 @@ const (
 const (
 	DataType_Friend uint8 = iota
 	DataType_Presence
+	DataType_Group
 	DataType_Room
 	DataType_Black
 	DataType_Message
 	DataType_RoomMessage
 )
 
-available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
+//available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
 const (
 	PresenceType_Subscribe uint8 = iota
 	PresenceType_Subscribed
@@ -129,7 +130,7 @@ type MsgRetQuitChat struct {
 const MsgId_ReqCreateAppdata uint16 = 1004
 
 type MsgReqCreateAppdata struct {
-	NickName string
+	NickName []byte
 }
 
 type MsgRetCreateAppdata struct {
@@ -145,7 +146,7 @@ type MsgReqUserData struct {
 
 type MsgRetUserData struct {
 	ErrorCode uint16
-	Json      string
+	Json      []byte
 }
 
 const MsgId_ReqFriendList uint16 = 1006
@@ -155,7 +156,7 @@ type MsgReqFriendList struct {
 
 type MsgRetFriendList struct {
 	ErrorCode uint16
-	Json      string
+	Json      []byte
 }
 
 // const MsgId_ReqUserSubscribe uint16 = 1007
@@ -171,10 +172,10 @@ type MsgRetFriendList struct {
 const MsgId_Presence uint16 = 1007
 
 type MsgPresence struct {
-	PresenceType uint8 `json:"presencetype"`//available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
+	PresenceType uint8  `json:"presencetype"` //available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
 	Who          uint64 `json:"who"`
-	TimeStamp	int64 `json:"timestamp"`
-	Message      string `json:"message"`
+	TimeStamp    int64  `json:"timestamp"`
+	Message      []byte `json:"message"`
 }
 
 type MsgPresenceReceipt struct {
@@ -185,9 +186,9 @@ const MsgId_Message uint16 = 1008
 
 type MsgMessage struct {
 	//MessageType uint8 //chat, friends, multi
-	Who     uint64 //使用who，表示客户端填充的接收者，服务器转发时会修改为发送者
-	TimeStamp	int64
-	Message string
+	Who       uint64 //使用who，表示客户端填充的接收者，服务器转发时会修改为发送者
+	TimeStamp int64
+	Message   []byte
 }
 
 type MsgMessageReceipt struct {
@@ -198,7 +199,7 @@ type MsgMessageReceipt struct {
 const MsgId_AllFriendsMessage uint16 = 1009
 
 type MsgMsgId_AllFriendsMessage struct {
-	Message string
+	Message []byte
 }
 
 const MsgId_GroupMessage uint16 = 1010
@@ -206,7 +207,7 @@ const MsgId_GroupMessage uint16 = 1010
 type MsgMsgId_GroupMessage struct {
 	Count     uint8
 	GroupName []byte
-	Message   string
+	Message   []byte
 }
 
 const MsgId_MultiUsersMessage uint16 = 1011
@@ -214,7 +215,7 @@ const MsgId_MultiUsersMessage uint16 = 1011
 type MsgMsgId_MultiUsersMessage struct {
 	Count   uint8
 	To      []uint64
-	Message string
+	Message []byte
 }
 
 const MsgId_RoomMessage uint16 = 1012
@@ -222,7 +223,7 @@ const MsgId_RoomMessage uint16 = 1012
 type MsgRoomMessage struct {
 	Room    uint64
 	From    uint64
-	Message string
+	Message []byte
 }
 
 const MsgId_RoomUserMessage uint16 = 1013
@@ -230,7 +231,7 @@ const MsgId_RoomUserMessage uint16 = 1013
 type MsgRoomUserMessage struct {
 	Room    uint64
 	Who     uint64
-	Message string
+	Message []byte
 }
 
 const MsgId_ReqDataList uint16 = 1014
@@ -241,14 +242,14 @@ type MsgReqDataList struct {
 
 type MsgRetDataList struct {
 	ErrorCode uint16
-	Json      string
+	Json      []byte
 }
 
 //create/delete user group
 const MsgId_ReqGroupCreate uint16 = 1015
 
 type MsgReqGroupCreate struct {
-	GroupName string
+	GroupName []byte
 }
 
 type MsgRetGroupCreate struct {
@@ -258,7 +259,7 @@ type MsgRetGroupCreate struct {
 const MsgId_ReqGroupDelete uint16 = 1016
 
 type MsgReqGroupDelete struct {
-	GroupName string
+	GroupName []byte
 }
 
 type MsgRetGroupDelete struct {
@@ -291,7 +292,7 @@ const MsgId_ReqAddGroupItem uint16 = 1019
 
 type MsgReqAddGroupItem struct {
 	AppdataId uint64
-	GroupName string
+	GroupName []byte
 }
 
 type MsgRetAddGroupItem struct {
@@ -302,7 +303,7 @@ type MsgRetAddGroupItem struct {
 const MsgId_ReqUpdateAppdata uint16 = 1020
 
 type MsgReqUpdateAppdata struct {
-	Json string
+	Json []byte
 }
 
 type MsgRetUpdateAppdata struct {
@@ -314,12 +315,12 @@ const MsgId_ReqSearch uint16 = 1021
 
 type MsgReqSearch struct {
 	SearchType uint8
-	Json       string
+	Json       []byte
 }
 
 type MsgRetSearch struct {
 	ErrorCode uint16
-	Json      string
+	Json      []byte
 }
 
 //history message ?

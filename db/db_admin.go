@@ -108,7 +108,7 @@ func (db *DBManager) GetAdminCount(args ...*AdminFilter) (uint64, error) {
 
 func (db *DBManager) GetAdminList(offset, count int, args ...*AdminFilter) ([]*Admin, error) {
 	adminlist := []*Admin{}
-	retdb := db.sql.Offset(offset).Limit(count).Where("account != ?", "admin")
+	retdb := db.sql.Model(admin_table).Offset(offset).Limit(count).Where("account != ?", "admin")
 	if len(args) > 0 {
 		filter := args[0]
 		if filter != nil {

@@ -11,34 +11,79 @@ var friend_tablelist = []*Friend{}
 var group_table = &Group{}
 var group_tablelist = []*Group{}
 
-func (db *DBManager) AddFriendRequest(id, otherid uint64, group string) error {
-	conn := db.rd.Get()
-	defer conn.Close()
-	_, err := conn.Do("HSET", keyJoin("hset:app:data:friend:request", id), otherid, group)
-	return err
-}
+// func (db *DBManager) AddFriendRequest(id, otherid uint64, group string) error {
+// 	conn := db.rd.Get()
+// 	defer conn.Close()
+// 	_, err := conn.Do("HSET", keyJoin("hset:app:data:friend:request", id), otherid, group)
+// 	return err
+// }
 
-func (db *DBManager) RemoveFriendRequest(id, otherid uint64) error {
-	conn := db.rd.Get()
-	defer conn.Close()
-	_, err := conn.Do("HDEL", keyJoin("hset:app:data:friend:request", id), otherid)
-	return err
-}
+// func (db *DBManager) RemoveFriendRequest(id, otherid uint64) error {
+// 	conn := db.rd.Get()
+// 	defer conn.Close()
+// 	_, err := conn.Do("HDEL", keyJoin("hset:app:data:friend:request", id), otherid)
+// 	return err
+// }
 
-func (db *DBManager) AddFriend(tbl_friend *Friend) error {
-	retdb := db.sql.Create(tbl_friend)
-	return retdb.Error
+func (db *DBManager) AddFriend(tbl_from, tbl_to *Friend) error {
+	// retdb := db.sql.Create(tbl_friend)
+	// return retdb.Error
+	tx := db.sql.Begin()
+	if err := tx.Create(tbl_from).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Create(tbl_to).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+	return nil
 }
 
 func (db *DBManager) RemoveFriend(id, otherid uint64) error {
-	retdb := db.sql.Delete(friend_table, "dataid = ? AND otherdataid = ?", id, otherid)
-	return retdb.Error
+	tx := db.sql.Begin()
+	if err := tx.Delete(friend_table, "dataid = ? AND otherdataid = ?", id, otherid).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Delete(friend_table, "dataid = ? AND otherdataid = ?", otherid, id).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+	return nil
 }
 
 func (db *DBManager) GetFriend(id, otherid uint64) (*Friend, error) {
 	friend := &Friend{}
 	retdb := db.sql.Where("dataid = ? AND otherdataid = ?", id, otherid).First(friend)
 	return friend, retdb.Error
+}
+
+func (db *DBManager) GetOnlineFriendInfoList(id uint64) ([]*Online, error) {
+	onlinelist := []*Online{}
+	retdb := db.sql.Model(online_table).Joins("left join friends on friends.dataid = ? AND friends.otherdataid = onlines.dataid", id)
+	retdb = retdb.Find(&onlinelist)
+	return onlinelist, retdb.Error
+}
+
+func (db *DBManager) GetOnlineFriendIdList(id uint64) ([]uint64, error) {
+	var friendidlist []uint64
+	retdb := db.sql.Table("friends").Select("friends.otherdataid").Joins("left join onlines on friends.dataid = ? AND friends.otherdataid = onlines.dataid", id).Scan(&friendidlist)
+	return friendidlist, retdb.Error
+}
+
+func (db *DBManager) GetOfflineFriendIdList(id uint64) ([]uint64, error) {
+	var friendidlist []uint64
+	retdb := db.sql.Table("friends").Select("friends.otherdataid").Joins("left join onlines on friends.dataid = ? AND friends.otherdataid != onlines.dataid", id).Scan(&friendidlist)
+	return friendidlist, retdb.Error
+}
+
+func (db *DBManager) GetFriendIdList(id uint64) ([]uint64, error) {
+	var friendidlist []uint64
+	retdb := db.sql.Table("friends").Select("friends.otherdataid").Where("friends.dataid = ?", id).Scan(&friendidlist)
+	return friendidlist, retdb.Error
 }
 
 func (db *DBManager) GetFriendList(id uint64, offset, count int) ([]*Friend, error) {

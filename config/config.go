@@ -14,3 +14,5 @@ var MysqlTablePrefix string = "gtchat"
 
 var StartUID uint64 = 1000
 var StartAPPID uint64 = 0
+
+var DefaultGroupName = "MyFriends"

@@ -105,6 +105,12 @@ func (db *DBManager) GetAccount(account string) (*Account, error) {
 	return tbl_acc, retdb.Error
 }
 
+func (db *DBManager) GetUserOnlineInfo(id uint64) (*Online, error) {
+	var online *Online
+	retdb := db.sql.Model(online_table).Where("dataid = ?", id).Find(&online)
+	return online, retdb.Error
+}
+
 func (db *DBManager) SetUserOnline(tbl_online *Online) error {
 	retdb := db.sql.Create(tbl_online)
 	return retdb.Error
