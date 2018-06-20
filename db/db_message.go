@@ -5,6 +5,10 @@ import (
 	. "github.com/gtechx/base/common"
 )
 
+//服务器记录所有消息？
+//服务器记录7天之内的消息？如果超出，则删除更早的。msg:id:timestamp 设置定时器
+//未读消息数量怎样存储
+
 // func (db *DBManager) IsPresenceRecordExists(from, to uint64) (bool, error) {
 // 	conn := db.rd.Get()
 // 	defer conn.Close()
@@ -34,10 +38,10 @@ func (db *DBManager) IsPresenceExists(id, from uint64) (bool, error) {
 	return redis.Bool(ret, err)
 }
 
-func (db *DBManager) AddPresence(from, to uint64, data []byte) error {
+func (db *DBManager) AddPresence(from, to uint64, msg []byte) error {
 	conn := db.rd.Get()
 	defer conn.Close()
-	_, err := conn.Do("HSET", "presence:"+String(to), from, data) //记录到目的地用户presence列表
+	_, err := conn.Do("HSET", "presence:"+String(to), from, msg) //记录到目的地用户presence列表
 	return err
 }
 
@@ -67,8 +71,10 @@ func (db *DBManager) GetOfflineMessage(id uint64) ([][]byte, error) {
 	defer conn.Close()
 
 	ret, err := conn.Do("LRANGE", "message:offline:"+String(id), 0, -1)
+	datalist, err := redis.ByteSlices(ret, err)
+	conn.Do("LTRIM", "message:offline:"+String(id), len(datalist), -1)
 
-	return redis.ByteSlices(ret, err)
+	return datalist, err
 	// if err != nil {
 	// 	return nil, err
 	// }
@@ -87,10 +93,10 @@ func (db *DBManager) GetOfflineMessage(id uint64) ([][]byte, error) {
 	// return msglist, err
 }
 
-func (db *DBManager) SendMsgToUserOnline(data []byte, serveraddr string) error {
+func (db *DBManager) SendMsgToUserOnline(msg []byte, serveraddr string) error {
 	conn := db.rd.Get()
 	defer conn.Close()
-	_, err := conn.Do("RPUSH", "message:"+serveraddr, data)
+	_, err := conn.Do("RPUSH", "message:"+serveraddr, msg)
 	return err
 }
 

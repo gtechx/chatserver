@@ -311,13 +311,13 @@ type AppData struct {
 	Nickname  string    `redis:"nickname" json:"nickname"`
 	Desc      string    `redis:"desc" json:"desc"`
 	Sex       string    `redis:"sex" json:"sex"`
-	Birthday  time.Time `redis:"birthday" json:"birthday"`
+	Birthday  time.Time `redis:"birthday" json:"_"`
 	Country   string    `redis:"country" json:"country"`
 	Isbaned   bool      `redis:"isbaned" json:"isbaned" gorm:"tinyint(1);default:0"`
 	Regip     string    `redis:"regip" json:"regip"`
 	Lastip    string    `redis:"lastip" json:"lastip"`
-	Lastlogin time.Time `redis:"lastlogin" json:"lastlogin"`
-	CreatedAt time.Time `redis:"createdate" json:"createdate"`
+	Lastlogin time.Time `redis:"lastlogin" json:"_"`
+	CreatedAt time.Time `redis:"createdate" json:"_"`
 
 	Onlines []Online `json:"_" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
 	Friends []Friend `json:"_" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
@@ -463,4 +463,12 @@ var db_tables []interface{} = []interface{}{
 	&AccountBaned{},
 	&AppBaned{},
 	&AppDataBaned{},
+}
+
+type FriendJson struct {
+	Dataid   uint64 `json:"dataid"`
+	Nickname string `json:"nickname"`
+	Desc     string `json:"desc"`
+	Group    string `json:"group"`
+	Comment  string `json:"comment"`
 }

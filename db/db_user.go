@@ -105,7 +105,8 @@ func (db *DBManager) GetAccount(account string) (*Account, error) {
 	return tbl_acc, retdb.Error
 }
 
-func (db *DBManager) GetUserOnlineInfo(id uint64) (*Online, error) {
+//多端登录的时候，会有多条online信息，因为每个端会可能会连接到不同的服务器
+func (db *DBManager) GetUserOnlineInfo(id uint64) ([]*Online, error) {
 	var online *Online
 	retdb := db.sql.Model(online_table).Where("dataid = ?", id).Find(&online)
 	return online, retdb.Error

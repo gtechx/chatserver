@@ -1,8 +1,8 @@
 package main
 
 import (
+	. "github.com/gtechx/base/common"
 	"github.com/gtechx/chatserver/db"
-	//"github.com/gtechx/base/gtnet"
 )
 
 func messagePullInit() {
@@ -19,8 +19,8 @@ func startMessagePull() {
 
 		if data != nil {
 			//fmt.Println(data)
-			// uid := Uint64(data[0:8])
-			// sendMsgToUid(uid, data[8:])
+			id := Uint64(data[0:8])
+			SessMgr().SendMsgToId(id, data[8:])
 		}
 	}
 }

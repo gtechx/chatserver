@@ -12,6 +12,7 @@ import (
 func RegisterUserMsg() {
 	registerMsgHandler(MsgId_ReqUserData, HandlerReqUserData)
 	registerMsgHandler(MsgId_Presence, HandlerPresence)
+	registerMsgHandler(MsgId_Message, HandlerMessage)
 	//registerMsgHandler(MsgId_EnterChat, HandlerEnterChat)
 }
 
@@ -35,15 +36,18 @@ func HandlerReqUserData(sess ISession, data []byte) (uint16, interface{}) {
 
 func SendMessageToUserOnline(to uint64, data []byte) uint16 {
 	dbMgr := gtdb.Manager()
-	online, err := dbMgr.GetUserOnlineInfo(to)
+	onlinelist, err := dbMgr.GetUserOnlineInfo(to)
 	if err != nil {
 		return ERR_DB
 	}
 
-	err = gtdb.Manager().SendMsgToUserOnline(append(Bytes(to), data...), online.Serveraddr)
-	if err != nil {
-		return ERR_DB
+	for _, online := range onlinelist {
+		err = gtdb.Manager().SendMsgToUserOnline(append(Bytes(to), data...), online.Serveraddr)
+		if err != nil {
+			return ERR_DB
+		}
 	}
+
 	return ERR_NONE
 }
 
@@ -71,7 +75,7 @@ func SendMessageToUser(to uint64, data []byte) uint16 {
 
 func SendMessageToFriendsOnline(id uint64, data []byte) uint16 {
 	dbMgr := gtdb.Manager()
-	friendinfolist, err := dbMgr.GetOnlineFriendInfoList(id)
+	friendinfolist, err := dbMgr.GetFriendOnlineList(id)
 	if err != nil {
 		return ERR_DB
 	}
@@ -122,16 +126,21 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 						errcode = ERR_FRIEND_EXISTS
 					} else {
 						//send presence to who and record this presence for who's answer
-						presencebytes := Bytes(presence)
-						err = dbMgr.AddPresence(sess.ID(), who, presencebytes)
+						presencebytes, err := json.Marshal(presence)
 						if err != nil {
-							errcode = ERR_DB
+							errcode = ERR_UNKNOWN
 						} else {
-							//send to who
-							errcode = SendMessageToUser(who, presencebytes)
-							// if errcode != ERR_NONE {
+							senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
+							err = dbMgr.AddPresence(sess.ID(), who, presencebytes)
+							if err != nil {
+								errcode = ERR_DB
+							} else {
+								//send to who
+								errcode = SendMessageToUser(who, senddata)
+								// if errcode != ERR_NONE {
 
-							// }
+								// }
+							}
 						}
 					}
 				}
@@ -151,9 +160,14 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 						if err != nil {
 							errcode = ERR_DB
 						} else {
-							presencebytes := Bytes(presence)
-							errcode = SendMessageToUser(who, presencebytes)
-							dbMgr.RemovePresence(sess.ID(), who)
+							presencebytes, err := json.Marshal(presence)
+							if err != nil {
+								errcode = ERR_UNKNOWN
+							} else {
+								senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
+								errcode = SendMessageToUser(who, senddata)
+								dbMgr.RemovePresence(sess.ID(), who)
+							}
 						}
 					}
 				}
@@ -170,8 +184,13 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 						if err != nil {
 							errcode = ERR_DB
 						} else {
-							presencebytes := Bytes(presence)
-							errcode = SendMessageToUser(who, presencebytes)
+							presencebytes, err := json.Marshal(presence)
+							if err != nil {
+								errcode = ERR_UNKNOWN
+							} else {
+								senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
+								errcode = SendMessageToUser(who, senddata)
+							}
 						}
 					}
 				}
@@ -184,14 +203,25 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 					if !flag {
 						errcode = ERR_UNKNOWN
 					} else {
-						presencebytes := Bytes(presence)
-						errcode = SendMessageToUser(who, presencebytes)
+						presencebytes, err := json.Marshal(presence)
+						if err != nil {
+							errcode = ERR_UNKNOWN
+						} else {
+							senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
+							errcode = SendMessageToUser(who, senddata)
+							dbMgr.RemovePresence(sess.ID(), who)
+						}
 					}
 				}
 			case PresenceType_Available, PresenceType_Unavailable, PresenceType_Invisible:
 				//send to my friend online
-				presencebytes := Bytes(presence)
-				SendMessageToFriendsOnline(sess.ID(), presencebytes)
+				presencebytes, err := json.Marshal(presence)
+				if err != nil {
+					errcode = ERR_UNKNOWN
+				} else {
+					senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
+					SendMessageToFriendsOnline(sess.ID(), senddata)
+				}
 			}
 		}
 	}
@@ -206,6 +236,7 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 
 // type MsgRetDataList struct {
 // 	ErrorCode uint16
+// 	DataType  uint8
 // 	Json      []byte
 // }
 func HandlerReqDataList(sess ISession, data []byte) (uint16, interface{}) {
@@ -213,14 +244,111 @@ func HandlerReqDataList(sess ISession, data []byte) (uint16, interface{}) {
 
 	errcode := ERR_NONE
 	dbMgr := gtdb.Manager()
-	flag, err := dbMgr.IsAppDataExists(who)
+
+	ret := &MsgRetDataList{}
+	ret.DataType = datatype
+
 	switch datatype {
-	case DataType_Group:
 	case DataType_Friend:
+		list, err := dbMgr.GetFriendInfoList(sess.ID())
+		if err != nil {
+			errcode = ERR_DB
+		} else {
+			ret.Json, err = json.Marshal(list)
+			if err != nil {
+				errcode = ERR_UNKNOWN
+				ret.Json = nil
+			}
+		}
 	case DataType_Presence:
+		list, err := dbMgr.GetAllPresence(sess.ID())
+		if err != nil {
+			errcode = ERR_DB
+		} else {
+			presencelist := []*MsgPresence{}
+			for _, presdata := range list {
+				var pres *MsgPresence
+				err = json.Unmarshal(presdata[7:], &pres)
+				if err != nil {
+					errcode = ERR_DB
+					break
+				}
+				presencelist = append(presencelist, pres)
+			}
+
+			if err != nil {
+				errcode = ERR_DB
+			} else {
+				ret.Json, err = json.Marshal(presencelist)
+				if err != nil {
+					errcode = ERR_UNKNOWN
+					ret.Json = nil
+				}
+			}
+		}
 	case DataType_Black:
 	case DataType_Message:
+		list, err := dbMgr.GetOfflineMessage(sess.ID())
+		if err != nil {
+			errcode = ERR_DB
+		} else {
+			msglist := []*MsgMessage{}
+			for _, msgdata := range list {
+				var pres *MsgMessage
+				err = json.Unmarshal(msgdata[7:], &pres)
+				if err != nil {
+					errcode = ERR_DB
+					break
+				}
+				msglist = append(msglist, pres)
+			}
+
+			if err != nil {
+				errcode = ERR_DB
+			} else {
+				ret.Json, err = json.Marshal(msglist)
+				if err != nil {
+					errcode = ERR_UNKNOWN
+					ret.Json = nil
+				}
+			}
+		}
 	case DataType_Room:
 	case DataType_RoomMessage:
 	}
+
+	ret.ErrorCode = errcode
+	return errcode, ret
+}
+
+func HandlerMessage(sess ISession, data []byte) (uint16, interface{}) {
+	who := Uint64(data)
+	timestamp := Int64(data[8:])
+	message := data[16:]
+
+	timestamp = time.Now().Unix()
+
+	msg := &MsgMessage{Who: sess.ID(), TimeStamp: timestamp, Message: message}
+
+	errcode := ERR_NONE
+	dbMgr := gtdb.Manager()
+	flag, err := dbMgr.IsAppDataExists(who)
+
+	if err != nil {
+		errcode = ERR_DB
+	} else {
+		if !flag {
+			errcode = ERR_APPDATAID_NOT_EXISTS
+		} else {
+			msgbytes, err := json.Marshal(msg)
+			if err != nil {
+				errcode = ERR_UNKNOWN
+			} else {
+				senddata := packageMsg(RetFrame, 0, MsgId_Message, msgbytes)
+				errcode = SendMessageToUser(who, senddata)
+			}
+		}
+	}
+
+	return errcode, errcode
 }

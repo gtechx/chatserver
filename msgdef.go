@@ -28,8 +28,8 @@ const (
 //friend, presence,room, black, message, roommessage
 const (
 	DataType_Friend uint8 = iota
+	//DataType_Group
 	DataType_Presence
-	DataType_Group
 	DataType_Room
 	DataType_Black
 	DataType_Message
@@ -151,12 +151,15 @@ type MsgRetUserData struct {
 
 const MsgId_ReqFriendList uint16 = 1006
 
-type MsgReqFriendList struct {
+type MsgReqGroupFriendList struct {
+	GroupName []byte
 }
 
-type MsgRetFriendList struct {
+type MsgRetGroupFriendList struct {
 	ErrorCode uint16
-	Json      []byte
+	Count     uint16
+	Step      uint16
+	Data      []byte
 }
 
 // const MsgId_ReqUserSubscribe uint16 = 1007
@@ -186,9 +189,9 @@ const MsgId_Message uint16 = 1008
 
 type MsgMessage struct {
 	//MessageType uint8 //chat, friends, multi
-	Who       uint64 //使用who，表示客户端填充的接收者，服务器转发时会修改为发送者
-	TimeStamp int64
-	Message   []byte
+	Who       uint64 `json:"who"` //使用who，表示客户端填充的接收者，服务器转发时会修改为发送者
+	TimeStamp int64  `json:"timestamp"`
+	Message   []byte `json:"message"`
 }
 
 type MsgMessageReceipt struct {
@@ -242,6 +245,7 @@ type MsgReqDataList struct {
 
 type MsgRetDataList struct {
 	ErrorCode uint16
+	DataType  uint8
 	Json      []byte
 }
 

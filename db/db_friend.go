@@ -61,29 +61,35 @@ func (db *DBManager) GetFriend(id, otherid uint64) (*Friend, error) {
 	return friend, retdb.Error
 }
 
-func (db *DBManager) GetOnlineFriendInfoList(id uint64) ([]*Online, error) {
+func (db *DBManager) GetFriendOnlineList(id uint64) ([]*Online, error) {
 	onlinelist := []*Online{}
-	retdb := db.sql.Model(online_table).Joins("left join friends on friends.dataid = ? AND friends.otherdataid = onlines.dataid", id)
+	retdb := db.sql.Model(online_table).Joins("join friends on friends.dataid = ? AND friends.otherdataid = onlines.dataid", id)
 	retdb = retdb.Find(&onlinelist)
 	return onlinelist, retdb.Error
 }
 
 func (db *DBManager) GetOnlineFriendIdList(id uint64) ([]uint64, error) {
 	var friendidlist []uint64
-	retdb := db.sql.Table("friends").Select("friends.otherdataid").Joins("left join onlines on friends.dataid = ? AND friends.otherdataid = onlines.dataid", id).Scan(&friendidlist)
+	retdb := db.sql.Table("friends").Where("friends.dataid = ?", id).Select("friends.otherdataid").Joins("join onlines on friends.otherdataid = onlines.dataid").Scan(&friendidlist)
 	return friendidlist, retdb.Error
 }
 
 func (db *DBManager) GetOfflineFriendIdList(id uint64) ([]uint64, error) {
 	var friendidlist []uint64
-	retdb := db.sql.Table("friends").Select("friends.otherdataid").Joins("left join onlines on friends.dataid = ? AND friends.otherdataid != onlines.dataid", id).Scan(&friendidlist)
+	retdb := db.sql.Table("friends").Where("friends.dataid = ?", id).Select("friends.otherdataid").Joins("join onlines on friends.otherdataid != onlines.dataid").Scan(&friendidlist)
 	return friendidlist, retdb.Error
 }
 
 func (db *DBManager) GetFriendIdList(id uint64) ([]uint64, error) {
 	var friendidlist []uint64
-	retdb := db.sql.Table("friends").Select("friends.otherdataid").Where("friends.dataid = ?", id).Scan(&friendidlist)
+	retdb := db.sql.Table("friends").Where("friends.dataid = ?", id).Pluck("otherdataid", &friendidlist) //.Select("friends.otherdataid").Scan(&friendidlist)
 	return friendidlist, retdb.Error
+}
+
+func (db *DBManager) GetFriendInfoList(id uint64) ([]*FriendJson, error) {
+	friendlist := []*FriendJson{}
+	retdb := db.sql.Table("friends").Where("friends.dataid = ?", id).Select("friends.otherdataid as dataid, friends.group, friends.comment, app_data.nickname, app_data.desc").Joins("join app_data on friends.otherdataid != app_data.id").Find(&friendlist)
+	return friendlist, retdb.Error
 }
 
 func (db *DBManager) GetFriendList(id uint64, offset, count int) ([]*Friend, error) {

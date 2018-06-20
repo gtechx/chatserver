@@ -35,3 +35,12 @@ func (sm *SessManager) GetSess(id uint64) ISession {
 	}
 	return nil
 }
+
+func (sm *SessManager) SendMsgToId(id uint64, msg []byte) bool {
+	sess, ok := sm.sessMap.Load(id)
+	if ok {
+		sess.(*Sess).Send(msg)
+		return true
+	}
+	return false
+}
