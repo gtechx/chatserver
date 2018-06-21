@@ -9,6 +9,10 @@ import (
 	"github.com/gtechx/chatserver/db"
 )
 
+func init() {
+	RegisterUserMsg()
+}
+
 func RegisterUserMsg() {
 	registerMsgHandler(MsgId_ReqUserData, HandlerReqUserData)
 	registerMsgHandler(MsgId_Presence, HandlerPresence)
@@ -287,31 +291,33 @@ func HandlerReqDataList(sess ISession, data []byte) (uint16, interface{}) {
 			}
 		}
 	case DataType_Black:
-	case DataType_Message:
+	case DataType_Offline_Message:
 		list, err := dbMgr.GetOfflineMessage(sess.ID())
 		if err != nil {
 			errcode = ERR_DB
 		} else {
-			msglist := []*MsgMessage{}
+			//msglist := []*MsgMessage{}
 			for _, msgdata := range list {
-				var pres *MsgMessage
-				err = json.Unmarshal(msgdata[7:], &pres)
-				if err != nil {
-					errcode = ERR_DB
-					break
-				}
-				msglist = append(msglist, pres)
+				// var pres *MsgMessage
+				// err = json.Unmarshal(msgdata[7:], &pres)
+				// if err != nil {
+				// 	errcode = ERR_DB
+				// 	break
+				// }
+				// msglist = append(msglist, pres)
+				sess.Send(msgdata)
 			}
 
-			if err != nil {
-				errcode = ERR_DB
-			} else {
-				ret.Json, err = json.Marshal(msglist)
-				if err != nil {
-					errcode = ERR_UNKNOWN
-					ret.Json = nil
-				}
-			}
+			// if err != nil {
+			// 	errcode = ERR_DB
+			// } else {
+			// 	ret.Json, err = json.Marshal(msglist)
+			// 	if err != nil {
+			// 		errcode = ERR_UNKNOWN
+			// 		ret.Json = nil
+			// 	}
+			// }
+			return errcode, nil
 		}
 	case DataType_Room:
 	case DataType_RoomMessage:
@@ -319,6 +325,14 @@ func HandlerReqDataList(sess ISession, data []byte) (uint16, interface{}) {
 
 	ret.ErrorCode = errcode
 	return errcode, ret
+}
+
+func isInBlack(id, otherid uint64) (bool, error) {
+	flag, err := gtdb.Manager().IsInBlack(id, otherid)
+	if err != nil {
+		return false, err
+	}
+	return flag, nil
 }
 
 func HandlerMessage(sess ISession, data []byte) (uint16, interface{}) {
@@ -340,12 +354,21 @@ func HandlerMessage(sess ISession, data []byte) (uint16, interface{}) {
 		if !flag {
 			errcode = ERR_APPDATAID_NOT_EXISTS
 		} else {
-			msgbytes, err := json.Marshal(msg)
+			flag, err = isInBlack(sess.ID(), who)
 			if err != nil {
-				errcode = ERR_UNKNOWN
+				errcode = ERR_DB
 			} else {
-				senddata := packageMsg(RetFrame, 0, MsgId_Message, msgbytes)
-				errcode = SendMessageToUser(who, senddata)
+				if !flag {
+					errcode = ERR_IN_BLACKLIST
+				} else {
+					msgbytes, err := json.Marshal(msg)
+					if err != nil {
+						errcode = ERR_UNKNOWN
+					} else {
+						senddata := packageMsg(RetFrame, 0, MsgId_Message, msgbytes)
+						errcode = SendMessageToUser(who, senddata)
+					}
+				}
 			}
 		}
 	}

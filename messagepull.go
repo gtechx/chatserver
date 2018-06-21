@@ -20,10 +20,10 @@ func startMessagePull() {
 		if data != nil {
 			//fmt.Println(data)
 			id := Uint64(data[0:8])
-			ok := SessMgr().SendMsgToId(id, data[8:])
-			if !ok {
-				gtdb.Manager().SendMsgToUserOffline(id, data[8:])
-			}
+			SessMgr().SendMsgToId(id, data[8:])
+			// if !ok {
+			// 	gtdb.Manager().SendMsgToUserOffline(id, data[8:])
+			// }
 		}
 	}
 }

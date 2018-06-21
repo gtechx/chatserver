@@ -32,7 +32,7 @@ const (
 	DataType_Presence
 	DataType_Room
 	DataType_Black
-	DataType_Message
+	DataType_Offline_Message
 	DataType_RoomMessage
 )
 

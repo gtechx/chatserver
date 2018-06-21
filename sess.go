@@ -80,7 +80,7 @@ func (s *Sess) startRecv() {
 		default:
 			if msgid != MsgId_ReqQuitChat {
 				errcode, ret := HandleMsg(msgid, s, databuff)
-				if errcode != ERR_MSG_INVALID {
+				if errcode == ERR_MSG_INVALID {
 					goto end
 				}
 				if ret != nil {

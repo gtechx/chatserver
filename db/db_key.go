@@ -387,7 +387,7 @@ func (appdata *AppData) BeforeDelete(tx *gorm.DB) error {
 }
 
 type Online struct {
-	Dataid uint64 `redis:"dataid" json:"dataid" gorm:"unique;not null"`
+	Dataid uint64 `redis:"dataid" json:"dataid" gorm:"not null"`
 	// Account    string    `redis:"account" json:"account"`
 	// Appname    string    `redis:"appname" json:"appname"`
 	// Zonename   string    `redis:"zonename" json:"zonename"`

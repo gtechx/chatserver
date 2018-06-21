@@ -174,8 +174,11 @@ func onNewConn(conn net.Conn) {
 
 			if errcode == ERR_NONE {
 				fmt.Println("sess start:", appdataid)
+				lastremoteaddr := conn.RemoteAddr().String()
+				lasttime := time.Now()
 				sess := SessMgr().CreateSess(conn, appname, zonename, account, appdataid)
 				sess.Start()
+				gtdb.Manager().UpdateLastLoginInfo(appdataid, lastremoteaddr, lasttime)
 			}
 		} else if err == nil && msgid == MsgId_ReqCreateAppdata {
 			nickname := String(databuff)
