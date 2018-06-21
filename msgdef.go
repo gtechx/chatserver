@@ -327,6 +327,8 @@ type MsgRetSearch struct {
 	Json      []byte
 }
 
+const MsgId_KickOut uint16 = 1022
+
 //history message ?
 
 //modify room setting

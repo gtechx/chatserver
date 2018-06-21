@@ -72,12 +72,22 @@ func HandlerReqLogin(buff []byte) (uint16, interface{}) {
 func HandlerReqChatLogin(account, password, appname, zonename string) (uint16, interface{}) {
 	errcode := checkAccount(account, password)
 	if errcode == ERR_NONE {
-		idlist, err := gtdb.Manager().GetAppDataIdList(appname, zonename, account)
+		dbMgr := gtdb.Manager()
+		app, err := dbMgr.GetApp(appname)
 		if err != nil {
 			errcode = ERR_DB
+		} else {
+			realappname := appname
+			if app.Share != "" {
+				realappname = app.Share
+			}
+			idlist, err := dbMgr.GetAppDataIdList(realappname, zonename, account)
+			if err != nil {
+				errcode = ERR_DB
+			}
+			ret := &MsgRetChatLogin{errcode, idlist}
+			return errcode, ret
 		}
-		ret := &MsgRetChatLogin{errcode, idlist}
-		return errcode, ret
 	}
 	ret := &MsgRetChatLogin{ErrorCode: errcode}
 	return errcode, ret
@@ -88,19 +98,28 @@ func HandlerReqCreateAppdata(appname, zonename, account, nickname, regip string)
 	errcode := ERR_NONE
 	id := uint64(0)
 
-	flag, err := dbMgr.IsNicknameExists(appname, zonename, account, nickname)
+	app, err := dbMgr.GetApp(appname)
 	if err != nil {
 		errcode = ERR_DB
-	} else if flag {
-		errcode = ERR_NICKNAME_EXISTS
 	} else {
-		tbl_appdata := &gtdb.AppData{Appname: appname, Zonename: zonename, Account: account, Nickname: nickname, Regip: regip}
-		err = dbMgr.CreateAppData(tbl_appdata)
-
+		realappname := appname
+		if app.Share != "" {
+			realappname = app.Share
+		}
+		flag, err := dbMgr.IsNicknameExists(realappname, zonename, account, nickname)
 		if err != nil {
 			errcode = ERR_DB
+		} else if flag {
+			errcode = ERR_NICKNAME_EXISTS
 		} else {
-			id = tbl_appdata.ID
+			tbl_appdata := &gtdb.AppData{Appname: realappname, Zonename: zonename, Account: account, Nickname: nickname, Regip: regip}
+			err = dbMgr.CreateAppData(tbl_appdata)
+
+			if err != nil {
+				errcode = ERR_DB
+			} else {
+				id = tbl_appdata.ID
+			}
 		}
 	}
 

@@ -13,6 +13,7 @@ type ISession interface {
 	Send(buff []byte)
 	Start()
 	Stop()
+	KickOut()
 }
 
 type Sess struct {
@@ -51,6 +52,12 @@ func (s *Sess) Start() {
 
 func (s *Sess) Stop() {
 	s.quitChan <- 1
+}
+
+func (s *Sess) KickOut() {
+	senddata := packageMsg(RetFrame, 0, MsgId_KickOut, nil)
+	s.Send(senddata)
+	s.Stop()
 }
 
 func (s *Sess) Send(buff []byte) {
