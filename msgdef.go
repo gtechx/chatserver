@@ -329,6 +329,15 @@ type MsgRetSearch struct {
 
 const MsgId_KickOut uint16 = 1022
 
+const MsgId_PresenceByName uint16 = 1023
+
+type MsgPresenceByName struct {
+	PresenceType uint8  `json:"presencetype"` //available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
+	Who          uint64 `json:"who"`
+	TimeStamp    int64  `json:"timestamp"`
+	Message      []byte `json:"message"`
+}
+
 //history message ?
 
 //modify room setting

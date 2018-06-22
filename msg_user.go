@@ -105,6 +105,10 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 	timestamp := Int64(data[9:])
 	message := data[17:]
 
+	if who == sess.ID() {
+		return ERR_FRIEND_SELF, ERR_FRIEND_SELF
+	}
+
 	timestamp = time.Now().Unix()
 
 	presence := &MsgPresence{PresenceType: presencetype, Who: sess.ID(), TimeStamp: timestamp, Message: message}
@@ -339,6 +343,10 @@ func HandlerMessage(sess ISession, data []byte) (uint16, interface{}) {
 	who := Uint64(data)
 	timestamp := Int64(data[8:])
 	message := data[16:]
+
+	if who == sess.ID() {
+		return ERR_MESSAGE_SELF, ERR_MESSAGE_SELF
+	}
 
 	timestamp = time.Now().Unix()
 
