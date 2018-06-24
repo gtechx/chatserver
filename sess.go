@@ -10,6 +10,7 @@ type ISession interface {
 	Account() string
 	AppName() string
 	ZoneName() string
+	NickName() string
 	Send(buff []byte)
 	Start()
 	Stop()
@@ -20,6 +21,7 @@ type Sess struct {
 	account  string
 	appname  string
 	zonename string
+	nickname string
 	id       uint64
 	conn     net.Conn
 
@@ -41,6 +43,10 @@ func (s *Sess) AppName() string {
 
 func (s *Sess) ZoneName() string {
 	return s.zonename
+}
+
+func (s *Sess) NickName() string {
+	return s.nickname
 }
 
 func (s *Sess) Start() {

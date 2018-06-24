@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"net"
@@ -252,6 +253,11 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 	size = Uint16(sizebuff)
 
 	fmt.Println("data size:", size)
+
+	if size > 65535 {
+		err = errors.New("too long data size")
+		goto end
+	}
 
 	_, err = conn.Read(msgidbuff)
 	if err != nil {

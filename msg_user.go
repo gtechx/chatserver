@@ -100,18 +100,33 @@ func SendMessageToFriendsOnline(id uint64, data []byte) uint16 {
 // 	Message      string
 // }
 func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
-	presencetype := uint8(data[0])
-	who := Uint64(data[1:])
-	timestamp := Int64(data[9:])
-	message := data[17:]
+	var presence *MsgPresence
+	err := json.Unmarshal(data, presence)
+
+	if err != nil {
+		return ERR_UNKNOWN, ERR_UNKNOWN
+	}
+
+	appdata, err := gtdb.Manager().GetAppData(sess.ID())
+
+	if err != nil {
+		return ERR_DB, ERR_DB
+	}
+
+	presence.Nickname = appdata.Nickname
+
+	presencetype := presence.PresenceType
+	who := presence.Who
+	//timestamp := Int64(data[9:])
+	//message := data[17:]
 
 	if who == sess.ID() {
 		return ERR_FRIEND_SELF, ERR_FRIEND_SELF
 	}
 
-	timestamp = time.Now().Unix()
+	presence.TimeStamp = time.Now().Unix()
 
-	presence := &MsgPresence{PresenceType: presencetype, Who: sess.ID(), TimeStamp: timestamp, Message: message}
+	//presence := &MsgPresence{PresenceType: presencetype, Who: sess.ID(), TimeStamp: timestamp, Message: message}
 
 	errcode := ERR_NONE
 	dbMgr := gtdb.Manager()

@@ -176,9 +176,10 @@ const MsgId_Presence uint16 = 1007
 
 type MsgPresence struct {
 	PresenceType uint8  `json:"presencetype"` //available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
-	Who          uint64 `json:"who"`
-	TimeStamp    int64  `json:"timestamp"`
-	Message      []byte `json:"message"`
+	Who          uint64 `json:"who,string"`
+	Nickname     string `json:"nickname"`
+	TimeStamp    int64  `json:"timestamp,string"`
+	Message      string `json:"message"`
 }
 
 type MsgPresenceReceipt struct {
@@ -328,15 +329,6 @@ type MsgRetSearch struct {
 }
 
 const MsgId_KickOut uint16 = 1022
-
-const MsgId_PresenceByName uint16 = 1023
-
-type MsgPresenceByName struct {
-	PresenceType uint8  `json:"presencetype"` //available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
-	Who          uint64 `json:"who"`
-	TimeStamp    int64  `json:"timestamp"`
-	Message      []byte `json:"message"`
-}
 
 //history message ?
 
