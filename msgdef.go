@@ -202,13 +202,13 @@ type MsgMessageReceipt struct {
 //其它类型的单人消息，服务器收到以后，转发其它人时，都是使用1008的消息格式，但是消息id使用自己的。
 const MsgId_AllFriendsMessage uint16 = 1009
 
-type MsgMsgId_AllFriendsMessage struct {
+type MsgAllFriendsMessage struct {
 	Message []byte
 }
 
 const MsgId_GroupMessage uint16 = 1010
 
-type MsgMsgId_GroupMessage struct {
+type MsgGroupMessage struct {
 	Count     uint8
 	GroupName []byte
 	Message   []byte
@@ -216,7 +216,7 @@ type MsgMsgId_GroupMessage struct {
 
 const MsgId_MultiUsersMessage uint16 = 1011
 
-type MsgMsgId_MultiUsersMessage struct {
+type MsgMultiUsersMessage struct {
 	Count   uint8
 	To      []uint64
 	Message []byte

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	. "github.com/gtechx/base/common"
@@ -17,6 +18,7 @@ func RegisterUserMsg() {
 	registerMsgHandler(MsgId_ReqUserData, HandlerReqUserData)
 	registerMsgHandler(MsgId_Presence, HandlerPresence)
 	registerMsgHandler(MsgId_Message, HandlerMessage)
+	registerMsgHandler(MsgId_ReqDataList, HandlerReqDataList)
 	//registerMsgHandler(MsgId_EnterChat, HandlerEnterChat)
 }
 
@@ -100,11 +102,14 @@ func SendMessageToFriendsOnline(id uint64, data []byte) uint16 {
 // 	Message      string
 // }
 func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
-	var presence *MsgPresence
+	var presence *MsgPresence = &MsgPresence{}
 	err := json.Unmarshal(data, presence)
 
+	fmt.Println(string(data))
+	fmt.Println(presence)
 	if err != nil {
-		return ERR_UNKNOWN, ERR_UNKNOWN
+		fmt.Println(err.Error())
+		return ERR_INVALID_JSON, ERR_INVALID_JSON
 	}
 
 	appdata, err := gtdb.Manager().GetAppData(sess.ID())
@@ -151,7 +156,7 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 						//send presence to who and record this presence for who's answer
 						presencebytes, err := json.Marshal(presence)
 						if err != nil {
-							errcode = ERR_UNKNOWN
+							errcode = ERR_INVALID_JSON
 						} else {
 							senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
 							err = dbMgr.AddPresence(sess.ID(), who, presencebytes)
@@ -174,7 +179,7 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 					errcode = ERR_DB
 				} else {
 					if !flag {
-						errcode = ERR_UNKNOWN
+						errcode = ERR_PRESENCE_NOT_EXISTS
 					} else {
 						tbl_from := &gtdb.Friend{Dataid: who, Otherdataid: sess.ID(), Group: config.DefaultGroupName}
 						tbl_to := &gtdb.Friend{Dataid: sess.ID(), Otherdataid: who, Group: config.DefaultGroupName}
@@ -185,7 +190,7 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 						} else {
 							presencebytes, err := json.Marshal(presence)
 							if err != nil {
-								errcode = ERR_UNKNOWN
+								errcode = ERR_INVALID_JSON
 							} else {
 								senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
 								errcode = SendMessageToUser(who, senddata)
@@ -209,7 +214,7 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 						} else {
 							presencebytes, err := json.Marshal(presence)
 							if err != nil {
-								errcode = ERR_UNKNOWN
+								errcode = ERR_INVALID_JSON
 							} else {
 								senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
 								errcode = SendMessageToUser(who, senddata)
@@ -224,11 +229,11 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 					errcode = ERR_DB
 				} else {
 					if !flag {
-						errcode = ERR_UNKNOWN
+						errcode = ERR_PRESENCE_NOT_EXISTS
 					} else {
 						presencebytes, err := json.Marshal(presence)
 						if err != nil {
-							errcode = ERR_UNKNOWN
+							errcode = ERR_INVALID_JSON
 						} else {
 							senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
 							errcode = SendMessageToUser(who, senddata)
@@ -240,7 +245,7 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 				//send to my friend online
 				presencebytes, err := json.Marshal(presence)
 				if err != nil {
-					errcode = ERR_UNKNOWN
+					errcode = ERR_INVALID_JSON
 				} else {
 					senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
 					SendMessageToFriendsOnline(sess.ID(), senddata)
