@@ -52,18 +52,22 @@ func (db *DBManager) RemovePresence(id, from uint64) error {
 	return err
 }
 
-func (db *DBManager) GetAllPresence(id uint64) ([][]byte, error) {
+func (db *DBManager) GetAllPresence(id uint64) (map[string]string, error) {
 	conn := db.rd.Get()
 	defer conn.Close()
 	ret, err := conn.Do("HGETALL", "presence:"+String(id))
-	return redis.ByteSlices(ret, err)
+	return redis.StringMap(ret, err) //.ByteSlices(ret, err)
 }
 
-func (db *DBManager) PullOnlineMessage(serveraddr string, timeout int) ([]byte, error) {
+func (db *DBManager) PullOnlineMessage(serveraddr string, timeout int) (map[string]string, error) {
 	conn := db.rd.Get()
 	defer conn.Close()
-	ret, err := conn.Do("BLPOP", "message:"+serveraddr, timeout)
-	return redis.Bytes(ret, err)
+	cmd := "POP"
+	if timeout != 0 {
+		cmd = BLPOP
+	}
+	ret, err := conn.Do(cmd, "message:"+serveraddr, timeout)
+	return redis.StringMap(ret, err)
 }
 
 func (db *DBManager) GetOfflineMessage(id uint64) ([][]byte, error) {

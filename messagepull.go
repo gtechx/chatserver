@@ -1,7 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"time"
+
 	. "github.com/gtechx/base/common"
+	"github.com/gtechx/chatserver/config"
 	"github.com/gtechx/chatserver/db"
 )
 
@@ -11,19 +15,19 @@ func messagePullInit() {
 
 func startMessagePull() {
 	for {
-		data, err := gtdb.Manager().PullOnlineMessage(serverAddr, 15)
+		datamap, err := gtdb.Manager().PullOnlineMessage(config.ServerAddr, 0)
 
 		if err != nil {
+			//fmt.Println(err.Error())
+			time.Sleep(time.Duration(5) * time.Second)
 			continue
 		}
 
-		if data != nil {
-			//fmt.Println(data)
+		for _, datastr := range datamap {
+			data := []byte(datastr)
 			id := Uint64(data[0:8])
+			fmt.Println("transfer msg to ", id, " data ", string(data[8:]))
 			SessMgr().SendMsgToId(id, data[8:])
-			// if !ok {
-			// 	gtdb.Manager().SendMsgToUserOffline(id, data[8:])
-			// }
 		}
 	}
 }

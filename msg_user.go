@@ -48,6 +48,8 @@ func SendMessageToUserOnline(to uint64, data []byte) uint16 {
 	}
 
 	for _, online := range onlinelist {
+		fmt.Println("SendMessageToUserOnline to ", to, " serveraddr ", online.Serveraddr)
+
 		err = gtdb.Manager().SendMsgToUserOnline(append(Bytes(to), data...), online.Serveraddr)
 		if err != nil {
 			return ERR_DB
@@ -130,6 +132,7 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 	}
 
 	presence.TimeStamp = time.Now().Unix()
+	presence.Who = sess.ID()
 
 	//presence := &MsgPresence{PresenceType: presencetype, Who: sess.ID(), TimeStamp: timestamp, Message: message}
 
@@ -293,10 +296,12 @@ func HandlerReqDataList(sess ISession, data []byte) (uint16, interface{}) {
 		if err != nil {
 			errcode = ERR_DB
 		} else {
+			fmt.Println(list)
 			presencelist := []*MsgPresence{}
-			for _, presdata := range list {
-				var pres *MsgPresence
-				err = json.Unmarshal(presdata[7:], &pres)
+			for _, presstr := range list {
+				var pres *MsgPresence = &MsgPresence{}
+				presdata := []byte(presstr)
+				err = json.Unmarshal(presdata, pres)
 				if err != nil {
 					errcode = ERR_DB
 					break
@@ -308,6 +313,7 @@ func HandlerReqDataList(sess ISession, data []byte) (uint16, interface{}) {
 				errcode = ERR_DB
 			} else {
 				ret.Json, err = json.Marshal(presencelist)
+				fmt.Println(string(ret.Json))
 				if err != nil {
 					errcode = ERR_UNKNOWN
 					ret.Json = nil

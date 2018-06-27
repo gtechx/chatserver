@@ -195,6 +195,14 @@ type MsgMessage struct {
 	Message   []byte `json:"message"`
 }
 
+type MsgMessageJson struct {
+	//MessageType uint8 //chat, friends, multi
+	Who       uint64 `json:"who,string"` //使用who，表示客户端填充的接收者，服务器转发时会修改为发送者
+	TimeStamp int64  `json:"timestamp,string"`
+	Nickname  string `json:"nickname"`
+	Message   string `json:"message"`
+}
+
 type MsgMessageReceipt struct {
 	ErrorCode uint16
 }

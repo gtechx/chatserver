@@ -230,7 +230,7 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 		goto end
 	}
 
-	fmt.Println("data type:", typebuff[0])
+	//fmt.Println("data type:", typebuff[0])
 
 	if typebuff[0] == TickFrame {
 		goto end
@@ -243,7 +243,7 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 	}
 	id = Uint16(idbuff)
 
-	fmt.Println("id:", id)
+	//fmt.Println("id:", id)
 
 	_, err = conn.Read(sizebuff)
 	if err != nil {
@@ -252,7 +252,7 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 	}
 	size = Uint16(sizebuff)
 
-	fmt.Println("data size:", size)
+	//fmt.Println("data size:", size)
 
 	if size > 65535 {
 		err = errors.New("too long data size")
@@ -266,7 +266,7 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 	}
 	msgid = Uint16(msgidbuff)
 
-	fmt.Println("msgid:", msgid)
+	//fmt.Println("msgid:", msgid)
 
 	if size == 0 {
 		goto end
