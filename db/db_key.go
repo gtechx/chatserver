@@ -304,7 +304,7 @@ type AppChatChannel struct {
 }
 
 type AppData struct {
-	ID        uint64    `redis:"id" json:"id" gorm:"primary_key;AUTO_INCREMENT"`
+	ID        uint64    `redis:"id" json:"id,string" gorm:"primary_key;AUTO_INCREMENT"`
 	Account   string    `redis:"account" json:"account"`
 	Appname   string    `redis:"appname" json:"appname"`
 	Zonename  string    `redis:"zonename" json:"zonename"`
@@ -466,7 +466,7 @@ var db_tables []interface{} = []interface{}{
 }
 
 type FriendJson struct {
-	Dataid   uint64 `json:"dataid"`
+	Dataid   uint64 `json:"who,string"`
 	Nickname string `json:"nickname"`
 	Desc     string `json:"desc"`
 	Group    string `json:"group"`

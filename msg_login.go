@@ -163,25 +163,13 @@ func HandlerReqEnterChat(appdataid uint64) (uint16, interface{}) {
 }
 
 func HandlerReqQuitChat(appdataid uint64) (uint16, interface{}) {
-	dbmgr := gtdb.Manager()
 	errcode := ERR_NONE
 
-	ok, err := dbmgr.IsAppDataExists(appdataid)
-
+	err := gtdb.Manager().SetUserOffline(appdataid)
 	if err != nil {
 		errcode = ERR_DB
-	} else {
-		if !ok {
-			errcode = ERR_APPDATAID_NOT_EXISTS
-		} else {
-			err = dbmgr.SetUserOffline(appdataid)
-			if err != nil {
-				errcode = ERR_DB
-			}
-		}
 	}
 
-	ret := &MsgRetQuitChat{errcode}
 	//sess.Send(ret)
-	return errcode, ret
+	return errcode, errcode
 }

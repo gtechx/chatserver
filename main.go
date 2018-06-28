@@ -165,8 +165,20 @@ func onNewConn(conn net.Conn) {
 		if err == nil && msgid == MsgId_ReqEnterChat {
 			appdataid := Uint64(databuff)
 			defer HandlerReqQuitChat(appdataid)
-			errcode, ret := HandlerReqEnterChat(appdataid)
-			senddata := packageMsg(RetFrame, id, MsgId_ReqEnterChat, ret)
+			//errcode, ret := HandlerReqEnterChat(appdataid)
+			errcode := ERR_NONE
+			tbl_appdata, err := gtdb.Manager().GetAppData(appdataid)
+			if err != nil {
+				errcode = ERR_DB
+			}
+
+			tbl_online := &gtdb.Online{Dataid: appdataid, Serveraddr: config.ServerAddr, State: "available"}
+			err = gtdb.Manager().SetUserOnline(tbl_online)
+			if err != nil {
+				errcode = ERR_DB
+			}
+
+			senddata := packageMsg(RetFrame, id, MsgId_ReqEnterChat, errcode)
 			_, err = conn.Write(senddata)
 
 			if err != nil {
@@ -177,7 +189,7 @@ func onNewConn(conn net.Conn) {
 				fmt.Println("sess start:", appdataid)
 				lastremoteaddr := conn.RemoteAddr().String()
 				lasttime := time.Now()
-				sess := SessMgr().CreateSess(conn, appname, zonename, account, appdataid)
+				sess := SessMgr().CreateSess(conn, tbl_appdata)
 				sess.Start()
 				gtdb.Manager().UpdateLastLoginInfo(appdataid, lastremoteaddr, lasttime)
 			}

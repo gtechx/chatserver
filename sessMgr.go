@@ -3,6 +3,8 @@ package main
 import (
 	"net"
 	"sync"
+
+	"github.com/gtechx/chatserver/db"
 )
 
 type SessManager struct {
@@ -18,18 +20,18 @@ func SessMgr() *SessManager {
 	return sessmgr
 }
 
-func (sm *SessManager) CreateSess(conn net.Conn, appname, zonename, account string, id uint64) ISession {
-	sess := &Sess{account: account, appname: appname, zonename: zonename, id: id, conn: conn}
-	sesslist := sm.GetSess(id)
+func (sm *SessManager) CreateSess(conn net.Conn, tbl_appdata *gtdb.AppData) ISession {
+	sess := &Sess{appdata: tbl_appdata, conn: conn}
+	sesslist := sm.GetSess(tbl_appdata.ID)
 	if sesslist == nil {
 		sesslist = map[string]ISession{}
-		sm.sessMap.Store(id, sesslist)
+		sm.sessMap.Store(tbl_appdata.ID, sesslist)
 	}
-	oldsess, ok := sesslist[appname]
+	oldsess, ok := sesslist[tbl_appdata.Appname]
 	if ok {
 		oldsess.KickOut()
 	}
-	sesslist[appname] = sess
+	sesslist[tbl_appdata.Appname] = sess
 	return sess
 }
 

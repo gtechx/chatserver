@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net"
+
+	"github.com/gtechx/chatserver/db"
 )
 
 type ISession interface {
@@ -18,35 +20,31 @@ type ISession interface {
 }
 
 type Sess struct {
-	account  string
-	appname  string
-	zonename string
-	nickname string
-	id       uint64
-	conn     net.Conn
+	appdata *gtdb.AppData
+	conn    net.Conn
 
 	sendChan chan []byte
 	quitChan chan int
 }
 
 func (s *Sess) ID() uint64 {
-	return s.id
+	return s.appdata.ID
 }
 
 func (s *Sess) Account() string {
-	return s.account
+	return s.appdata.Account
 }
 
 func (s *Sess) AppName() string {
-	return s.appname
+	return s.appdata.Appname
 }
 
 func (s *Sess) ZoneName() string {
-	return s.zonename
+	return s.appdata.Zonename
 }
 
 func (s *Sess) NickName() string {
-	return s.nickname
+	return s.appdata.Nickname
 }
 
 func (s *Sess) Start() {
@@ -134,5 +132,5 @@ func (s *Sess) startSend() {
 	}
 end:
 	fmt.Println("remove session from sessmgr..")
-	SessMgr().DelSess(s.id)
+	SessMgr().DelSess(s.appdata.ID)
 }

@@ -114,14 +114,6 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 		return ERR_INVALID_JSON, ERR_INVALID_JSON
 	}
 
-	appdata, err := gtdb.Manager().GetAppData(sess.ID())
-
-	if err != nil {
-		return ERR_DB, ERR_DB
-	}
-
-	presence.Nickname = appdata.Nickname
-
 	presencetype := presence.PresenceType
 	who := presence.Who
 	//timestamp := Int64(data[9:])
@@ -131,6 +123,7 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 		return ERR_FRIEND_SELF, ERR_FRIEND_SELF
 	}
 
+	presence.Nickname = sess.NickName()
 	presence.TimeStamp = time.Now().Unix()
 	presence.Who = sess.ID()
 
@@ -366,17 +359,25 @@ func isInBlack(id, otherid uint64) (bool, error) {
 }
 
 func HandlerMessage(sess ISession, data []byte) (uint16, interface{}) {
-	who := Uint64(data)
-	timestamp := Int64(data[8:])
-	message := data[16:]
+	var msg *MsgMessageJson = &MsgMessageJson{}
+	err := json.Unmarshal(data, msg)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return ERR_INVALID_JSON, ERR_INVALID_JSON
+	}
+
+	who := msg.Who
 
 	if who == sess.ID() {
 		return ERR_MESSAGE_SELF, ERR_MESSAGE_SELF
 	}
 
-	timestamp = time.Now().Unix()
+	msg.TimeStamp = time.Now().Unix()
+	msg.Who = sess.ID()
+	msg.Nickname = sess.NickName()
 
-	msg := &MsgMessage{Who: sess.ID(), TimeStamp: timestamp, Message: message}
+	//msg := &MsgMessage{Who: sess.ID(), TimeStamp: timestamp, Message: message}
 
 	errcode := ERR_NONE
 	dbMgr := gtdb.Manager()
@@ -392,7 +393,7 @@ func HandlerMessage(sess ISession, data []byte) (uint16, interface{}) {
 			if err != nil {
 				errcode = ERR_DB
 			} else {
-				if !flag {
+				if flag {
 					errcode = ERR_IN_BLACKLIST
 				} else {
 					msgbytes, err := json.Marshal(msg)

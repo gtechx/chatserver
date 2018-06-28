@@ -59,15 +59,11 @@ func (db *DBManager) GetAllPresence(id uint64) (map[string]string, error) {
 	return redis.StringMap(ret, err) //.ByteSlices(ret, err)
 }
 
-func (db *DBManager) PullOnlineMessage(serveraddr string, timeout int) (map[string]string, error) {
+func (db *DBManager) PullOnlineMessage(serveraddr string) ([]byte, error) {
 	conn := db.rd.Get()
 	defer conn.Close()
-	cmd := "POP"
-	if timeout != 0 {
-		cmd = BLPOP
-	}
-	ret, err := conn.Do(cmd, "message:"+serveraddr, timeout)
-	return redis.StringMap(ret, err)
+	ret, err := conn.Do("LPOP", "message:"+serveraddr)
+	return redis.Bytes(ret, err)
 }
 
 func (db *DBManager) GetOfflineMessage(id uint64) ([][]byte, error) {
