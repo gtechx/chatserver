@@ -35,8 +35,11 @@ func (sm *SessManager) CreateSess(conn net.Conn, tbl_appdata *gtdb.AppData) ISes
 	return sess
 }
 
-func (sm *SessManager) DelSess(id uint64) {
-	sm.sessMap.Delete(id)
+func (sm *SessManager) DelSess(sess ISession) {
+	sesslist := sm.GetSess(id)
+	if sesslist != nil {
+		delete(sesslist, sess.AppName())
+	}
 }
 
 func (sm *SessManager) GetSess(id uint64) map[string]ISession {
@@ -50,10 +53,11 @@ func (sm *SessManager) GetSess(id uint64) map[string]ISession {
 func (sm *SessManager) SendMsgToId(id uint64, msg []byte) bool {
 	sesslist := sm.GetSess(id)
 	if sesslist != nil {
+		flag := false
 		for _, sess := range sesslist {
-			sess.(*Sess).Send(msg)
+			flag = flag || sess.(*Sess).Send(msg)
 		}
-		return true
+		return flag
 	}
 	return false
 }

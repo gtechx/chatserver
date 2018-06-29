@@ -13,7 +13,7 @@ type ISession interface {
 	AppName() string
 	ZoneName() string
 	NickName() string
-	Send(buff []byte)
+	Send(buff []byte) bool
 	Start()
 	Stop()
 	KickOut()
@@ -25,6 +25,7 @@ type Sess struct {
 
 	sendChan chan []byte
 	quitChan chan int
+	isClosed bool
 }
 
 func (s *Sess) ID() uint64 {
@@ -55,6 +56,7 @@ func (s *Sess) Start() {
 }
 
 func (s *Sess) Stop() {
+	s.isClosed = true
 	s.quitChan <- 1
 }
 
@@ -64,8 +66,12 @@ func (s *Sess) KickOut() {
 	s.Stop()
 }
 
-func (s *Sess) Send(buff []byte) {
+func (s *Sess) Send(buff []byte) bool {
+	if s.isClosed {
+		return false
+	}
 	s.sendChan <- buff
+	return true
 }
 
 func (s *Sess) startRecv() {
@@ -132,5 +138,5 @@ func (s *Sess) startSend() {
 	}
 end:
 	fmt.Println("remove session from sessmgr..")
-	SessMgr().DelSess(s.appdata.ID)
+	SessMgr().DelSess(s)
 }
