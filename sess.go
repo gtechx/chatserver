@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/gtechx/chatserver/db"
 )
@@ -23,9 +24,10 @@ type Sess struct {
 	appdata *gtdb.AppData
 	conn    net.Conn
 
-	sendChan chan []byte
-	quitChan chan int
-	isClosed bool
+	sendChan  chan []byte
+	quitChan  chan bool
+	errorChan chan bool
+	isClosed  bool
 }
 
 func (s *Sess) ID() uint64 {
@@ -49,7 +51,8 @@ func (s *Sess) NickName() string {
 }
 
 func (s *Sess) Start() {
-	s.quitChan = make(chan int, 1)
+	s.quitChan = make(chan bool, 2) //多个goroutine有可能会quit，所以需要两个，防止阻塞某个goroutine
+	s.errorChan = make(chan bool, 1)
 	s.sendChan = make(chan []byte, 2)
 	go s.startRecv()
 	s.startSend()
@@ -57,7 +60,7 @@ func (s *Sess) Start() {
 
 func (s *Sess) Stop() {
 	s.isClosed = true
-	s.quitChan <- 1
+	s.quitChan <- true
 }
 
 func (s *Sess) KickOut() {
@@ -70,7 +73,11 @@ func (s *Sess) Send(buff []byte) bool {
 	if s.isClosed {
 		return false
 	}
-	s.sendChan <- buff
+	select {
+	case s.sendChan <- buff:
+	case time.After(time.Millisecond * 100):
+		return false
+	}
 	return true
 }
 
@@ -79,6 +86,7 @@ func (s *Sess) startRecv() {
 		msgtype, id, _, msgid, databuff, err := readMsgHeader(s.conn)
 		if err != nil {
 			fmt.Println("readMsgHeader error:" + err.Error())
+			s.errorChan <- true
 			break
 		}
 		switch msgtype {
@@ -92,6 +100,7 @@ func (s *Sess) startRecv() {
 				errcode, ret := HandleMsg(msgid, s, databuff)
 				if errcode == ERR_MSG_INVALID {
 					fmt.Println("ERR_MSG_INVALID")
+					s.errorChan <- true
 					goto end
 				}
 				if ret != nil {
@@ -99,12 +108,12 @@ func (s *Sess) startRecv() {
 					s.sendChan <- senddata
 				}
 			} else {
+				s.Stop()
 				goto end
 			}
 		}
 	}
 end:
-	s.quitChan <- 1
 	fmt.Println("sess recv end")
 }
 
@@ -122,6 +131,8 @@ func (s *Sess) startSend() {
 					goto end
 				}
 			}
+			goto end
+		case <-s.errorChan:
 			goto end
 		case databuff := <-s.sendChan:
 			_, err := s.conn.Write(databuff)

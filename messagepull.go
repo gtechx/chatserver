@@ -19,7 +19,7 @@ func startMessagePull() {
 
 		if err != nil {
 			//fmt.Println(err.Error())
-			time.Sleep(time.Duration(1) * time.Second)
+			time.Sleep(1 * time.Second)
 			continue
 		}
 

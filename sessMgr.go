@@ -36,7 +36,7 @@ func (sm *SessManager) CreateSess(conn net.Conn, tbl_appdata *gtdb.AppData) ISes
 }
 
 func (sm *SessManager) DelSess(sess ISession) {
-	sesslist := sm.GetSess(id)
+	sesslist := sm.GetSess(sess.ID())
 	if sesslist != nil {
 		delete(sesslist, sess.AppName())
 	}
