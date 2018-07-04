@@ -75,7 +75,7 @@ func (s *Sess) Send(buff []byte) bool {
 	}
 	select {
 	case s.sendChan <- buff:
-	case time.After(time.Millisecond * 100):
+	case <-time.After(time.Millisecond * 100):
 		return false
 	}
 	return true
