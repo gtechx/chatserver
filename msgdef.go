@@ -4,6 +4,11 @@ import (
 	"fmt"
 )
 
+//客户端在发送一个请求以后，需要启动一个定时器来检测该请求是否得到反馈：
+//1.如果在规定时间没有反馈，则说明网络超时。
+//2.如果收到反馈，则可以根据反馈进行弹框告知用户。
+//在收到反馈或者超时以后需要将该检测移除检测队列。
+
 //处理函数中需要根据发送给谁的id进行发送，这就需要用到session管理器，根据id查找到对于的session
 //并且需要发送返回的消息， 所以可能需要传session进来
 //所以消息处理模块和session和db模块有交互
@@ -277,6 +282,32 @@ type MsgReqGroupDelete struct {
 
 type MsgRetGroupDelete struct {
 	ErrorCode uint16
+}
+
+const MsgId_ReqGroupModify uint16 = 1016
+
+type MsgReqGroupModify struct {
+	OldGroupName []byte
+	NewGroupName []byte
+}
+
+type MsgRetGroupModify struct {
+	ErrorCode uint16
+}
+
+type MsgReqGroupJson struct {
+	Cmd     byte   `json:"cmd"`
+	Name    string `json:"name"`
+	OldName string `json:"oldname"`
+	NewName string `json:"newname"`
+}
+
+type MsgRetGroupJson struct {
+	Cmd       byte   `json:"cmd"`
+	Name      string `json:"name,omitempty"`
+	OldName   string `json:"oldname,omitempty"`
+	NewName   string `json:"newname,omitempty"`
+	ErrorCode uint16 `json:"errorcode"`
 }
 
 //add/remove black user
