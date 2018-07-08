@@ -61,3 +61,10 @@ func (sm *SessManager) SendMsgToId(id uint64, msg []byte) bool {
 	}
 	return false
 }
+
+func (sm *SessManager) TrySaveOfflineMsg(id uint64, msg []byte) {
+	sesslist := sm.GetSess(id)
+	if len(sesslist) == 0 {
+		gtdb.Manager().SendMsgToUserOffline(id, msg)
+	}
+}

@@ -150,4 +150,9 @@ func (s *Sess) startSend() {
 end:
 	fmt.Println("remove session from sessmgr..")
 	SessMgr().DelSess(s)
+	count := len(s.sendChan)
+	for i := 0; i < count; i++ {
+		databuff := <-s.sendChan
+		SessMgr().TrySaveOfflineMsg(s.ID(), databuff)
+	}
 }
