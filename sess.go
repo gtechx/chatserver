@@ -14,6 +14,7 @@ type ISession interface {
 	AppName() string
 	ZoneName() string
 	NickName() string
+	Platform() string
 	Send(buff []byte) bool
 	Start()
 	Stop()
@@ -21,8 +22,9 @@ type ISession interface {
 }
 
 type Sess struct {
-	appdata *gtdb.AppData
-	conn    net.Conn
+	appdata  *gtdb.AppData
+	conn     net.Conn
+	platform string
 
 	sendChan  chan []byte
 	quitChan  chan bool
@@ -48,6 +50,10 @@ func (s *Sess) ZoneName() string {
 
 func (s *Sess) NickName() string {
 	return s.appdata.Nickname
+}
+
+func (s *Sess) Platform() string {
+	return s.platform
 }
 
 func (s *Sess) Start() {

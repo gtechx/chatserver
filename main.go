@@ -147,8 +147,10 @@ func onNewConn(conn net.Conn) {
 		buff = buff[1+slen:]
 		slen = int(buff[0])
 		zonename := String(buff[1 : 1+slen])
+		slen = int(buff[0])
+		platform := String(buff[1 : 1+slen])
 
-		fmt.Println(account, password, appname, zonename)
+		fmt.Println(account, password, appname, zonename, platform)
 		_, ret := HandlerReqChatLogin(account, password, appname, zonename)
 
 		senddata := packageMsg(RetFrame, id, MsgId_ReqChatLogin, ret)
@@ -189,7 +191,7 @@ func onNewConn(conn net.Conn) {
 				fmt.Println("sess start:", appdataid)
 				lastremoteaddr := conn.RemoteAddr().String()
 				lasttime := time.Now()
-				sess := SessMgr().CreateSess(conn, tbl_appdata)
+				sess := SessMgr().CreateSess(conn, tbl_appdata, platform)
 				sess.Start()
 				gtdb.Manager().UpdateLastLoginInfo(appdataid, lastremoteaddr, lasttime)
 			}

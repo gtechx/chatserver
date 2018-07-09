@@ -104,6 +104,7 @@ type MsgReqChatLogin struct {
 	Password string
 	AppName  string
 	ZoneName string
+	Platform string
 }
 
 type MsgRetChatLogin struct {

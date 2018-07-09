@@ -20,25 +20,25 @@ func SessMgr() *SessManager {
 	return sessmgr
 }
 
-func (sm *SessManager) CreateSess(conn net.Conn, tbl_appdata *gtdb.AppData) ISession {
-	sess := &Sess{appdata: tbl_appdata, conn: conn}
+func (sm *SessManager) CreateSess(conn net.Conn, tbl_appdata *gtdb.AppData, platform string) ISession {
+	sess := &Sess{appdata: tbl_appdata, conn: conn, platform: platform}
 	sesslist := sm.GetSess(tbl_appdata.ID)
 	if sesslist == nil {
 		sesslist = map[string]ISession{}
 		sm.sessMap.Store(tbl_appdata.ID, sesslist)
 	}
-	oldsess, ok := sesslist[tbl_appdata.Appname]
+	oldsess, ok := sesslist[platform]
 	if ok {
 		oldsess.KickOut()
 	}
-	sesslist[tbl_appdata.Appname] = sess
+	sesslist[platform] = sess
 	return sess
 }
 
 func (sm *SessManager) DelSess(sess ISession) {
 	sesslist := sm.GetSess(sess.ID())
 	if sesslist != nil {
-		delete(sesslist, sess.AppName())
+		delete(sesslist, sess.Platform())
 	}
 }
 
