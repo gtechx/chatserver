@@ -116,6 +116,12 @@ func (db *DBManager) IsFriend(id, otherid uint64) (bool, error) {
 	return count > 0, retdb.Error
 }
 
+func (db *DBManager) GetFriendCountInGroup(id uint64, group string) (int, error) {
+	var count int
+	retdb := db.sql.Model(friend_table).Where("dataid = ?", id).Where("group = ?", group).Count(&count)
+	return count, retdb.Error
+}
+
 // func (db *DBManager) GetGroupFriendIn(datakey *DataKey, otheraccount string) (string, error) {
 // 	conn := db.redisPool.Get()
 // 	defer conn.Close()
@@ -154,6 +160,20 @@ func (db *DBManager) IsInGroup(id, otherid uint64, group string) (bool, error) {
 func (db *DBManager) MoveToGroup(id, otherid uint64, destgroup string) error {
 	retdb := db.sql.Model(friend_table).Where("dataid = ? AND otherdataid = ?", id, otherid).Update("group", destgroup)
 	return retdb.Error
+}
+
+func (db *DBManager) RenameGroup(id uint64, oldname, newname string) error {
+	tx := db.sql.Begin()
+	if err := tx.Model(group_table).Where("dataid = ? AND groupname = ?", id, oldname).Update("groupname", newname).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Model(friend_table).Where("dataid = ? AND group = ?", id, oldname).Update("group", newname).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+	return nil
 }
 
 func (db *DBManager) SetComment(id, otherid uint64, comment string) error {

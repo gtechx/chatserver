@@ -24,7 +24,11 @@ func RegisterUserMsg() {
 }
 
 func HandlerReqUserData(sess ISession, data []byte) (uint16, interface{}) {
-	appdata, err := gtdb.Manager().GetAppData(sess.ID())
+	id := Uint64(data)
+	if id == 0 {
+		id = sess.ID()
+	}
+	appdata, err := gtdb.Manager().GetAppData(id)
 	errcode := ERR_NONE
 	var jsonbytes []byte
 
@@ -435,9 +439,9 @@ func HandlerGroup(sess ISession, data []byte) (uint16, interface{}) {
 	errcode := ERR_NONE
 	dbMgr := gtdb.Manager()
 
-	switch groupmsg.cmd {
+	switch groupmsg.Cmd {
 	case "create":
-		flag, err := dbMgr.IsGroupExists(groupmsg.Name)
+		flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.Name)
 		if err != nil {
 			errcode = ERR_DB
 		} else {
@@ -452,7 +456,7 @@ func HandlerGroup(sess ISession, data []byte) (uint16, interface{}) {
 			}
 		}
 	case "delete":
-		flag, err := dbMgr.IsGroupExists(groupmsg.Name)
+		flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.Name)
 		if err != nil {
 			errcode = ERR_DB
 		} else {
@@ -460,14 +464,45 @@ func HandlerGroup(sess ISession, data []byte) (uint16, interface{}) {
 				errcode = ERR_GROUP_NOT_EXISTS
 			} else {
 				//check if group has friend
+				count, err := dbMgr.GetFriendCountInGroup(sess.ID(), groupmsg.Name)
 
-				err = dbMgr.RemoveGroup(sess.ID(), groupmsg.Name)
 				if err != nil {
 					errcode = ERR_DB
+				} else {
+					if count > 0 {
+						errcode = ERR_GROUP_NOT_EMPTY
+					} else {
+						err = dbMgr.RemoveGroup(sess.ID(), groupmsg.Name)
+						if err != nil {
+							errcode = ERR_DB
+						}
+					}
 				}
 			}
 		}
 	case "rename":
+		flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.OldName)
+		if err != nil {
+			errcode = ERR_DB
+		} else {
+			if !flag {
+				errcode = ERR_OLD_GROUP_NOT_EXISTS
+			} else {
+				flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.NewName)
+				if err != nil {
+					errcode = ERR_DB
+				} else {
+					if flag {
+						errcode = ERR_NEW_GROUP_EXISTS
+					} else {
+						err := dbMgr.RenameGroup(sess.ID(), groupmsg.OldName, groupmsg.NewName)
+						if err != nil {
+							errcode = ERR_DB
+						}
+					}
+				}
+			}
+		}
 	case "refresh":
 	}
 
