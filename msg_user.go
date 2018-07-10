@@ -19,6 +19,7 @@ func RegisterUserMsg() {
 	registerMsgHandler(MsgId_Presence, HandlerPresence)
 	registerMsgHandler(MsgId_Message, HandlerMessage)
 	registerMsgHandler(MsgId_ReqDataList, HandlerReqDataList)
+	registerMsgHandler(MsgId_Group, HandlerGroup)
 	//registerMsgHandler(MsgId_EnterChat, HandlerEnterChat)
 }
 
@@ -274,11 +275,20 @@ func HandlerReqDataList(sess ISession, data []byte) (uint16, interface{}) {
 
 	switch datatype {
 	case DataType_Friend:
-		list, err := dbMgr.GetFriendInfoList(sess.ID())
+		grouplist, err := dbMgr.GetGroupList(sess.ID())
 		if err != nil {
 			errcode = ERR_DB
 		} else {
-			ret.Json, err = json.Marshal(list)
+			friendlist := map[string][]*gtdb.FriendJson{}
+			for _, group := range grouplist {
+				list, err := dbMgr.GetFriendInfoList(sess.ID(), group)
+				if err != nil {
+					errcode = ERR_DB
+				} else {
+					friendlist[group] = list
+				}
+			}
+			ret.Json, err = json.Marshal(friendlist)
 			if err != nil {
 				errcode = ERR_UNKNOWN
 				ret.Json = nil
@@ -406,6 +416,59 @@ func HandlerMessage(sess ISession, data []byte) (uint16, interface{}) {
 				}
 			}
 		}
+	}
+
+	return errcode, errcode
+}
+
+func HandlerGroup(sess ISession, data []byte) (uint16, interface{}) {
+	var groupmsg *MsgReqGroupJson = &MsgReqGroupJson{}
+	err := json.Unmarshal(data, groupmsg)
+
+	fmt.Println(string(data))
+	fmt.Println(groupmsg)
+	if err != nil {
+		fmt.Println(err.Error())
+		return ERR_INVALID_JSON, ERR_INVALID_JSON
+	}
+
+	errcode := ERR_NONE
+	dbMgr := gtdb.Manager()
+
+	switch groupmsg.cmd {
+	case "create":
+		flag, err := dbMgr.IsGroupExists(groupmsg.Name)
+		if err != nil {
+			errcode = ERR_DB
+		} else {
+			if flag {
+				errcode = ERR_GROUP_NOT_EXISTS
+			} else {
+				tbl_group := &gtdb.Group{Groupname: groupmsg.Name, Dataid: sess.ID()}
+				err = dbMgr.AddGroup(tbl_group)
+				if err != nil {
+					errcode = ERR_DB
+				}
+			}
+		}
+	case "delete":
+		flag, err := dbMgr.IsGroupExists(groupmsg.Name)
+		if err != nil {
+			errcode = ERR_DB
+		} else {
+			if !flag {
+				errcode = ERR_GROUP_NOT_EXISTS
+			} else {
+				//check if group has friend
+
+				err = dbMgr.RemoveGroup(sess.ID(), groupmsg.Name)
+				if err != nil {
+					errcode = ERR_DB
+				}
+			}
+		}
+	case "rename":
+	case "refresh":
 	}
 
 	return errcode, errcode

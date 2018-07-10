@@ -296,15 +296,17 @@ type MsgRetGroupModify struct {
 	ErrorCode uint16
 }
 
+const MsgId_Group uint16 = 1015
+
 type MsgReqGroupJson struct {
-	Cmd     byte   `json:"cmd"`
+	Cmd     string `json:"cmd"`
 	Name    string `json:"name"`
 	OldName string `json:"oldname"`
 	NewName string `json:"newname"`
 }
 
 type MsgRetGroupJson struct {
-	Cmd       byte   `json:"cmd"`
+	Cmd       string `json:"cmd"`
 	Name      string `json:"name,omitempty"`
 	OldName   string `json:"oldname,omitempty"`
 	NewName   string `json:"newname,omitempty"`

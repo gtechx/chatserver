@@ -2,6 +2,7 @@ package gtdb
 
 import "time"
 import "github.com/jinzhu/gorm"
+import . "github.com/gtechx/base/common"
 
 //. "github.com/gtechx/base/common"
 
@@ -10,7 +11,8 @@ var appdata_tablelist = []*AppData{}
 
 func (db *DBManager) CreateAppData(tbl_appdata *AppData) error {
 	tx := db.sql.Begin()
-	if err := tx.Create(tbl_appdata).Error; err != nil {
+	tmpdb := tx.Create(tbl_appdata)
+	if err := tmpdb.Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -35,6 +37,13 @@ func (db *DBManager) CreateAppData(tbl_appdata *AppData) error {
 			tx.Rollback()
 			return err
 		}
+	}
+
+	id := Uint64(tmpdb.Value)
+
+	if err := tx.Create(&Group{Groupname: "MyFriends", Dataid: id}).Error; err != nil {
+		tx.Rollback()
+		return err
 	}
 
 	tx.Commit()

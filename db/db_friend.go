@@ -81,14 +81,20 @@ func (db *DBManager) GetOfflineFriendIdList(id uint64) ([]uint64, error) {
 }
 
 func (db *DBManager) GetFriendIdList(id uint64) ([]uint64, error) {
-	var friendidlist []uint64
+	friendidlist := []uint64{}
 	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Pluck("otherdataid", &friendidlist) //.Select("friends.otherdataid").Scan(&friendidlist)
 	return friendidlist, retdb.Error
 }
 
-func (db *DBManager) GetFriendInfoList(id uint64) ([]*FriendJson, error) {
+func (db *DBManager) GetAllFriendInfoList(id uint64) ([]*FriendJson, error) {
 	friendlist := []*FriendJson{}
 	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Select("gtchat_friends.otherdataid as dataid, gtchat_friends.group, gtchat_friends.comment, gtchat_app_data.nickname, gtchat_app_data.desc").Joins("join gtchat_app_data on gtchat_friends.otherdataid = gtchat_app_data.id").Find(&friendlist)
+	return friendlist, retdb.Error
+}
+
+func (db *DBManager) GetFriendInfoList(id uint64, group string) ([]*FriendJson, error) {
+	friendlist := []*FriendJson{}
+	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Where("gtchat_friends.group = ?", group).Select("gtchat_friends.otherdataid as dataid, gtchat_friends.group, gtchat_friends.comment, gtchat_app_data.nickname, gtchat_app_data.desc").Joins("join gtchat_app_data on gtchat_friends.otherdataid = gtchat_app_data.id").Find(&friendlist)
 	return friendlist, retdb.Error
 }
 
@@ -127,9 +133,9 @@ func (db *DBManager) RemoveGroup(id uint64, group string) error {
 	return retdb.Error
 }
 
-func (db *DBManager) GetGroupList(id uint64) ([]*Group, error) {
-	grouplist := []*Group{}
-	retdb := db.sql.Where("dataid = ?", id).Find(&grouplist)
+func (db *DBManager) GetGroupList(id uint64) ([]string, error) {
+	grouplist := []string{}
+	retdb := db.sql.Model(group_table).Where("dataid = ?", id).Pluck("groupname", &grouplist) //.Select("friends.otherdataid").Scan(&friendidlist)
 	return grouplist, retdb.Error
 }
 
