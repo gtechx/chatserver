@@ -20,6 +20,7 @@ func RegisterUserMsg() {
 	registerMsgHandler(MsgId_Message, HandlerMessage)
 	registerMsgHandler(MsgId_ReqDataList, HandlerReqDataList)
 	registerMsgHandler(MsgId_Group, HandlerGroup)
+	registerMsgHandler(MsgId_ReqGroupRefresh, HandlerGroupRefresh)
 	//registerMsgHandler(MsgId_EnterChat, HandlerEnterChat)
 }
 
@@ -507,4 +508,37 @@ func HandlerGroup(sess ISession, data []byte) (uint16, interface{}) {
 	}
 
 	return errcode, errcode
+}
+
+func HandlerGroupRefresh(sess ISession, data []byte) (uint16, interface{}) {
+	groupname := String(data)
+	errcode := ERR_NONE
+	dbMgr := gtdb.Manager()
+	ret := &MsgRetGroupRefresh{}
+
+	flag, err := dbMgr.IsGroupExists(sess.ID(), groupname)
+		if err != nil {
+			errcode = ERR_DB
+		} else {
+			if !flag {
+				errcode = ERR_GROUP_NOT_EXISTS
+			} else {
+				friendlist := map[string][]*gtdb.FriendJson{}
+				list, err := dbMgr.GetFriendInfoList(sess.ID(), groupname)
+				if err != nil {
+					errcode = ERR_DB
+				} else {
+					friendlist[groupname] = list
+				}
+				ret.Json, err = json.Marshal(friendlist)
+				if err != nil {
+					errcode = ERR_JSON_SERIALIZE
+					ret.Json = nil
+				}
+			}
+		}
+	}
+	ret.ErrorCode = errcode
+
+	return errcode, ret
 }

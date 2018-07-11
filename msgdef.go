@@ -265,37 +265,6 @@ type MsgRetDataList struct {
 }
 
 //create/delete user group
-const MsgId_ReqGroupCreate uint16 = 1015
-
-type MsgReqGroupCreate struct {
-	GroupName []byte
-}
-
-type MsgRetGroupCreate struct {
-	ErrorCode uint16
-}
-
-const MsgId_ReqGroupDelete uint16 = 1016
-
-type MsgReqGroupDelete struct {
-	GroupName []byte
-}
-
-type MsgRetGroupDelete struct {
-	ErrorCode uint16
-}
-
-const MsgId_ReqGroupModify uint16 = 1016
-
-type MsgReqGroupModify struct {
-	OldGroupName []byte
-	NewGroupName []byte
-}
-
-type MsgRetGroupModify struct {
-	ErrorCode uint16
-}
-
 const MsgId_Group uint16 = 1015
 
 type MsgReqGroupJson struct {
@@ -306,11 +275,22 @@ type MsgReqGroupJson struct {
 }
 
 type MsgRetGroupJson struct {
-	Cmd       string `json:"cmd"`
-	Name      string `json:"name,omitempty"`
-	OldName   string `json:"oldname,omitempty"`
-	NewName   string `json:"newname,omitempty"`
+	// Cmd       string `json:"cmd"`
+	// Name      string `json:"name,omitempty"`
+	// OldName   string `json:"oldname,omitempty"`
+	// NewName   string `json:"newname,omitempty"`
 	ErrorCode uint16 `json:"errorcode"`
+}
+
+const MsgId_ReqGroupRefresh uint16 = 1016
+
+type MsgReqGroupRefresh struct {
+	GroupName string
+}
+
+type MsgRetGroupRefresh struct {
+	ErrorCode uint16
+	Json      []byte
 }
 
 //add/remove black user
