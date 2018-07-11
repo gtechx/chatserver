@@ -517,24 +517,23 @@ func HandlerGroupRefresh(sess ISession, data []byte) (uint16, interface{}) {
 	ret := &MsgRetGroupRefresh{}
 
 	flag, err := dbMgr.IsGroupExists(sess.ID(), groupname)
-		if err != nil {
-			errcode = ERR_DB
+	if err != nil {
+		errcode = ERR_DB
+	} else {
+		if !flag {
+			errcode = ERR_GROUP_NOT_EXISTS
 		} else {
-			if !flag {
-				errcode = ERR_GROUP_NOT_EXISTS
+			friendlist := map[string][]*gtdb.FriendJson{}
+			list, err := dbMgr.GetFriendInfoList(sess.ID(), groupname)
+			if err != nil {
+				errcode = ERR_DB
 			} else {
-				friendlist := map[string][]*gtdb.FriendJson{}
-				list, err := dbMgr.GetFriendInfoList(sess.ID(), groupname)
-				if err != nil {
-					errcode = ERR_DB
-				} else {
-					friendlist[groupname] = list
-				}
-				ret.Json, err = json.Marshal(friendlist)
-				if err != nil {
-					errcode = ERR_JSON_SERIALIZE
-					ret.Json = nil
-				}
+				friendlist[groupname] = list
+			}
+			ret.Json, err = json.Marshal(friendlist)
+			if err != nil {
+				errcode = ERR_JSON_SERIALIZE
+				ret.Json = nil
 			}
 		}
 	}
