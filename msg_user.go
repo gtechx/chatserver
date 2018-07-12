@@ -19,9 +19,6 @@ func RegisterUserMsg() {
 	registerMsgHandler(MsgId_Presence, HandlerPresence)
 	registerMsgHandler(MsgId_Message, HandlerMessage)
 	registerMsgHandler(MsgId_ReqDataList, HandlerReqDataList)
-	registerMsgHandler(MsgId_Group, HandlerGroup)
-	registerMsgHandler(MsgId_ReqGroupRefresh, HandlerGroupRefresh)
-	//registerMsgHandler(MsgId_EnterChat, HandlerEnterChat)
 }
 
 func HandlerReqUserData(sess ISession, data []byte) (uint16, interface{}) {
@@ -329,6 +326,17 @@ func HandlerReqDataList(sess ISession, data []byte) (uint16, interface{}) {
 			}
 		}
 	case DataType_Black:
+		blacklist, err := dbMgr.GetBlackInfoList(sess.ID())
+		if err != nil {
+			errcode = ERR_DB
+		} else {
+			ret.Json, err = json.Marshal(blacklist)
+			fmt.Println(string(ret.Json))
+			if err != nil {
+				errcode = ERR_JSON_SERIALIZE
+				ret.Json = nil
+			}
+		}
 	case DataType_Offline_Message:
 		list, err := dbMgr.GetOfflineMessage(sess.ID())
 		if err != nil {
@@ -363,14 +371,6 @@ func HandlerReqDataList(sess ISession, data []byte) (uint16, interface{}) {
 
 	ret.ErrorCode = errcode
 	return errcode, ret
-}
-
-func isInBlack(id, otherid uint64) (bool, error) {
-	flag, err := gtdb.Manager().IsInBlack(id, otherid)
-	if err != nil {
-		return false, err
-	}
-	return flag, nil
 }
 
 func HandlerMessage(sess ISession, data []byte) (uint16, interface{}) {
@@ -424,120 +424,4 @@ func HandlerMessage(sess ISession, data []byte) (uint16, interface{}) {
 	}
 
 	return errcode, errcode
-}
-
-func HandlerGroup(sess ISession, data []byte) (uint16, interface{}) {
-	var groupmsg *MsgReqGroupJson = &MsgReqGroupJson{}
-	err := json.Unmarshal(data, groupmsg)
-
-	fmt.Println(string(data))
-	fmt.Println(groupmsg)
-	if err != nil {
-		fmt.Println(err.Error())
-		return ERR_INVALID_JSON, ERR_INVALID_JSON
-	}
-
-	errcode := ERR_NONE
-	dbMgr := gtdb.Manager()
-
-	switch groupmsg.Cmd {
-	case "create":
-		flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.Name)
-		if err != nil {
-			errcode = ERR_DB
-		} else {
-			if flag {
-				errcode = ERR_GROUP_NOT_EXISTS
-			} else {
-				tbl_group := &gtdb.Group{Groupname: groupmsg.Name, Dataid: sess.ID()}
-				err = dbMgr.AddGroup(tbl_group)
-				if err != nil {
-					errcode = ERR_DB
-				}
-			}
-		}
-	case "delete":
-		flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.Name)
-		if err != nil {
-			errcode = ERR_DB
-		} else {
-			if !flag {
-				errcode = ERR_GROUP_NOT_EXISTS
-			} else {
-				//check if group has friend
-				count, err := dbMgr.GetFriendCountInGroup(sess.ID(), groupmsg.Name)
-
-				if err != nil {
-					errcode = ERR_DB
-				} else {
-					if count > 0 {
-						errcode = ERR_GROUP_NOT_EMPTY
-					} else {
-						err = dbMgr.RemoveGroup(sess.ID(), groupmsg.Name)
-						if err != nil {
-							errcode = ERR_DB
-						}
-					}
-				}
-			}
-		}
-	case "rename":
-		flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.OldName)
-		if err != nil {
-			errcode = ERR_DB
-		} else {
-			if !flag {
-				errcode = ERR_OLD_GROUP_NOT_EXISTS
-			} else {
-				flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.NewName)
-				if err != nil {
-					errcode = ERR_DB
-				} else {
-					if flag {
-						errcode = ERR_NEW_GROUP_EXISTS
-					} else {
-						err := dbMgr.RenameGroup(sess.ID(), groupmsg.OldName, groupmsg.NewName)
-						if err != nil {
-							errcode = ERR_DB
-						}
-					}
-				}
-			}
-		}
-	case "refresh":
-	}
-
-	return errcode, errcode
-}
-
-func HandlerGroupRefresh(sess ISession, data []byte) (uint16, interface{}) {
-	groupname := String(data)
-	errcode := ERR_NONE
-	dbMgr := gtdb.Manager()
-	ret := &MsgRetGroupRefresh{}
-
-	flag, err := dbMgr.IsGroupExists(sess.ID(), groupname)
-	if err != nil {
-		errcode = ERR_DB
-	} else {
-		if !flag {
-			errcode = ERR_GROUP_NOT_EXISTS
-		} else {
-			friendlist := map[string][]*gtdb.FriendJson{}
-			list, err := dbMgr.GetFriendInfoList(sess.ID(), groupname)
-			if err != nil {
-				errcode = ERR_DB
-			} else {
-				friendlist[groupname] = list
-			}
-			ret.Json, err = json.Marshal(friendlist)
-			if err != nil {
-				errcode = ERR_JSON_SERIALIZE
-				ret.Json = nil
-			}
-		}
-	}
-	ret.ErrorCode = errcode
-
-	return errcode, ret
 }

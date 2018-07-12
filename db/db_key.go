@@ -472,3 +472,15 @@ type FriendJson struct {
 	Group    string `json:"group"`
 	Comment  string `json:"comment"`
 }
+
+type SearchUserJson struct {
+	Dataid   uint64 `json:"who,string"`
+	Nickname string `json:"nickname"`
+	Country  string `json:"country"`
+}
+
+type SearchRoomJson struct {
+	Dataid   uint64 `json:"who,string"`
+	Nickname string `json:"nickname"`
+	Country  string `json:"country"`
+}

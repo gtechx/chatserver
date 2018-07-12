@@ -315,14 +315,14 @@ type MsgRetRemoveBlack struct {
 }
 
 //包括从一个组移动到另一个组
-const MsgId_ReqAddGroupItem uint16 = 1019
+const MsgId_ReqAddUserToGroup uint16 = 1019
 
-type MsgReqAddGroupItem struct {
+type MsgReqAddUserToGroup struct {
 	AppdataId uint64
 	GroupName []byte
 }
 
-type MsgRetAddGroupItem struct {
+type MsgRetAddUserToGroup struct {
 	ErrorCode uint16
 }
 
@@ -337,20 +337,41 @@ type MsgRetUpdateAppdata struct {
 	ErrorCode uint16
 }
 
-//search user/room
-const MsgId_ReqSearch uint16 = 1021
+const MsgId_KickOut uint16 = 1022
 
-type MsgReqSearch struct {
-	SearchType uint8
-	Json       []byte
+//search user/room
+const MsgId_ReqIdSearch uint16 = 1023
+
+type MsgReqIdSearch struct {
+	Id uint64
 }
 
-type MsgRetSearch struct {
+type MsgRetIdSearch struct {
 	ErrorCode uint16
 	Json      []byte
 }
 
-const MsgId_KickOut uint16 = 1022
+const MsgId_ReqNicknameSearch uint16 = 1024
+
+type MsgReqNicknameSearch struct {
+	Nickname string
+}
+
+type MsgRetNicknameSearch struct {
+	ErrorCode uint16
+	Json      []byte
+}
+
+const MsgId_ReqRoomSearch uint16 = 1025
+
+type MsgReqRoomSearch struct {
+	Roomname string
+}
+
+type MsgRetRoomSearch struct {
+	ErrorCode uint16
+	Json      []byte
+}
 
 //history message ?
 

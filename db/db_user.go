@@ -151,3 +151,9 @@ func (db *DBManager) IsInBlack(id, otherid uint64) (bool, error) {
 	retdb := db.sql.Model(black_table).Where("dataid = ? AND otherdataid = ?", id, otherid).Count(&count)
 	return count > 0, retdb.Error
 }
+
+func (db *DBManager) GetBlackInfoList(id uint64) ([]*FriendJson, error) {
+	blacklist := []*FriendJson{}
+	retdb := db.sql.Table("gtchat_blacks").Where("gtchat_blacks.dataid = ?", id).Select("gtchat_blacks.otherdataid as dataid, gtchat_friends.comment, gtchat_app_data.nickname, gtchat_app_data.desc").Joins("join gtchat_app_data on gtchat_blacks.otherdataid = gtchat_app_data.id").Find(&blacklist)
+	return blacklist, retdb.Error
+}
