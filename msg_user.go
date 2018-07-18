@@ -19,6 +19,7 @@ func RegisterUserMsg() {
 	registerMsgHandler(MsgId_Presence, HandlerPresence)
 	registerMsgHandler(MsgId_Message, HandlerMessage)
 	registerMsgHandler(MsgId_ReqDataList, HandlerReqDataList)
+	registerMsgHandler(MsgId_ReqUpdateAppdata, HandlerReqUpdateAppdata)
 }
 
 func HandlerReqUserData(sess ISession, data []byte) (uint16, interface{}) {
@@ -421,6 +422,76 @@ func HandlerMessage(sess ISession, data []byte) (uint16, interface{}) {
 				}
 			}
 		}
+	}
+
+	return errcode, errcode
+}
+
+func HandlerReqUpdateAppdata(sess ISession, data []byte) (uint16, interface{}) {
+	msgmap := make(map[string]interface{})
+	err := json.Unmarshal(data, msgmap)
+	errcode := ERR_NONE
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return ERR_INVALID_JSON, ERR_INVALID_JSON
+	}
+
+	//TODO: 字段校验暂时未做
+	updatemap := make(map[string]interface{})
+
+	value, ok := msgmap["nickname"]
+
+	if ok {
+		nick, ok := value.(string)
+		if ok && nick != "" {
+			updatemap["nickname"] = nick
+		}
+	}
+
+	value, ok = msgmap["desc"]
+
+	if ok {
+		desc, ok := value.(string)
+		if ok {
+			updatemap["desc"] = desc
+		}
+	}
+
+	value, ok = msgmap["sex"]
+
+	if ok {
+		sex, ok := value.(string)
+		if ok && sex != "" {
+			updatemap["sex"] = sex
+		}
+	}
+
+	value, ok = msgmap["birthday"]
+
+	if ok {
+		strbirthday, ok := value.(string)
+		if ok && strbirthday != "" {
+			birthday, err := time.Parse("01/02/2006", strbirthday)
+			if err == nil {
+				updatemap["birthday"] = birthday
+			}
+		}
+	}
+
+	value, ok = msgmap["country"]
+
+	if ok {
+		country, ok := value.(string)
+		if ok && country != "" {
+			updatemap["country"] = country
+		}
+	}
+
+	err = gtdb.Manager().UpdateAppDataByMap(updatemap)
+
+	if err != nil {
+		errcode = ERR_DB
 	}
 
 	return errcode, errcode

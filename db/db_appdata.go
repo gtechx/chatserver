@@ -55,6 +55,11 @@ func (db *DBManager) UpdateAppData(tbl_appdata *AppData) error {
 	return retdb.Error
 }
 
+func (db *DBManager) UpdateAppDataByMap(data map[string]interface{}) error {
+	retdb := db.sql.Model(appdata_table).Updates(data)
+	return retdb.Error
+}
+
 func (db *DBManager) UpdateLastLoginInfo(id uint64, ip string, date time.Time) error {
 	retdb := db.sql.Model(appdata_table).Where("id = ?", id).Updates(map[string]interface{}{"lastip": ip, "lastlogin": date})
 	return retdb.Error

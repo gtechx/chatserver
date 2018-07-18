@@ -15,7 +15,7 @@ const (
 
 	//redis error
 	ERR_REDIS
-	ERR_DB
+	ERR_DB //11
 
 	//user error
 	ERR_ACCOUNT

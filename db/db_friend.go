@@ -106,7 +106,7 @@ func (db *DBManager) GetFriendList(id uint64, offset, count int) ([]*Friend, err
 
 func (db *DBManager) GetFriendListByGroup(id uint64, group string) ([]*Friend, error) {
 	friendlist := []*Friend{}
-	retdb := db.sql.Where("dataid = ? AND group = ?", id, group).Find(&friendlist)
+	retdb := db.sql.Where("dataid = ? AND 'group' = ?", id, group).Find(&friendlist)
 	return friendlist, retdb.Error
 }
 
@@ -118,7 +118,7 @@ func (db *DBManager) IsFriend(id, otherid uint64) (bool, error) {
 
 func (db *DBManager) GetFriendCountInGroup(id uint64, group string) (int, error) {
 	var count int
-	retdb := db.sql.Model(friend_table).Where("dataid = ?", id).Where("group = ?", group).Count(&count)
+	retdb := db.sql.Model(friend_table).Where("dataid = ?", id).Where("'group' = ?", group).Count(&count)
 	return count, retdb.Error
 }
 
@@ -135,7 +135,7 @@ func (db *DBManager) AddGroup(tbl_group *Group) error {
 }
 
 func (db *DBManager) RemoveGroup(id uint64, group string) error {
-	retdb := db.sql.Delete(group_table, "dataid = ? AND group = ?", id, group)
+	retdb := db.sql.Delete(group_table, "dataid = ? AND 'groupname' = ?", id, group)
 	return retdb.Error
 }
 
@@ -147,13 +147,13 @@ func (db *DBManager) GetGroupList(id uint64) ([]string, error) {
 
 func (db *DBManager) IsGroupExists(id uint64, group string) (bool, error) {
 	var count int
-	retdb := db.sql.Model(group_table).Where("dataid = ? AND group = ?", id, group).Count(&count)
+	retdb := db.sql.Model(group_table).Where("dataid = ? AND groupname = ?", id, group).Count(&count)
 	return count > 0, retdb.Error
 }
 
 func (db *DBManager) IsInGroup(id, otherid uint64, group string) (bool, error) {
 	var count int
-	retdb := db.sql.Model(friend_table).Where("dataid = ? AND otherdataid = ? AND group = ?", id, otherid, group).Count(&count)
+	retdb := db.sql.Model(friend_table).Where("dataid = ? AND otherdataid = ? AND 'group' = ?", id, otherid, group).Count(&count)
 	return count > 0, retdb.Error
 }
 
@@ -168,7 +168,7 @@ func (db *DBManager) RenameGroup(id uint64, oldname, newname string) error {
 		tx.Rollback()
 		return err
 	}
-	if err := tx.Model(friend_table).Where("dataid = ? AND group = ?", id, oldname).Update("group", newname).Error; err != nil {
+	if err := tx.Model(friend_table).Where("dataid = ? AND 'group' = ?", id, oldname).Update("group", newname).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
