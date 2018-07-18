@@ -181,8 +181,8 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 					if !flag {
 						errcode = ERR_PRESENCE_NOT_EXISTS
 					} else {
-						tbl_from := &gtdb.Friend{Dataid: who, Otherdataid: sess.ID(), Group: config.DefaultGroupName}
-						tbl_to := &gtdb.Friend{Dataid: sess.ID(), Otherdataid: who, Group: config.DefaultGroupName}
+						tbl_from := &gtdb.Friend{Dataid: who, Otherdataid: sess.ID(), Groupname: config.DefaultGroupName}
+						tbl_to := &gtdb.Friend{Dataid: sess.ID(), Otherdataid: who, Groupname: config.DefaultGroupName}
 						err = dbMgr.AddFriend(tbl_from, tbl_to)
 
 						if err != nil {

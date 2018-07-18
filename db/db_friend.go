@@ -88,13 +88,13 @@ func (db *DBManager) GetFriendIdList(id uint64) ([]uint64, error) {
 
 func (db *DBManager) GetAllFriendInfoList(id uint64) ([]*FriendJson, error) {
 	friendlist := []*FriendJson{}
-	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Select("gtchat_friends.otherdataid as dataid, gtchat_friends.group, gtchat_friends.comment, gtchat_app_data.nickname, gtchat_app_data.desc").Joins("join gtchat_app_data on gtchat_friends.otherdataid = gtchat_app_data.id").Find(&friendlist)
+	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Select("gtchat_friends.otherdataid as dataid, gtchat_friends.groupname, gtchat_friends.comment, gtchat_app_data.nickname, gtchat_app_data.desc").Joins("join gtchat_app_data on gtchat_friends.otherdataid = gtchat_app_data.id").Find(&friendlist)
 	return friendlist, retdb.Error
 }
 
-func (db *DBManager) GetFriendInfoList(id uint64, group string) ([]*FriendJson, error) {
+func (db *DBManager) GetFriendInfoList(id uint64, groupname string) ([]*FriendJson, error) {
 	friendlist := []*FriendJson{}
-	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Where("gtchat_friends.group = ?", group).Select("gtchat_friends.otherdataid as dataid, gtchat_friends.group, gtchat_friends.comment, gtchat_app_data.nickname, gtchat_app_data.desc").Joins("join gtchat_app_data on gtchat_friends.otherdataid = gtchat_app_data.id").Joins("join gtchat_blacks on gtchat_friends.dataid = gtchat_blacks.dataid AND gtchat_friends.otherdataid != gtchat_blacks.otherdataid").Find(&friendlist)
+	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Where("gtchat_friends.groupname = ?", groupname).Select("gtchat_friends.otherdataid as dataid, gtchat_friends.groupname, gtchat_friends.comment, gtchat_app_data.nickname, gtchat_app_data.desc").Joins("join gtchat_app_data on gtchat_friends.otherdataid = gtchat_app_data.id").Joins("join gtchat_blacks on gtchat_friends.dataid = gtchat_blacks.dataid AND gtchat_friends.otherdataid != gtchat_blacks.otherdataid").Find(&friendlist)
 	return friendlist, retdb.Error
 }
 
@@ -104,9 +104,9 @@ func (db *DBManager) GetFriendList(id uint64, offset, count int) ([]*Friend, err
 	return friendlist, retdb.Error
 }
 
-func (db *DBManager) GetFriendListByGroup(id uint64, group string) ([]*Friend, error) {
+func (db *DBManager) GetFriendListByGroup(id uint64, groupname string) ([]*Friend, error) {
 	friendlist := []*Friend{}
-	retdb := db.sql.Where("dataid = ? AND 'group' = ?", id, group).Find(&friendlist)
+	retdb := db.sql.Where("dataid = ? AND groupname = ?", id, groupname).Find(&friendlist)
 	return friendlist, retdb.Error
 }
 
@@ -116,9 +116,9 @@ func (db *DBManager) IsFriend(id, otherid uint64) (bool, error) {
 	return count > 0, retdb.Error
 }
 
-func (db *DBManager) GetFriendCountInGroup(id uint64, group string) (int, error) {
+func (db *DBManager) GetFriendCountInGroup(id uint64, groupname string) (int, error) {
 	var count int
-	retdb := db.sql.Model(friend_table).Where("dataid = ?", id).Where("'group' = ?", group).Count(&count)
+	retdb := db.sql.Model(friend_table).Where("dataid = ?", id).Where("groupname = ?", groupname).Count(&count)
 	return count, retdb.Error
 }
 
@@ -134,8 +134,8 @@ func (db *DBManager) AddGroup(tbl_group *Group) error {
 	return retdb.Error
 }
 
-func (db *DBManager) RemoveGroup(id uint64, group string) error {
-	retdb := db.sql.Delete(group_table, "dataid = ? AND 'groupname' = ?", id, group)
+func (db *DBManager) RemoveGroup(id uint64, groupname string) error {
+	retdb := db.sql.Delete(group_table, "dataid = ? AND groupname = ?", id, groupname)
 	return retdb.Error
 }
 
@@ -145,20 +145,20 @@ func (db *DBManager) GetGroupList(id uint64) ([]string, error) {
 	return grouplist, retdb.Error
 }
 
-func (db *DBManager) IsGroupExists(id uint64, group string) (bool, error) {
+func (db *DBManager) IsGroupExists(id uint64, groupname string) (bool, error) {
 	var count int
-	retdb := db.sql.Model(group_table).Where("dataid = ? AND groupname = ?", id, group).Count(&count)
+	retdb := db.sql.Model(group_table).Where("dataid = ? AND groupname = ?", id, groupname).Count(&count)
 	return count > 0, retdb.Error
 }
 
-func (db *DBManager) IsInGroup(id, otherid uint64, group string) (bool, error) {
+func (db *DBManager) IsInGroup(id, otherid uint64, groupname string) (bool, error) {
 	var count int
-	retdb := db.sql.Model(friend_table).Where("dataid = ? AND otherdataid = ? AND 'group' = ?", id, otherid, group).Count(&count)
+	retdb := db.sql.Model(friend_table).Where("dataid = ? AND otherdataid = ? AND groupname = ?", id, otherid, groupname).Count(&count)
 	return count > 0, retdb.Error
 }
 
 func (db *DBManager) MoveToGroup(id, otherid uint64, destgroup string) error {
-	retdb := db.sql.Model(friend_table).Where("dataid = ? AND otherdataid = ?", id, otherid).Update("group", destgroup)
+	retdb := db.sql.Model(friend_table).Where("dataid = ? AND otherdataid = ?", id, otherid).Update("groupname", destgroup)
 	return retdb.Error
 }
 
@@ -168,7 +168,7 @@ func (db *DBManager) RenameGroup(id uint64, oldname, newname string) error {
 		tx.Rollback()
 		return err
 	}
-	if err := tx.Model(friend_table).Where("dataid = ? AND 'group' = ?", id, oldname).Update("group", newname).Error; err != nil {
+	if err := tx.Model(friend_table).Where("dataid = ? AND groupname = ?", id, oldname).Update("groupname", newname).Error; err != nil {
 		tx.Rollback()
 		return err
 	}

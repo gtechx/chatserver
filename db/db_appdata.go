@@ -1,8 +1,10 @@
 package gtdb
 
-import "time"
-import "github.com/jinzhu/gorm"
-import . "github.com/gtechx/base/common"
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 
 //. "github.com/gtechx/base/common"
 
@@ -39,9 +41,7 @@ func (db *DBManager) CreateAppData(tbl_appdata *AppData) error {
 		}
 	}
 
-	id := Uint64(tmpdb.Value)
-
-	if err := tx.Create(&Group{Groupname: "MyFriends", Dataid: id}).Error; err != nil {
+	if err := tx.Create(&Group{Groupname: "MyFriends", Dataid: tbl_appdata.ID}).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -237,7 +237,32 @@ func (db *DBManager) GetAppDataCount(appname, zonename, account string, args ...
 	return count, retdb.Error
 }
 
+//获取我创建的应用和分区所有的账号数据列表
 func (db *DBManager) GetAppDataList(appname, zonename, account string, offset, count int, args ...*AppDataFilter) ([]*AppData, error) {
+	appdatalist := []*AppData{}
+	retdb := db.sql.Offset(offset).Limit(count)
+	if appname != "" {
+		retdb = retdb.Where("appname = ?", appname)
+	}
+	if zonename != "" {
+		retdb = retdb.Where("zonename = ?", zonename)
+	}
+	// if account != "" {
+	// 	retdb = retdb.Where("account = ?", account)
+	// }
+	if len(args) > 0 {
+		filter := args[0]
+		if filter != nil {
+			retdb = filter.apply(retdb)
+		}
+	}
+
+	retdb = retdb.Find(&appdatalist)
+	return appdatalist, retdb.Error
+}
+
+//获取我在该应用和分区创建的账号数据列表
+func (db *DBManager) GetMyAppDataList(appname, zonename, account string, offset, count int, args ...*AppDataFilter) ([]*AppData, error) {
 	appdatalist := []*AppData{}
 	retdb := db.sql.Offset(offset).Limit(count)
 	if appname != "" {

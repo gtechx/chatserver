@@ -411,7 +411,7 @@ type Friend struct {
 	// Otheraccount string    `redis:"otheraccount" json:"otheraccount"`
 	// Appname      string    `redis:"appname" json:"appname"`
 	// Zonename     string    `redis:"zonename" json:"zonename"`
-	Group     string    `redis:"group" json:"group"`
+	Groupname string    `redis:"groupname" json:"groupname"`
 	Comment   string    `redis:"comment" json:"comment"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
@@ -474,11 +474,11 @@ var db_tables []interface{} = []interface{}{
 }
 
 type FriendJson struct {
-	Dataid   uint64 `json:"who,string"`
-	Nickname string `json:"nickname"`
-	Desc     string `json:"desc"`
-	Group    string `json:"group"`
-	Comment  string `json:"comment"`
+	Dataid    uint64 `json:"who,string"`
+	Nickname  string `json:"nickname"`
+	Desc      string `json:"desc"`
+	Groupname string `json:"groupname"`
+	Comment   string `json:"comment"`
 }
 
 type SearchUserJson struct {
