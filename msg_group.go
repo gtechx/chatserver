@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	. "github.com/gtechx/base/common"
+	"github.com/gtechx/chatserver/config"
 	"github.com/gtechx/chatserver/db"
 )
 
@@ -113,48 +114,57 @@ func HandlerGroup(sess ISession, data []byte) (uint16, interface{}) {
 			}
 		}
 	case "delete":
-		flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.Name)
-		if err != nil {
-			errcode = ERR_DB
+		if groupmsg.Name == config.DefaultGroupName {
+			errcode = ERR_DEL_GROUP_DEFAULT
 		} else {
-			if !flag {
-				errcode = ERR_GROUP_NOT_EXISTS
-			} else {
-				//check if group has friend
-				count, err := dbMgr.GetFriendCountInGroup(sess.ID(), groupmsg.Name)
+			flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.Name)
 
-				if err != nil {
-					errcode = ERR_DB
+			if err != nil {
+				errcode = ERR_DB
+			} else {
+				if !flag {
+					errcode = ERR_GROUP_NOT_EXISTS
 				} else {
-					if count > 0 {
-						errcode = ERR_GROUP_NOT_EMPTY
+					//check if group has friend
+					count, err := dbMgr.GetFriendCountInGroup(sess.ID(), groupmsg.Name)
+
+					if err != nil {
+						errcode = ERR_DB
 					} else {
-						err = dbMgr.RemoveGroup(sess.ID(), groupmsg.Name)
-						if err != nil {
-							errcode = ERR_DB
+						if count > 0 {
+							errcode = ERR_GROUP_NOT_EMPTY
+						} else {
+							err = dbMgr.RemoveGroup(sess.ID(), groupmsg.Name)
+							if err != nil {
+								errcode = ERR_DB
+							}
 						}
 					}
 				}
 			}
 		}
 	case "rename":
-		flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.OldName)
-		if err != nil {
-			errcode = ERR_DB
+		if groupmsg.OldName == config.DefaultGroupName {
+			errcode = ERR_RENAME_GROUP_DEFAULT
 		} else {
-			if !flag {
-				errcode = ERR_OLD_GROUP_NOT_EXISTS
+			flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.OldName)
+			if err != nil {
+				errcode = ERR_DB
 			} else {
-				flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.NewName)
-				if err != nil {
-					errcode = ERR_DB
+				if !flag {
+					errcode = ERR_OLD_GROUP_NOT_EXISTS
 				} else {
-					if flag {
-						errcode = ERR_NEW_GROUP_EXISTS
+					flag, err := dbMgr.IsGroupExists(sess.ID(), groupmsg.NewName)
+					if err != nil {
+						errcode = ERR_DB
 					} else {
-						err := dbMgr.RenameGroup(sess.ID(), groupmsg.OldName, groupmsg.NewName)
-						if err != nil {
-							errcode = ERR_DB
+						if flag {
+							errcode = ERR_NEW_GROUP_EXISTS
+						} else {
+							err := dbMgr.RenameGroup(sess.ID(), groupmsg.OldName, groupmsg.NewName)
+							if err != nil {
+								errcode = ERR_DB
+							}
 						}
 					}
 				}

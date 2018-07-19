@@ -94,7 +94,7 @@ func (db *DBManager) GetAllFriendInfoList(id uint64) ([]*FriendJson, error) {
 
 func (db *DBManager) GetFriendInfoList(id uint64, groupname string) ([]*FriendJson, error) {
 	friendlist := []*FriendJson{}
-	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Where("gtchat_friends.groupname = ?", groupname).Select("gtchat_friends.otherdataid as dataid, gtchat_friends.groupname, gtchat_friends.comment, gtchat_app_data.nickname, gtchat_app_data.desc").Joins("join gtchat_app_data on gtchat_friends.otherdataid = gtchat_app_data.id").Joins("join gtchat_blacks on gtchat_friends.dataid = gtchat_blacks.dataid AND gtchat_friends.otherdataid != gtchat_blacks.otherdataid").Find(&friendlist)
+	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Where("gtchat_friends.groupname = ?", groupname).Select("gtchat_friends.otherdataid as dataid, gtchat_friends.groupname, gtchat_friends.comment, gtchat_app_data.nickname, gtchat_app_data.desc").Joins("join gtchat_app_data on gtchat_friends.otherdataid = gtchat_app_data.id").Where("(SELECT count(1) FROM gtchat_blacks where gtchat_friends.otherdataid = gtchat_blacks.otherdataid) = 0").Find(&friendlist)
 	return friendlist, retdb.Error
 }
 

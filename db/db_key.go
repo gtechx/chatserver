@@ -325,14 +325,6 @@ type AppData struct {
 	Groups  []Group  `json:"_" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
 }
 
-type AppDataJson struct {
-	Nickname string    `json:"nickname"`
-	Desc     string    `json:"desc"`
-	Sex      string    `json:"sex"`
-	Birthday time.Time `json:"birthday"`
-	Country  string    `json:"country"`
-}
-
 func (appdata *AppData) toAccountApp() *AccountApp {
 	return &AccountApp{Account: appdata.Account, Appname: appdata.Appname}
 }
@@ -471,6 +463,14 @@ var db_tables []interface{} = []interface{}{
 	&AccountBaned{},
 	&AppBaned{},
 	&AppDataBaned{},
+}
+
+type AppDataJson struct {
+	Nickname string    `json:"nickname"`
+	Desc     string    `json:"desc"`
+	Sex      string    `json:"sex"`
+	Birthday time.Time `json:"birthday"`
+	Country  string    `json:"country"`
 }
 
 type FriendJson struct {

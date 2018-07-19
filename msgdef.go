@@ -337,6 +337,17 @@ type MsgRetUpdateAppdata struct {
 	ErrorCode uint16
 }
 
+const MsgId_ReqModifyFriendComment uint16 = 1021
+
+type MsgReqModifyFriendComment struct {
+	Id      uint64
+	Comment string
+}
+
+type MsgRetModifyFriendComment struct {
+	ErrorCode uint16
+}
+
 const MsgId_KickOut uint16 = 1022
 
 //search user/room

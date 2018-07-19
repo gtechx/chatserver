@@ -20,6 +20,7 @@ func RegisterUserMsg() {
 	registerMsgHandler(MsgId_Message, HandlerMessage)
 	registerMsgHandler(MsgId_ReqDataList, HandlerReqDataList)
 	registerMsgHandler(MsgId_ReqUpdateAppdata, HandlerReqUpdateAppdata)
+	registerMsgHandler(MsgId_ReqModifyFriendComment, HandlerReqModifyFriendComment)
 }
 
 func HandlerReqUserData(sess ISession, data []byte) (uint16, interface{}) {
@@ -492,6 +493,26 @@ func HandlerReqUpdateAppdata(sess ISession, data []byte) (uint16, interface{}) {
 
 	if err != nil {
 		errcode = ERR_DB
+	}
+
+	return errcode, errcode
+}
+
+func HandlerReqModifyFriendComment(sess ISession, data []byte) (uint16, interface{}) {
+	id := Uint64(data)
+	comment := String(data[8:])
+
+	errcode := ERR_NONE
+	dbMgr := gtdb.Manager()
+	_, err := dbMgr.GetFriend(sess.ID(), id)
+
+	if err != nil {
+		errcode = ERR_DB
+	} else {
+		err = dbMgr.SetComment(sess.ID(), id, comment)
+		if err != nil {
+			errcode = ERR_DB
+		}
 	}
 
 	return errcode, errcode
