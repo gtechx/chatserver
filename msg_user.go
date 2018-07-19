@@ -430,7 +430,7 @@ func HandlerMessage(sess ISession, data []byte) (uint16, interface{}) {
 
 func HandlerReqUpdateAppdata(sess ISession, data []byte) (uint16, interface{}) {
 	msgmap := make(map[string]interface{})
-	err := json.Unmarshal(data, msgmap)
+	err := json.Unmarshal(data, &msgmap)
 	errcode := ERR_NONE
 
 	if err != nil {
