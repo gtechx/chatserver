@@ -65,6 +65,13 @@ func main() {
 
 	//EntityManager().Initialize()
 
+	err = gtdb.Manager().ClearOnlineInfo(config.ServerAddr)
+
+	if err != nil {
+		fmt.Println("clear online info err:", err)
+		return
+	}
+
 	//register server
 	err = gtdb.Manager().RegisterServer(config.ServerAddr)
 
@@ -147,6 +154,7 @@ func onNewConn(conn net.Conn) {
 		buff = buff[1+slen:]
 		slen = int(buff[0])
 		zonename := String(buff[1 : 1+slen])
+		buff = buff[1+slen:]
 		slen = int(buff[0])
 		platform := String(buff[1 : 1+slen])
 
@@ -166,7 +174,7 @@ func onNewConn(conn net.Conn) {
 		fmt.Println(msgtype, id, size, msgid)
 		if err == nil && msgid == MsgId_ReqEnterChat {
 			appdataid := Uint64(databuff)
-			defer HandlerReqQuitChat(appdataid)
+			defer SessMgr().SetUserOffline(appdataid, platform)
 			//errcode, ret := HandlerReqEnterChat(appdataid)
 			errcode := ERR_NONE
 			tbl_appdata, err := gtdb.Manager().GetAppData(appdataid)
@@ -174,11 +182,19 @@ func onNewConn(conn net.Conn) {
 				errcode = ERR_DB
 			}
 
-			tbl_online := &gtdb.Online{Dataid: appdataid, Serveraddr: config.ServerAddr, State: "available"}
-			err = gtdb.Manager().SetUserOnline(tbl_online)
-			if err != nil {
-				errcode = ERR_DB
-			}
+			// flag, err := gtdb.Manager().IsUserOnline(appdataid)
+			// if err != nil {
+			// 	errcode = ERR_DB
+			// } else {
+			// 	if !flag {
+			// 		tbl_online := &gtdb.Online{Dataid: appdataid, Serveraddr: config.ServerAddr, State: "available"}
+			// 		err = gtdb.Manager().SetUserOnline(tbl_online)
+			// 		if err != nil {
+			// 			errcode = ERR_DB
+			// 		}
+			// 	}
+			// }
+			errcode = SessMgr().SetUserOnline(appdataid, platform)
 
 			senddata := packageMsg(RetFrame, id, MsgId_ReqEnterChat, errcode)
 			_, err = conn.Write(senddata)

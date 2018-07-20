@@ -47,17 +47,22 @@ func HandlerReqUserData(sess ISession, data []byte) (uint16, interface{}) {
 
 func SendMessageToUserOnline(to uint64, data []byte) uint16 {
 	dbMgr := gtdb.Manager()
-	onlinelist, err := dbMgr.GetUserOnlineInfo(to)
+	addlist, err := dbMgr.GetUserOnlineAddrList(to)
 	if err != nil {
 		return ERR_DB
 	}
 
-	for _, online := range onlinelist {
-		fmt.Println("SendMessageToUserOnline to ", to, " serveraddr ", online.Serveraddr)
+	for _, addr := range addlist {
+		fmt.Println("SendMessageToUserOnline to ", to, " serveraddr ", addr)
 
-		err = gtdb.Manager().SendMsgToUserOnline(append(Bytes(to), data...), online.Serveraddr)
-		if err != nil {
-			return ERR_DB
+		if addr == config.ServerAddr {
+			//如果该用户在这台服务器也有登录，则直接转发
+			SessMgr().SendMsgToId(to, data)
+		} else {
+			err = gtdb.Manager().SendMsgToUserOnline(append(Bytes(to), data...), addr)
+			if err != nil {
+				return ERR_DB
+			}
 		}
 	}
 

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	"github.com/gtechx/chatserver/config"
 	//. "github.com/gtechx/base/common"
 
 	"github.com/jinzhu/gorm"
@@ -183,20 +184,7 @@ func (db *DBManager) Install() error {
 	}
 
 	//create test data
-	tbl_account = &Account{Account: "wyq", Password: "edf06a849c9ec19ea725bd3c6c4ce225", Salt: "p99U86", Regip: "127.0.0.1"}
-	if err = tx.Create(tbl_account).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	tbl_app := &App{Appname: "test1", Owner: "wyq", Desc: "ddddd", Share: ""}
-	if err = tx.Create(tbl_app).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	tbl_zone := &AppZone{Zonename: "aaa", Owner: "test1"}
-	if err = tx.Create(tbl_zone).Error; err != nil {
+	if err = db.CreateTestData(tx); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -204,4 +192,70 @@ func (db *DBManager) Install() error {
 
 	tx.Commit()
 	return err
+}
+
+func (db *DBManager) CreateTestData(tx *gorm.DB) error {
+	var err error
+	tbl_account := &Account{Account: "wyq", Password: "edf06a849c9ec19ea725bd3c6c4ce225", Salt: "p99U86", Regip: "127.0.0.1"}
+	if err = tx.Create(tbl_account).Error; err != nil {
+		return err
+	}
+
+	tbl_app := &App{Appname: "test1", Owner: "wyq", Desc: "ddddd", Share: ""}
+	if err = tx.Create(tbl_app).Error; err != nil {
+		return err
+	}
+
+	tbl_zone := &AppZone{Zonename: "aaa", Owner: "test1"}
+	if err = tx.Create(tbl_zone).Error; err != nil {
+		return err
+	}
+
+	tbl_account = &Account{Account: "wyq2", Password: "edf06a849c9ec19ea725bd3c6c4ce225", Salt: "p99U86", Regip: "127.0.0.1"}
+	if err = tx.Create(tbl_account).Error; err != nil {
+		return err
+	}
+
+	tbl_appdata := &AppData{Appname: "test1", Zonename: "aaa", Account: "wyq", Nickname: "wyqtest", Regip: "127.0.0.1"}
+	if err = db.CreateTestAppData(tx, tbl_appdata); err != nil {
+		return err
+	}
+
+	tbl_appdata = &AppData{Appname: "test1", Zonename: "aaa", Account: "wyq2", Nickname: "wyq2test", Regip: "127.0.0.1"}
+	if err = db.CreateTestAppData(tx, tbl_appdata); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *DBManager) CreateTestAppData(tx *gorm.DB, tbl_appdata *AppData) error {
+	tmpdb := tx.Create(tbl_appdata)
+	if err := tmpdb.Error; err != nil {
+		return err
+	}
+	var count uint64
+	if err := tx.Model(&AccountApp{}).Where("account = ?", tbl_appdata.Account).Where("appname = ?", tbl_appdata.Appname).Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		if err := tx.Create(tbl_appdata.toAccountApp()).Error; err != nil {
+			return err
+		}
+	}
+
+	if err := tx.Model(&AccountZone{}).Where("account = ?", tbl_appdata.Account).Where("appname = ?", tbl_appdata.Appname).Where("zonename = ?", tbl_appdata.Zonename).Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		if err := tx.Create(tbl_appdata.toAccountZone()).Error; err != nil {
+			return err
+		}
+	}
+
+	if err := tx.Create(&Group{Groupname: config.DefaultGroupName, Dataid: tbl_appdata.ID}).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

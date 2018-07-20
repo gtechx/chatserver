@@ -106,10 +106,16 @@ func (db *DBManager) GetAccount(account string) (*Account, error) {
 }
 
 //多端登录的时候，会有多条online信息，因为每个端会可能会连接到不同的服务器
-func (db *DBManager) GetUserOnlineInfo(id uint64) ([]*Online, error) {
+func (db *DBManager) GetUserOnlineInfoList(id uint64) ([]*Online, error) {
 	var onlinelist []*Online
 	retdb := db.sql.Model(online_table).Where("dataid = ?", id).Find(&onlinelist)
 	return onlinelist, retdb.Error
+}
+
+func (db *DBManager) GetUserOnlineAddrList(id uint64) ([]string, error) {
+	var addrlist []string
+	retdb := db.sql.Model(online_table).Where("dataid = ?", id).Pluck("distinct serveraddr", &addrlist)
+	return addrlist, retdb.Error
 }
 
 func (db *DBManager) SetUserOnline(tbl_online *Online) error {
@@ -117,8 +123,8 @@ func (db *DBManager) SetUserOnline(tbl_online *Online) error {
 	return retdb.Error
 }
 
-func (db *DBManager) SetUserOffline(id uint64) error {
-	retdb := db.sql.Delete(online_table, "dataid = ?", id)
+func (db *DBManager) SetUserOffline(id uint64, platform string) error {
+	retdb := db.sql.Delete(online_table, "dataid = ? AND platform = ?", id, platform)
 	return retdb.Error
 }
 
@@ -126,6 +132,11 @@ func (db *DBManager) IsUserOnline(id uint64) (bool, error) {
 	var count uint64
 	retdb := db.sql.Model(online_table).Where("dataid = ?", id).Count(&count)
 	return count > 0, retdb.Error
+}
+
+func (db *DBManager) ClearOnlineInfo(serveraddr string) error {
+	retdb := db.sql.Delete(online_table, "serveraddr = ?", serveraddr)
+	return retdb.Error
 }
 
 func (db *DBManager) SetUserState(id uint64, state string) error {

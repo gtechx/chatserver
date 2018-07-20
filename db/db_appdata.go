@@ -3,6 +3,7 @@ package gtdb
 import (
 	"time"
 
+	"github.com/gtechx/chatserver/config"
 	"github.com/jinzhu/gorm"
 )
 
@@ -41,7 +42,7 @@ func (db *DBManager) CreateAppData(tbl_appdata *AppData) error {
 		}
 	}
 
-	if err := tx.Create(&Group{Groupname: "MyFriends", Dataid: tbl_appdata.ID}).Error; err != nil {
+	if err := tx.Create(&Group{Groupname: config.DefaultGroupName, Dataid: tbl_appdata.ID}).Error; err != nil {
 		tx.Rollback()
 		return err
 	}

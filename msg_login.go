@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	. "github.com/gtechx/base/common"
-	"github.com/gtechx/chatserver/config"
 	"github.com/gtechx/chatserver/db"
 	"github.com/satori/go.uuid"
 )
@@ -138,38 +137,38 @@ func HandlerReqCreateAppdata(appname, zonename, account, nickname, regip string)
 // 	return errcode, ret
 // }
 
-func HandlerReqEnterChat(appdataid uint64) (uint16, interface{}) {
-	dbmgr := gtdb.Manager()
-	errcode := ERR_NONE
+// func HandlerReqEnterChat(appdataid uint64) (uint16, interface{}) {
+// 	dbmgr := gtdb.Manager()
+// 	errcode := ERR_NONE
 
-	ok, err := dbmgr.IsAppDataExists(appdataid)
+// 	ok, err := dbmgr.IsAppDataExists(appdataid)
 
-	if err != nil {
-		errcode = ERR_DB
-	} else {
-		if !ok {
-			errcode = ERR_APPDATAID_NOT_EXISTS
-		} else {
-			tbl_online := &gtdb.Online{Dataid: appdataid, Serveraddr: config.ServerAddr, State: "available"}
-			err = dbmgr.SetUserOnline(tbl_online)
-			if err != nil {
-				errcode = ERR_DB
-			}
-		}
-	}
+// 	if err != nil {
+// 		errcode = ERR_DB
+// 	} else {
+// 		if !ok {
+// 			errcode = ERR_APPDATAID_NOT_EXISTS
+// 		} else {
+// 			tbl_online := &gtdb.Online{Dataid: appdataid, Serveraddr: config.ServerAddr, State: "available"}
+// 			err = dbmgr.SetUserOnline(tbl_online)
+// 			if err != nil {
+// 				errcode = ERR_DB
+// 			}
+// 		}
+// 	}
 
-	ret := &MsgRetEnterChat{errcode}
-	return errcode, ret
-}
+// 	ret := &MsgRetEnterChat{errcode}
+// 	return errcode, ret
+// }
 
-func HandlerReqQuitChat(appdataid uint64) (uint16, interface{}) {
-	errcode := ERR_NONE
+// func HandlerReqQuitChat(appdataid uint64) (uint16, interface{}) {
+// 	errcode := ERR_NONE
 
-	err := gtdb.Manager().SetUserOffline(appdataid)
-	if err != nil {
-		errcode = ERR_DB
-	}
+// 	err := gtdb.Manager().SetUserOffline(appdataid)
+// 	if err != nil {
+// 		errcode = ERR_DB
+// 	}
 
-	//sess.Send(ret)
-	return errcode, errcode
-}
+// 	//sess.Send(ret)
+// 	return errcode, errcode
+// }

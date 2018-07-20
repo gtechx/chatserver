@@ -391,9 +391,10 @@ type Online struct {
 	// Account    string    `redis:"account" json:"account"`
 	// Appname    string    `redis:"appname" json:"appname"`
 	// Zonename   string    `redis:"zonename" json:"zonename"`
-	Serveraddr string    `redis:"serveraddr" json:"serveraddr"`
-	State      string    `redis:"state" json:"state"`
-	CreatedAt  time.Time `redis:"createdate" json:"createdate"`
+	Serveraddr string `redis:"serveraddr" json:"serveraddr"`
+	//State      string `redis:"state" json:"state"`
+	Platform  string    `redis:"platform" json:"platform"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
 
 type Friend struct {
