@@ -446,6 +446,12 @@ type AppDataBaned struct {
 	Dateline time.Time `redis:"dateline" json:"dateline"`
 }
 
+type AppDataJinyan struct {
+	Dataid   uint64    `redis:"dataid" json:"dataid" gorm:"unique;not null"`
+	Desc     string    `redis:"desc" json:"desc"`
+	Dateline time.Time `redis:"dateline" json:"dateline"`
+}
+
 var db_tables []interface{} = []interface{}{
 	&Admin{},
 	&AdminApp{},
@@ -464,6 +470,7 @@ var db_tables []interface{} = []interface{}{
 	&AccountBaned{},
 	&AppBaned{},
 	&AppDataBaned{},
+	&AppDataJinyan{},
 }
 
 type AppDataJson struct {

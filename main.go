@@ -159,12 +159,12 @@ func onNewConn(conn net.Conn) {
 		platform := String(buff[1 : 1+slen])
 
 		fmt.Println(account, password, appname, zonename, platform)
-		_, ret := HandlerReqChatLogin(account, password, appname, zonename)
+		errcode, ret := HandlerReqChatLogin(account, password, appname, zonename)
 
 		senddata := packageMsg(RetFrame, id, MsgId_ReqChatLogin, ret)
 		_, err = conn.Write(senddata)
 
-		if err != nil {
+		if err != nil || errcode != ERR_NONE {
 			return
 		}
 
@@ -176,7 +176,7 @@ func onNewConn(conn net.Conn) {
 			appdataid := Uint64(databuff)
 			defer SessMgr().SetUserOffline(appdataid, platform)
 			//errcode, ret := HandlerReqEnterChat(appdataid)
-			errcode := ERR_NONE
+			//errcode := ERR_NONE
 			tbl_appdata, err := gtdb.Manager().GetAppData(appdataid)
 			if err != nil {
 				errcode = ERR_DB
