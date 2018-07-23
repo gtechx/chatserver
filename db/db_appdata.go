@@ -226,7 +226,7 @@ func (db *DBManager) GetAppDataCount(appname, zonename, account string, args ...
 		retdb = retdb.Where("zonename = ?", zonename)
 	}
 	if account != "" {
-		retdb = retdb.Where("account = ?", account)
+		retdb = retdb.Where("account LIKE ?", "%"+account+"%")
 	}
 	if len(args) > 0 {
 		filter := args[0]
@@ -248,9 +248,9 @@ func (db *DBManager) GetAppDataList(appname, zonename, account string, offset, c
 	if zonename != "" {
 		retdb = retdb.Where("zonename = ?", zonename)
 	}
-	// if account != "" {
-	// 	retdb = retdb.Where("account = ?", account)
-	// }
+	if account != "" {
+		retdb = retdb.Where("account LIKE ?", "%"+account+"%")
+	}
 	if len(args) > 0 {
 		filter := args[0]
 		if filter != nil {
@@ -260,6 +260,28 @@ func (db *DBManager) GetAppDataList(appname, zonename, account string, offset, c
 
 	retdb = retdb.Find(&appdatalist)
 	return appdatalist, retdb.Error
+}
+
+func (db *DBManager) GetMyAppDataCount(appname, zonename, account string, args ...*AppDataFilter) (uint64, error) {
+	var count uint64
+	retdb := db.sql.Model(appdata_table)
+	if appname != "" {
+		retdb = retdb.Where("appname = ?", appname)
+	}
+	if zonename != "" {
+		retdb = retdb.Where("zonename = ?", zonename)
+	}
+	if account != "" {
+		retdb = retdb.Where("account = ?", account)
+	}
+	if len(args) > 0 {
+		filter := args[0]
+		if filter != nil {
+			retdb = filter.apply(retdb)
+		}
+	}
+	retdb = retdb.Count(&count)
+	return count, retdb.Error
 }
 
 //获取我在该应用和分区创建的账号数据列表
