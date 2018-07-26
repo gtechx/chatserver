@@ -14,8 +14,7 @@ var appdata_tablelist = []*AppData{}
 
 func (db *DBManager) CreateAppData(tbl_appdata *AppData) error {
 	tx := db.sql.Begin()
-	tmpdb := tx.Create(tbl_appdata)
-	if err := tmpdb.Error; err != nil {
+	if err := tx.Create(tbl_appdata).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -318,40 +317,4 @@ func (db *DBManager) GetAccountZoneList(account, appname string) ([]*AccountZone
 	accountzonelist := []*AccountZone{}
 	retdb := db.sql.Where("account = ?", account).Where("appname = ?", appname).Find(&accountzonelist)
 	return accountzonelist, retdb.Error
-}
-
-func (db *DBManager) BanAppDatas(ids []uint64) error {
-	tx := db.sql.Begin()
-	appdatadb := tx.Model(appdata_table)
-	for _, id := range ids {
-		if err := appdatadb.Where("id = ?", id).Update("isbaned", true).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-	tx.Commit()
-	return nil
-}
-
-func (db *DBManager) UnbanAppDatas(ids []uint64) error {
-	tx := db.sql.Begin()
-	appdatadb := tx.Model(appdata_table)
-	for _, id := range ids {
-		if err := appdatadb.Where("id = ?", id).Update("isbaned", false).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
-	}
-	tx.Commit()
-	return nil
-}
-
-func (db *DBManager) BanAppData(id uint64) error {
-	retdb := db.sql.Model(appdata_table).Where("id = ?", id).Update("isbaned", true)
-	return retdb.Error
-}
-
-func (db *DBManager) UnbanAppData(id uint64) error {
-	retdb := db.sql.Model(appdata_table).Where("id = ?", id).Update("isbaned", false)
-	return retdb.Error
 }

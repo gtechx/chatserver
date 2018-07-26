@@ -147,6 +147,7 @@ type Account struct {
 	Account   string    `redis:"account" json:"account" gorm:"primary_key"`
 	Password  string    `redis:"password" json:"_" gorm:"not null"`
 	Email     string    `redis:"email" json:"email"`
+	Mobile    string    `redis:"mobile" json:"mobile"`
 	Salt      string    `redis:"salt" json:"_" gorm:"type:varchar(6);not null;default:''"`
 	Regip     string    `redis:"regip" json:"regip"`
 	Isbaned   bool      `redis:"isbaned" json:"isbaned" gorm:"tinyint(1);default:0"`
@@ -314,6 +315,7 @@ type AppData struct {
 	Birthday  time.Time `redis:"birthday" json:"_"`
 	Country   string    `redis:"country" json:"country"`
 	Isbaned   bool      `redis:"isbaned" json:"isbaned" gorm:"tinyint(1);default:0"`
+	Isjinyan  bool      `redis:"isjinyan" json:"isjinyan" gorm:"tinyint(1);default:0"`
 	Regip     string    `redis:"regip" json:"regip"`
 	Lastip    string    `redis:"lastip" json:"lastip"`
 	Lastlogin time.Time `redis:"lastlogin" json:"_"`
@@ -393,8 +395,8 @@ type Online struct {
 	// Zonename   string    `redis:"zonename" json:"zonename"`
 	Serveraddr string `redis:"serveraddr" json:"serveraddr"`
 	//State      string `redis:"state" json:"state"`
-	Platform  string    `redis:"platform" json:"platform"`
-	CreatedAt time.Time `redis:"createdate" json:"createdate"`
+	Platform   string    `redis:"platform" json:"platform"`
+	Onlinedate time.Time `redis:"onlinedate" json:"onlinedate"`
 }
 
 type Friend struct {
@@ -430,26 +432,30 @@ type Group struct {
 
 type AccountBaned struct {
 	Account  string    `redis:"account" json:"account" gorm:"unique;not null"`
-	Desc     string    `redis:"desc" json:"desc"`
+	Why      string    `redis:"why" json:"why"`
 	Dateline time.Time `redis:"dateline" json:"dateline"`
+	Bandate  time.Time `redis:"bandate" json:"bandate"`
 }
 
 type AppBaned struct {
 	Appname  string    `redis:"appname" json:"appname" gorm:"unique;not null"`
-	Desc     string    `redis:"desc" json:"desc"`
+	Why      string    `redis:"why" json:"why"`
 	Dateline time.Time `redis:"dateline" json:"dateline"`
+	Bandate  time.Time `redis:"bandate" json:"bandate"`
 }
 
 type AppDataBaned struct {
 	Dataid   uint64    `redis:"dataid" json:"dataid" gorm:"unique;not null"`
-	Desc     string    `redis:"desc" json:"desc"`
+	Why      string    `redis:"why" json:"why"`
 	Dateline time.Time `redis:"dateline" json:"dateline"`
+	Bandate  time.Time `redis:"bandate" json:"bandate"`
 }
 
 type AppDataJinyan struct {
-	Dataid   uint64    `redis:"dataid" json:"dataid" gorm:"unique;not null"`
-	Desc     string    `redis:"desc" json:"desc"`
-	Dateline time.Time `redis:"dateline" json:"dateline"`
+	Dataid     uint64    `redis:"dataid" json:"dataid" gorm:"unique;not null"`
+	Why        string    `redis:"why" json:"why"`
+	Dateline   time.Time `redis:"dateline" json:"dateline"`
+	Jinyandate time.Time `redis:"jinyandate" json:"jinyandate"`
 }
 
 var db_tables []interface{} = []interface{}{
