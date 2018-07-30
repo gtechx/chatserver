@@ -5,14 +5,18 @@ package gtdb
 
 // 	//. "github.com/gtechx/base/common"
 // )
+var room_table = &Room{}
+var room_tablelist = []*Room{}
 
 //room op
-func (db *DBManager) createRoom() {
-
+func (db *DBManager) CreateRoom(tbl_room *Room) error {
+	retdb := db.sql.Create(tbl_room)
+	return retdb.Error
 }
 
-func (db *DBManager) deleteRoom() {
-
+func (db *DBManager) DeleteRoom(rid uint64) error {
+	retdb := db.sql.Delete(&Room{Rid: rid}, "rid = ?", rid)
+	return retdb.Error
 }
 
 func (db *DBManager) getRoomList() {
@@ -47,11 +51,16 @@ func (db *DBManager) removeUserToRoom() {
 
 }
 
+//踢出玩家
 func (db *DBManager) banUserInRoom() {
 
 }
 
-func (db *DBManager) unBanUserInRoom() {
+func (db *DBManager) JinyanUserInRoom() {
+
+}
+
+func (db *DBManager) UnJinyanUserInRoom() {
 
 }
 

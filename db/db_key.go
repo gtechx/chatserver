@@ -458,6 +458,23 @@ type AppDataJinyan struct {
 	Jinyandate time.Time `redis:"jinyandate" json:"jinyandate"`
 }
 
+type Room struct {
+	Rid       uint64    `redis:"rid" json:"rid" gorm:"unique;not null"`
+	Ownerid   uint64    `redis:"ownerid" json:"ownerid" gorm:"not null"`
+	Jointype  byte      `redis:"jointype" json:"jointype" gorm:"default:1"`
+	Notice    string    `redis:"notice" json:"notice"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
+}
+
+type RoomUser struct {
+	Rid         uint64    `redis:"rid" json:"rid" gorm:"unique;not null"`
+	Dataid      uint64    `redis:"dataid" json:"dataid" gorm:"not null"`
+	Isadmin     bool      `redis:"isadmin" json:"isadmin"`
+	Isjinyan    bool      `redis:"isjinyan" json:"isjinyan"`
+	Displayname string    `redis:"displayname" json:"displayname"`
+	CreatedAt   time.Time `redis:"createdate" json:"createdate"`
+}
+
 var db_tables []interface{} = []interface{}{
 	&Admin{},
 	&AdminApp{},
@@ -477,6 +494,9 @@ var db_tables []interface{} = []interface{}{
 	&AppBaned{},
 	&AppDataBaned{},
 	&AppDataJinyan{},
+
+	&Room{},
+	&RoomUser{},
 }
 
 type AppDataJson struct {

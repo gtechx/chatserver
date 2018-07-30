@@ -394,5 +394,6 @@ type MsgRetRoomSearch struct {
 //add/remove room role
 //invite/kickout
 //message broadcast
+//公共频道消息传输，如世界、国家等
 
 //define RPC
