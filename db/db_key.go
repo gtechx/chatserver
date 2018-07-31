@@ -461,6 +461,7 @@ type AppDataJinyan struct {
 type Room struct {
 	Rid       uint64    `redis:"rid" json:"rid" gorm:"unique;not null"`
 	Ownerid   uint64    `redis:"ownerid" json:"ownerid" gorm:"not null"`
+	Roomtype  byte      `redis:"jointype" json:"jointype" gorm:"default:1"`
 	Jointype  byte      `redis:"jointype" json:"jointype" gorm:"default:1"`
 	Notice    string    `redis:"notice" json:"notice"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`
@@ -469,6 +470,7 @@ type Room struct {
 type RoomUser struct {
 	Rid         uint64    `redis:"rid" json:"rid" gorm:"unique;not null"`
 	Dataid      uint64    `redis:"dataid" json:"dataid" gorm:"not null"`
+	Isowner     bool      `redis:"isowner" json:"isowner"`
 	Isadmin     bool      `redis:"isadmin" json:"isadmin"`
 	Isjinyan    bool      `redis:"isjinyan" json:"isjinyan"`
 	Displayname string    `redis:"displayname" json:"displayname"`
