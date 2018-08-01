@@ -119,9 +119,9 @@ type Admin struct {
 	Adminonline  bool      `redis:"adminonline" json:"adminonline" gorm:"tinyint(1);default:0"`
 	Adminmessage bool      `redis:"adminmessage" json:"adminmessage" gorm:"tinyint(1);default:0"`
 	Appcount     uint32    `redis:"appcount" json:"appcount" gorm:"default:0"`
-	Expire       time.Time `redis:"expire" json:"_" gorm:"type:datetime"`
+	Expire       time.Time `redis:"expire" json:"-" gorm:"type:datetime"`
 
-	AdminApps []AdminApp `json:"_" gorm:"foreignkey:Adminaccount;association_foreignkey:Account"`
+	AdminApps []AdminApp `json:"-" gorm:"foreignkey:Adminaccount;association_foreignkey:Account"`
 }
 
 func (admin *Admin) MarshalJSON() ([]byte, error) {
@@ -145,15 +145,15 @@ type AdminApp struct {
 
 type Account struct {
 	Account   string    `redis:"account" json:"account" gorm:"primary_key"`
-	Password  string    `redis:"password" json:"_" gorm:"not null"`
+	Password  string    `redis:"password" json:"-" gorm:"not null"`
 	Email     string    `redis:"email" json:"email"`
 	Mobile    string    `redis:"mobile" json:"mobile"`
-	Salt      string    `redis:"salt" json:"_" gorm:"type:varchar(6);not null;default:''"`
+	Salt      string    `redis:"salt" json:"-" gorm:"type:varchar(6);not null;default:''"`
 	Regip     string    `redis:"regip" json:"regip"`
 	Isbaned   bool      `redis:"isbaned" json:"isbaned" gorm:"tinyint(1);default:0"`
-	CreatedAt time.Time `redis:"createdate" json:"_"`
+	CreatedAt time.Time `redis:"createdate" json:"-"`
 
-	Apps []App `json:"_" gorm:"foreignkey:Owner;association_foreignkey:Account"`
+	Apps []App `json:"-" gorm:"foreignkey:Owner;association_foreignkey:Account"`
 }
 
 func (acc *Account) MarshalJSON() ([]byte, error) {
@@ -204,11 +204,11 @@ type App struct {
 	Share   string `redis:"share" json:"share"`
 	//Channelmax uint8     `redis:"channelmax" json:"channelmax"`
 	//Friendmax  uint8     `redis:"friendmax" json:"friendmax"`
-	CreatedAt time.Time `redis:"createdate" json:"_"`
+	CreatedAt time.Time `redis:"createdate" json:"-"`
 
-	AppZones  []AppZone  `json:"_" gorm:"foreignkey:Owner;association_foreignkey:Appname"`
-	AppShares []AppShare `json:"_" gorm:"foreignkey:Appname;association_foreignkey:Appname"`
-	AppDatas  []AppData  `json:"_" gorm:"foreignkey:Appname;association_foreignkey:Appname"`
+	AppZones  []AppZone  `json:"-" gorm:"foreignkey:Owner;association_foreignkey:Appname"`
+	AppShares []AppShare `json:"-" gorm:"foreignkey:Appname;association_foreignkey:Appname"`
+	AppDatas  []AppData  `json:"-" gorm:"foreignkey:Appname;association_foreignkey:Appname"`
 }
 
 func (app *App) MarshalJSON() ([]byte, error) {
@@ -312,19 +312,19 @@ type AppData struct {
 	Nickname  string    `redis:"nickname" json:"nickname"`
 	Desc      string    `redis:"desc" json:"desc"`
 	Sex       string    `redis:"sex" json:"sex"`
-	Birthday  time.Time `redis:"birthday" json:"_"`
+	Birthday  time.Time `redis:"birthday" json:"-"`
 	Country   string    `redis:"country" json:"country"`
 	Isbaned   bool      `redis:"isbaned" json:"isbaned" gorm:"tinyint(1);default:0"`
 	Isjinyan  bool      `redis:"isjinyan" json:"isjinyan" gorm:"tinyint(1);default:0"`
 	Regip     string    `redis:"regip" json:"regip"`
 	Lastip    string    `redis:"lastip" json:"lastip"`
-	Lastlogin time.Time `redis:"lastlogin" json:"_"`
-	CreatedAt time.Time `redis:"createdate" json:"_"`
+	Lastlogin time.Time `redis:"lastlogin" json:"-"`
+	CreatedAt time.Time `redis:"createdate" json:"-"`
 
-	Onlines []Online `json:"_" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
-	Friends []Friend `json:"_" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
-	Blacks  []Black  `json:"_" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
-	Groups  []Group  `json:"_" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
+	Onlines []Online `json:"-" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
+	Friends []Friend `json:"-" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
+	Blacks  []Black  `json:"-" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
+	Groups  []Group  `json:"-" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
 }
 
 func (appdata *AppData) toAccountApp() *AccountApp {

@@ -18,8 +18,8 @@ type BanedAppData struct {
 	Nickname string `redis:"nickname" json:"nickname"`
 
 	Why      string    `redis:"why" json:"why"`
-	Dateline time.Time `redis:"dateline" json:"dateline"`
-	Bandate  time.Time `redis:"bandate" json:"bandate"`
+	Dateline time.Time `redis:"dateline" json:"-"`
+	Bandate  time.Time `redis:"bandate" json:"-"`
 }
 
 func (ps *BanedAppData) MarshalJSON() ([]byte, error) {

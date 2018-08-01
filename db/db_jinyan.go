@@ -18,8 +18,8 @@ type JinyanAppData struct {
 	Nickname string `redis:"nickname" json:"nickname"`
 
 	Why        string    `redis:"why" json:"why"`
-	Dateline   time.Time `redis:"dateline" json:"_"`
-	Jinyandate time.Time `redis:"jinyandate" json:"_"`
+	Dateline   time.Time `redis:"dateline" json:"-"`
+	Jinyandate time.Time `redis:"jinyandate" json:"-"`
 }
 
 func (ps *JinyanAppData) MarshalJSON() ([]byte, error) {

@@ -17,13 +17,13 @@ type OnlineAppData struct {
 	Isjinyan bool `redis:"isjinyan" json:"isjinyan"`
 	// Desc     string    `redis:"desc" json:"desc"`
 	Sex string `redis:"sex" json:"sex"`
-	// Birthday time.Time `redis:"birthday" json:"_"`
+	// Birthday time.Time `redis:"birthday" json:"-"`
 	Country string `redis:"country" json:"country"`
 	// Regip     string    `redis:"regip" json:"regip"`
 
 	Serveraddr string    `redis:"serveraddr" json:"serveraddr"`
 	Platform   string    `redis:"platform" json:"platform"`
-	Onlinedate time.Time `redis:"onlinedate" json:"_"`
+	Onlinedate time.Time `redis:"onlinedate" json:"-"`
 }
 
 func (ps *OnlineAppData) MarshalJSON() ([]byte, error) {
