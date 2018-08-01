@@ -1,7 +1,6 @@
 package gtdb
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -22,6 +21,8 @@ func keyJoin(params ...interface{}) string {
 	}
 	return builder.String()
 }
+
+//关于结构体中time类型json化问题，所有终端统一使用RFC3339Nano字符串格式，即go中time默认json的格式。
 
 //Key[Hset|Zset|Set][store data][by][field]
 //store data:
@@ -119,24 +120,24 @@ type Admin struct {
 	Adminonline  bool      `redis:"adminonline" json:"adminonline" gorm:"tinyint(1);default:0"`
 	Adminmessage bool      `redis:"adminmessage" json:"adminmessage" gorm:"tinyint(1);default:0"`
 	Appcount     uint32    `redis:"appcount" json:"appcount" gorm:"default:0"`
-	Expire       time.Time `redis:"expire" json:"-" gorm:"type:datetime"`
+	Expire       time.Time `redis:"expire" json:"expire" gorm:"type:datetime"`
 
 	AdminApps []AdminApp `json:"-" gorm:"foreignkey:Adminaccount;association_foreignkey:Account"`
 }
 
-func (admin *Admin) MarshalJSON() ([]byte, error) {
-	// 定义一个该结构体的别名
-	type Alias Admin
-	// 定义一个新的结构体
-	tmpSt := struct {
-		Alias
-		Expire string `json:"expire"`
-	}{
-		Alias:  (Alias)(*admin),
-		Expire: admin.Expire.Format("01/02/2006"),
-	}
-	return json.Marshal(tmpSt)
-}
+// func (admin *Admin) MarshalJSON() ([]byte, error) {
+// 	// 定义一个该结构体的别名
+// 	type Alias Admin
+// 	// 定义一个新的结构体
+// 	tmpSt := struct {
+// 		Alias
+// 		Expire string `json:"expire"`
+// 	}{
+// 		Alias:  (Alias)(*admin),
+// 		Expire: admin.Expire.Format("01/02/2006"),
+// 	}
+// 	return json.Marshal(tmpSt)
+// }
 
 type AdminApp struct {
 	Adminaccount string `redis:"adminaccount" json:"adminaccount"`
@@ -151,24 +152,24 @@ type Account struct {
 	Salt      string    `redis:"salt" json:"-" gorm:"type:varchar(6);not null;default:''"`
 	Regip     string    `redis:"regip" json:"regip"`
 	Isbaned   bool      `redis:"isbaned" json:"isbaned" gorm:"tinyint(1);default:0"`
-	CreatedAt time.Time `redis:"createdate" json:"-"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 
 	Apps []App `json:"-" gorm:"foreignkey:Owner;association_foreignkey:Account"`
 }
 
-func (acc *Account) MarshalJSON() ([]byte, error) {
-	// 定义一个该结构体的别名
-	type Alias Account
-	// 定义一个新的结构体
-	tmpSt := struct {
-		Alias
-		CreateDate string `json:"createdate"`
-	}{
-		Alias:      (Alias)(*acc),
-		CreateDate: acc.CreatedAt.Format("01/02/2006 15:04:05"),
-	}
-	return json.Marshal(tmpSt)
-}
+// func (acc *Account) MarshalJSON() ([]byte, error) {
+// 	// 定义一个该结构体的别名
+// 	type Alias Account
+// 	// 定义一个新的结构体
+// 	tmpSt := struct {
+// 		Alias
+// 		CreateDate string `json:"createdate"`
+// 	}{
+// 		Alias:      (Alias)(*acc),
+// 		CreateDate: acc.CreatedAt.Format("01/02/2006 15:04:05"),
+// 	}
+// 	return json.Marshal(tmpSt)
+// }
 
 func (acc *Account) BeforeDelete(tx *gorm.DB) error {
 	fmt.Println("BeforeDelete Account", acc)
@@ -204,26 +205,26 @@ type App struct {
 	Share   string `redis:"share" json:"share"`
 	//Channelmax uint8     `redis:"channelmax" json:"channelmax"`
 	//Friendmax  uint8     `redis:"friendmax" json:"friendmax"`
-	CreatedAt time.Time `redis:"createdate" json:"-"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 
 	AppZones  []AppZone  `json:"-" gorm:"foreignkey:Owner;association_foreignkey:Appname"`
 	AppShares []AppShare `json:"-" gorm:"foreignkey:Appname;association_foreignkey:Appname"`
 	AppDatas  []AppData  `json:"-" gorm:"foreignkey:Appname;association_foreignkey:Appname"`
 }
 
-func (app *App) MarshalJSON() ([]byte, error) {
-	// 定义一个该结构体的别名
-	type Alias App
-	// 定义一个新的结构体
-	tmpSt := struct {
-		Alias
-		CreateDate string `json:"createdate"`
-	}{
-		Alias:      (Alias)(*app),
-		CreateDate: app.CreatedAt.Format("01/02/2006 15:04:05"),
-	}
-	return json.Marshal(tmpSt)
-}
+// func (app *App) MarshalJSON() ([]byte, error) {
+// 	// 定义一个该结构体的别名
+// 	type Alias App
+// 	// 定义一个新的结构体
+// 	tmpSt := struct {
+// 		Alias
+// 		CreateDate string `json:"createdate"`
+// 	}{
+// 		Alias:      (Alias)(*app),
+// 		CreateDate: app.CreatedAt.Format("01/02/2006 15:04:05"),
+// 	}
+// 	return json.Marshal(tmpSt)
+// }
 
 func (app *App) BeforeDelete(tx *gorm.DB) error {
 	fmt.Println("BeforeDelete App", app)
@@ -312,19 +313,30 @@ type AppData struct {
 	Nickname  string    `redis:"nickname" json:"nickname"`
 	Desc      string    `redis:"desc" json:"desc"`
 	Sex       string    `redis:"sex" json:"sex"`
-	Birthday  time.Time `redis:"birthday" json:"-"`
+	Birthday  time.Time `redis:"birthday" json:"birthday"`
 	Country   string    `redis:"country" json:"country"`
 	Isbaned   bool      `redis:"isbaned" json:"isbaned" gorm:"tinyint(1);default:0"`
 	Isjinyan  bool      `redis:"isjinyan" json:"isjinyan" gorm:"tinyint(1);default:0"`
 	Regip     string    `redis:"regip" json:"regip"`
 	Lastip    string    `redis:"lastip" json:"lastip"`
-	Lastlogin time.Time `redis:"lastlogin" json:"-"`
-	CreatedAt time.Time `redis:"createdate" json:"-"`
+	Lastlogin time.Time `redis:"lastlogin" json:"lastlogin"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 
 	Onlines []Online `json:"-" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
 	Friends []Friend `json:"-" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
 	Blacks  []Black  `json:"-" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
 	Groups  []Group  `json:"-" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
+}
+
+type AppDataPublic struct {
+	Account  string    `redis:"account" json:"account" gorm:"-"`
+	Appname  string    `redis:"appname" json:"appname" gorm:"-"`
+	Zonename string    `redis:"zonename" json:"zonename" gorm:"-"`
+	Nickname string    `redis:"nickname" json:"nickname" gorm:"-"`
+	Desc     string    `redis:"desc" json:"desc" gorm:"-"`
+	Sex      string    `redis:"sex" json:"sex" gorm:"-"`
+	Birthday time.Time `redis:"birthday" json:"birthday" gorm:"-"`
+	Country  string    `redis:"country" json:"country" gorm:"-"`
 }
 
 func (appdata *AppData) toAccountApp() *AccountApp {
@@ -348,23 +360,23 @@ type AccountZone struct {
 	Zonename string `redis:"zonename" json:"zonename"`
 }
 
-func (appdata *AppData) MarshalJSON() ([]byte, error) {
-	// 定义一个该结构体的别名
-	type Alias AppData
-	// 定义一个新的结构体
-	tmpSt := struct {
-		Alias
-		Birthday   string `json:"birthday"`
-		Lastlogin  string `json:"lastlogin"`
-		CreateDate string `json:"createdate"`
-	}{
-		Alias:      (Alias)(*appdata),
-		Birthday:   appdata.Birthday.Format("01/02/2006"),
-		Lastlogin:  appdata.Lastlogin.Format("01/02/2006 15:04:05"),
-		CreateDate: appdata.CreatedAt.Format("01/02/2006 15:04:05"),
-	}
-	return json.Marshal(tmpSt)
-}
+// func (appdata *AppData) MarshalJSON() ([]byte, error) {
+// 	// 定义一个该结构体的别名
+// 	type Alias AppData
+// 	// 定义一个新的结构体
+// 	tmpSt := struct {
+// 		Alias
+// 		Birthday   string `json:"birthday"`
+// 		Lastlogin  string `json:"lastlogin"`
+// 		CreateDate string `json:"createdate"`
+// 	}{
+// 		Alias:      (Alias)(*appdata),
+// 		Birthday:   appdata.Birthday.Format("01/02/2006"),
+// 		Lastlogin:  appdata.Lastlogin.Format("01/02/2006 15:04:05"),
+// 		CreateDate: appdata.CreatedAt.Format("01/02/2006 15:04:05"),
+// 	}
+// 	return json.Marshal(tmpSt)
+// }
 
 func (appdata *AppData) BeforeDelete(tx *gorm.DB) error {
 	fmt.Println("BeforeDelete AppData", appdata)
@@ -395,8 +407,8 @@ type Online struct {
 	// Zonename   string    `redis:"zonename" json:"zonename"`
 	Serveraddr string `redis:"serveraddr" json:"serveraddr"`
 	//State      string `redis:"state" json:"state"`
-	Platform   string    `redis:"platform" json:"platform"`
-	Onlinedate time.Time `redis:"onlinedate" json:"onlinedate"`
+	Platform  string    `redis:"platform" json:"platform"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
 
 type Friend struct {
@@ -431,35 +443,35 @@ type Group struct {
 }
 
 type AccountBaned struct {
-	Account  string    `redis:"account" json:"account" gorm:"unique;not null"`
-	Why      string    `redis:"why" json:"why"`
-	Dateline time.Time `redis:"dateline" json:"dateline"`
-	Bandate  time.Time `redis:"bandate" json:"bandate"`
+	Account   string    `redis:"account" json:"account" gorm:"unique;not null"`
+	Why       string    `redis:"why" json:"why"`
+	Dateline  time.Time `redis:"dateline" json:"dateline"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
 
 type AppBaned struct {
-	Appname  string    `redis:"appname" json:"appname" gorm:"unique;not null"`
-	Why      string    `redis:"why" json:"why"`
-	Dateline time.Time `redis:"dateline" json:"dateline"`
-	Bandate  time.Time `redis:"bandate" json:"bandate"`
+	Appname   string    `redis:"appname" json:"appname" gorm:"unique;not null"`
+	Why       string    `redis:"why" json:"why"`
+	Dateline  time.Time `redis:"dateline" json:"dateline"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
 
 type AppDataBaned struct {
-	Dataid   uint64    `redis:"dataid" json:"dataid" gorm:"unique;not null"`
-	Why      string    `redis:"why" json:"why"`
-	Dateline time.Time `redis:"dateline" json:"dateline"`
-	Bandate  time.Time `redis:"bandate" json:"bandate"`
+	Dataid    uint64    `redis:"dataid" json:"dataid" gorm:"unique;not null"`
+	Why       string    `redis:"why" json:"why"`
+	Dateline  time.Time `redis:"dateline" json:"dateline"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
 
 type AppDataJinyan struct {
-	Dataid     uint64    `redis:"dataid" json:"dataid" gorm:"unique;not null"`
-	Why        string    `redis:"why" json:"why"`
-	Dateline   time.Time `redis:"dateline" json:"dateline"`
-	Jinyandate time.Time `redis:"jinyandate" json:"jinyandate"`
+	Dataid    uint64    `redis:"dataid" json:"dataid" gorm:"unique;not null"`
+	Why       string    `redis:"why" json:"why"`
+	Dateline  time.Time `redis:"dateline" json:"dateline"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
 
 type Room struct {
-	Rid       uint64    `redis:"rid" json:"rid" gorm:"unique;not null"`
+	Rid       uint64    `redis:"rid" json:"rid" gorm:"primary_key;AUTO_INCREMENT"`
 	Ownerid   uint64    `redis:"ownerid" json:"ownerid" gorm:"not null"`
 	Roomtype  byte      `redis:"jointype" json:"jointype" gorm:"default:1"`
 	Jointype  byte      `redis:"jointype" json:"jointype" gorm:"default:1"`
@@ -468,13 +480,19 @@ type Room struct {
 }
 
 type RoomUser struct {
-	Rid         uint64    `redis:"rid" json:"rid" gorm:"unique;not null"`
+	Rid         uint64    `redis:"rid" json:"rid" gorm:"not null"`
 	Dataid      uint64    `redis:"dataid" json:"dataid" gorm:"not null"`
 	Isowner     bool      `redis:"isowner" json:"isowner"`
 	Isadmin     bool      `redis:"isadmin" json:"isadmin"`
 	Isjinyan    bool      `redis:"isjinyan" json:"isjinyan"`
 	Displayname string    `redis:"displayname" json:"displayname"`
 	CreatedAt   time.Time `redis:"createdate" json:"createdate"`
+
+	//other info, for join select
+	Nickname string `redis:"nickname" json:"nickname" gorm:"-"`
+	Desc     string `redis:"desc" json:"desc" gorm:"-"`
+	Sex      string `redis:"sex" json:"sex" gorm:"-"`
+	Country  string `redis:"country" json:"country" gorm:"-"`
 }
 
 var db_tables []interface{} = []interface{}{
