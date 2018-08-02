@@ -1,7 +1,6 @@
 package gtdb
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -10,35 +9,35 @@ import (
 var appdatabaned_table = &AppDataBaned{}
 var appdatabaned_tablelist = []*AppDataBaned{}
 
-type BanedAppData struct {
-	ID       uint64 `redis:"id" json:"id,string"`
-	Account  string `redis:"account" json:"account"`
-	Appname  string `redis:"appname" json:"appname"`
-	Zonename string `redis:"zonename" json:"zonename"`
-	Nickname string `redis:"nickname" json:"nickname"`
+// type BanedAppData struct {
+// 	ID       uint64 `redis:"id" json:"id,string"`
+// 	Account  string `redis:"account" json:"account"`
+// 	Appname  string `redis:"appname" json:"appname"`
+// 	Zonename string `redis:"zonename" json:"zonename"`
+// 	Nickname string `redis:"nickname" json:"nickname"`
 
-	Why      string    `redis:"why" json:"why"`
-	Dateline time.Time `redis:"dateline" json:"-"`
-	Bandate  time.Time `redis:"bandate" json:"-"`
-}
+// 	Why      string    `redis:"why" json:"why"`
+// 	Dateline time.Time `redis:"dateline" json:"-"`
+// 	Bandate  time.Time `redis:"bandate" json:"-"`
+// }
 
-func (ps *BanedAppData) MarshalJSON() ([]byte, error) {
-	// 定义一个该结构体的别名
-	type Alias BanedAppData
-	// 定义一个新的结构体
-	tmpSt := struct {
-		Alias
-		EndDate    string `json:"enddate"`
-		CreateDate string `json:"createdate"`
-	}{
-		Alias:      (Alias)(*ps),
-		EndDate:    ps.Dateline.Format("01/02/2006 15:04:05"),
-		CreateDate: ps.Bandate.Format("01/02/2006 15:04:05"),
-	}
-	return json.Marshal(tmpSt)
-}
+// func (ps *BanedAppData) MarshalJSON() ([]byte, error) {
+// 	// 定义一个该结构体的别名
+// 	type Alias BanedAppData
+// 	// 定义一个新的结构体
+// 	tmpSt := struct {
+// 		Alias
+// 		EndDate    string `json:"enddate"`
+// 		CreateDate string `json:"createdate"`
+// 	}{
+// 		Alias:      (Alias)(*ps),
+// 		EndDate:    ps.Dateline.Format("01/02/2006 15:04:05"),
+// 		CreateDate: ps.Bandate.Format("01/02/2006 15:04:05"),
+// 	}
+// 	return json.Marshal(tmpSt)
+// }
 
-type BanedAppDataFilter struct {
+type AppDataBanedFilter struct {
 	Account  string
 	Appname  string
 	Zonename string
@@ -51,7 +50,7 @@ type BanedAppDataFilter struct {
 	Banedenddate   *time.Time
 }
 
-func (filter *BanedAppDataFilter) apply(db *gorm.DB) *gorm.DB {
+func (filter *AppDataBanedFilter) apply(db *gorm.DB) *gorm.DB {
 	retdb := db
 	if filter.Account != "" {
 		retdb = retdb.Where("account LIKE ?", "%"+filter.Account+"%")
@@ -78,9 +77,9 @@ func (filter *BanedAppDataFilter) apply(db *gorm.DB) *gorm.DB {
 	return retdb
 }
 
-func (db *DBManager) GetBanedAppDataCount(appname, zonename string, args ...*BanedAppDataFilter) (uint64, error) {
+func (db *DBManager) GetBanedAppDataCount(appname, zonename string, args ...*AppDataBanedFilter) (uint64, error) {
 	var count uint64
-	retdb := db.sql.Table("" + db.sql.prefix + "app_data a")
+	retdb := db.sql.Table(db.sql.prefix + "app_data a")
 	if appname != "" {
 		retdb = retdb.Where("appname = ?", appname)
 	}
@@ -101,9 +100,9 @@ func (db *DBManager) GetBanedAppDataCount(appname, zonename string, args ...*Ban
 	return count, retdb.Error
 }
 
-func (db *DBManager) GetBanedAppDataList(appname, zonename string, offset, count int, args ...*BanedAppDataFilter) ([]*BanedAppData, error) {
-	appdatalist := []*BanedAppData{}
-	retdb := db.sql.Table("" + db.sql.prefix + "app_data a").Offset(offset).Limit(count)
+func (db *DBManager) GetBanedAppDataList(appname, zonename string, offset, count int, args ...*AppDataBanedFilter) ([]*AppDataBaned, error) {
+	appdatalist := []*AppDataBaned{}
+	retdb := db.sql.Table(db.sql.prefix + "app_data a").Offset(offset).Limit(count)
 	if appname != "" {
 		retdb = retdb.Where("appname = ?", appname)
 	}
@@ -124,9 +123,9 @@ func (db *DBManager) GetBanedAppDataList(appname, zonename string, offset, count
 	return appdatalist, retdb.Error
 }
 
-func (db *DBManager) GetBanedAppData(id uint64) (*BanedAppData, error) {
-	appdata := &BanedAppData{}
-	retdb := db.sql.Table("" + db.sql.prefix + "app_data a")
+func (db *DBManager) GetBanedAppData(id uint64) (*AppDataBaned, error) {
+	appdata := &AppDataBaned{}
+	retdb := db.sql.Table(db.sql.prefix + "app_data a")
 	retdb = retdb.Joins("join "+db.sql.prefix+"app_data_baned b on b.dataid = a.id").Where("dataid = ?", id)
 	retdb = retdb.Select("a.*, b.*").Limit(1).Scan(appdata)
 	return appdata, retdb.Error

@@ -1,46 +1,45 @@
 package gtdb
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/jinzhu/gorm"
 )
 
-type OnlineAppData struct {
-	ID       uint64 `redis:"id" json:"id,string"`
-	Account  string `redis:"account" json:"account"`
-	Appname  string `redis:"appname" json:"appname"`
-	Zonename string `redis:"zonename" json:"zonename"`
-	Nickname string `redis:"nickname" json:"nickname"`
-	//Isbaned   bool      `redis:"isbaned" json:"isbaned"`
-	Isjinyan bool `redis:"isjinyan" json:"isjinyan"`
-	// Desc     string    `redis:"desc" json:"desc"`
-	Sex string `redis:"sex" json:"sex"`
-	// Birthday time.Time `redis:"birthday" json:"-"`
-	Country string `redis:"country" json:"country"`
-	// Regip     string    `redis:"regip" json:"regip"`
+// type OnlineAppData struct {
+// 	ID       uint64 `redis:"id" json:"id,string"`
+// 	Account  string `redis:"account" json:"account"`
+// 	Appname  string `redis:"appname" json:"appname"`
+// 	Zonename string `redis:"zonename" json:"zonename"`
+// 	Nickname string `redis:"nickname" json:"nickname"`
+// 	//Isbaned   bool      `redis:"isbaned" json:"isbaned"`
+// 	Isjinyan bool `redis:"isjinyan" json:"isjinyan"`
+// 	// Desc     string    `redis:"desc" json:"desc"`
+// 	Sex string `redis:"sex" json:"sex"`
+// 	// Birthday time.Time `redis:"birthday" json:"-"`
+// 	Country string `redis:"country" json:"country"`
+// 	// Regip     string    `redis:"regip" json:"regip"`
 
-	Serveraddr string    `redis:"serveraddr" json:"serveraddr"`
-	Platform   string    `redis:"platform" json:"platform"`
-	Onlinedate time.Time `redis:"onlinedate" json:"-"`
-}
+// 	Serveraddr string    `redis:"serveraddr" json:"serveraddr"`
+// 	Platform   string    `redis:"platform" json:"platform"`
+// 	Onlinedate time.Time `redis:"onlinedate" json:"-"`
+// }
 
-func (ps *OnlineAppData) MarshalJSON() ([]byte, error) {
-	// 定义一个该结构体的别名
-	type Alias OnlineAppData
-	// 定义一个新的结构体
-	tmpSt := struct {
-		Alias
-		CreateDate string `json:"createdate"`
-	}{
-		Alias:      (Alias)(*ps),
-		CreateDate: ps.Onlinedate.Format("01/02/2006 15:04:05"),
-	}
-	return json.Marshal(tmpSt)
-}
+// func (ps *OnlineAppData) MarshalJSON() ([]byte, error) {
+// 	// 定义一个该结构体的别名
+// 	type Alias OnlineAppData
+// 	// 定义一个新的结构体
+// 	tmpSt := struct {
+// 		Alias
+// 		CreateDate string `json:"createdate"`
+// 	}{
+// 		Alias:      (Alias)(*ps),
+// 		CreateDate: ps.Onlinedate.Format("01/02/2006 15:04:05"),
+// 	}
+// 	return json.Marshal(tmpSt)
+// }
 
-type OnlineAppDataFilter struct {
+type OnlineFilter struct {
 	Account string
 	// Appname  string
 	// Zonename string
@@ -57,7 +56,7 @@ type OnlineAppDataFilter struct {
 	Onlineenddate   *time.Time
 }
 
-func (filter *OnlineAppDataFilter) apply(db *gorm.DB) *gorm.DB {
+func (filter *OnlineFilter) apply(db *gorm.DB) *gorm.DB {
 	retdb := db
 	if filter.Account != "" {
 		retdb = retdb.Where("account LIKE ?", "%"+filter.Account+"%")
@@ -100,9 +99,9 @@ func (filter *OnlineAppDataFilter) apply(db *gorm.DB) *gorm.DB {
 	return retdb
 }
 
-func (db *DBManager) GetOnlineAppDataCount(appname, zonename string, args ...*OnlineAppDataFilter) (uint64, error) {
+func (db *DBManager) GetOnlineCount(appname, zonename string, args ...*OnlineFilter) (uint64, error) {
 	var count uint64
-	retdb := db.sql.Table("" + db.sql.prefix + "app_data a")
+	retdb := db.sql.Table(db.sql.prefix + "app_data a")
 	if appname != "" {
 		retdb = retdb.Where("appname = ?", appname)
 	}
@@ -123,9 +122,9 @@ func (db *DBManager) GetOnlineAppDataCount(appname, zonename string, args ...*On
 	return count, retdb.Error
 }
 
-func (db *DBManager) GetOnlineAppDataList(appname, zonename string, offset, count int, args ...*OnlineAppDataFilter) ([]*OnlineAppData, error) {
-	appdatalist := []*OnlineAppData{}
-	retdb := db.sql.Table("" + db.sql.prefix + "app_data a").Offset(offset).Limit(count)
+func (db *DBManager) GetOnlineList(appname, zonename string, offset, count int, args ...*OnlineFilter) ([]*Online, error) {
+	appdatalist := []*Online{}
+	retdb := db.sql.Table(db.sql.prefix + "app_data a").Offset(offset).Limit(count)
 	if appname != "" {
 		retdb = retdb.Where("appname = ?", appname)
 	}
@@ -146,9 +145,9 @@ func (db *DBManager) GetOnlineAppDataList(appname, zonename string, offset, coun
 	return appdatalist, retdb.Error
 }
 
-func (db *DBManager) GetOnlineAppData(id uint64) (*OnlineAppData, error) {
-	appdata := &OnlineAppData{}
-	retdb := db.sql.Table("" + db.sql.prefix + "app_data a")
+func (db *DBManager) GetOnline(id uint64) (*Online, error) {
+	appdata := &Online{}
+	retdb := db.sql.Table(db.sql.prefix + "app_data a")
 	retdb = retdb.Joins("join "+db.sql.prefix+"online b on b.dataid = a.id").Where("dataid = ?", id)
 	retdb = retdb.Select("a.*, b.*").Limit(1).Scan(appdata)
 	return appdata, retdb.Error

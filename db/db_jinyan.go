@@ -1,7 +1,6 @@
 package gtdb
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -10,35 +9,35 @@ import (
 var appdatajinyan_table = &AppDataJinyan{}
 var appdatajinyan_tablelist = []*AppDataJinyan{}
 
-type JinyanAppData struct {
-	ID       uint64 `redis:"id" json:"id,string"`
-	Account  string `redis:"account" json:"account"`
-	Appname  string `redis:"appname" json:"appname"`
-	Zonename string `redis:"zonename" json:"zonename"`
-	Nickname string `redis:"nickname" json:"nickname"`
+// type JinyanAppData struct {
+// 	ID       uint64 `redis:"id" json:"id,string"`
+// 	Account  string `redis:"account" json:"account"`
+// 	Appname  string `redis:"appname" json:"appname"`
+// 	Zonename string `redis:"zonename" json:"zonename"`
+// 	Nickname string `redis:"nickname" json:"nickname"`
 
-	Why        string    `redis:"why" json:"why"`
-	Dateline   time.Time `redis:"dateline" json:"-"`
-	Jinyandate time.Time `redis:"jinyandate" json:"-"`
-}
+// 	Why        string    `redis:"why" json:"why"`
+// 	Dateline   time.Time `redis:"dateline" json:"-"`
+// 	Jinyandate time.Time `redis:"jinyandate" json:"-"`
+// }
 
-func (ps *JinyanAppData) MarshalJSON() ([]byte, error) {
-	// 定义一个该结构体的别名
-	type Alias JinyanAppData
-	// 定义一个新的结构体
-	tmpSt := struct {
-		Alias
-		EndDate    string `json:"enddate"`
-		CreateDate string `json:"createdate"`
-	}{
-		Alias:      (Alias)(*ps),
-		EndDate:    ps.Dateline.Format("01/02/2006 15:04:05"),
-		CreateDate: ps.Jinyandate.Format("01/02/2006 15:04:05"),
-	}
-	return json.Marshal(tmpSt)
-}
+// func (ps *JinyanAppData) MarshalJSON() ([]byte, error) {
+// 	// 定义一个该结构体的别名
+// 	type Alias JinyanAppData
+// 	// 定义一个新的结构体
+// 	tmpSt := struct {
+// 		Alias
+// 		EndDate    string `json:"enddate"`
+// 		CreateDate string `json:"createdate"`
+// 	}{
+// 		Alias:      (Alias)(*ps),
+// 		EndDate:    ps.Dateline.Format("01/02/2006 15:04:05"),
+// 		CreateDate: ps.Jinyandate.Format("01/02/2006 15:04:05"),
+// 	}
+// 	return json.Marshal(tmpSt)
+// }
 
-type JinyanAppDataFilter struct {
+type AppDataJinyanFilter struct {
 	Account  string
 	Appname  string
 	Zonename string
@@ -51,7 +50,7 @@ type JinyanAppDataFilter struct {
 	Jinyanenddate   *time.Time
 }
 
-func (filter *JinyanAppDataFilter) apply(db *gorm.DB) *gorm.DB {
+func (filter *AppDataJinyanFilter) apply(db *gorm.DB) *gorm.DB {
 	retdb := db
 	if filter.Account != "" {
 		retdb = retdb.Where("account LIKE ?", "%"+filter.Account+"%")
@@ -78,9 +77,9 @@ func (filter *JinyanAppDataFilter) apply(db *gorm.DB) *gorm.DB {
 	return retdb
 }
 
-func (db *DBManager) GetJinyanAppDataCount(appname, zonename string, args ...*JinyanAppDataFilter) (uint64, error) {
+func (db *DBManager) GetAppDataJinyanCount(appname, zonename string, args ...*AppDataJinyanFilter) (uint64, error) {
 	var count uint64
-	retdb := db.sql.Table("" + db.sql.prefix + "app_data a")
+	retdb := db.sql.Table(db.sql.prefix + "app_data a")
 	if appname != "" {
 		retdb = retdb.Where("appname = ?", appname)
 	}
@@ -101,9 +100,9 @@ func (db *DBManager) GetJinyanAppDataCount(appname, zonename string, args ...*Ji
 	return count, retdb.Error
 }
 
-func (db *DBManager) GetJinyanAppDataList(appname, zonename string, offset, count int, args ...*JinyanAppDataFilter) ([]*JinyanAppData, error) {
-	appdatalist := []*JinyanAppData{}
-	retdb := db.sql.Table("" + db.sql.prefix + "app_data a").Offset(offset).Limit(count)
+func (db *DBManager) GetAppDataJinyanList(appname, zonename string, offset, count int, args ...*AppDataJinyanFilter) ([]*AppDataJinyan, error) {
+	appdatalist := []*AppDataJinyan{}
+	retdb := db.sql.Table(db.sql.prefix + "app_data a").Offset(offset).Limit(count)
 	if appname != "" {
 		retdb = retdb.Where("appname = ?", appname)
 	}
@@ -124,9 +123,9 @@ func (db *DBManager) GetJinyanAppDataList(appname, zonename string, offset, coun
 	return appdatalist, retdb.Error
 }
 
-func (db *DBManager) GetJinyanAppData(id uint64) (*JinyanAppData, error) {
-	appdata := &JinyanAppData{}
-	retdb := db.sql.Table("" + db.sql.prefix + "app_data a")
+func (db *DBManager) GetAppDataJinyan(id uint64) (*AppDataJinyan, error) {
+	appdata := &AppDataJinyan{}
+	retdb := db.sql.Table(db.sql.prefix + "app_data a")
 	retdb = retdb.Joins("join "+db.sql.prefix+"app_data_jinyan b on b.dataid = a.id").Where("dataid = ?", id)
 	retdb = retdb.Select("a.*, b.*").Limit(1).Scan(appdata)
 	return appdata, retdb.Error

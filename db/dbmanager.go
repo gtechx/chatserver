@@ -17,7 +17,7 @@ type config struct {
 	RedisDefaultDB uint64 `json:"redisdefaultdb"`
 	RedisMaxConn   int    `json:"redismaxconn"`
 
-	MysqlAddr         string `json:"redisaddr"`
+	MysqlAddr         string `json:"mysqladdr"`
 	MysqlUserPassword string `json:"mysqluserpassword"`
 	MysqlDefaultDB    string `json:"mysqldefaultdb"`
 	MysqlTablePrefix  string `json:"mysqltableprefix"`

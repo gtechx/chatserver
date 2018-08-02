@@ -413,6 +413,9 @@ type Online struct {
 	//State      string `redis:"state" json:"state"`
 	Platform  string    `redis:"platform" json:"platform"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`
+
+	//other info, for join
+	AppDataPublic
 }
 
 type Friend struct {
@@ -465,6 +468,9 @@ type AppDataBaned struct {
 	Why       string    `redis:"why" json:"why"`
 	Dateline  time.Time `redis:"dateline" json:"dateline"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`
+
+	//other info, for join
+	AppDataPublic
 }
 
 type AppDataJinyan struct {
@@ -472,6 +478,9 @@ type AppDataJinyan struct {
 	Why       string    `redis:"why" json:"why"`
 	Dateline  time.Time `redis:"dateline" json:"dateline"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`
+
+	//other info, for join
+	AppDataPublic
 }
 
 type Room struct {
