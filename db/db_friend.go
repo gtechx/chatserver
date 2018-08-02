@@ -63,38 +63,38 @@ func (db *DBManager) GetFriend(id, otherid uint64) (*Friend, error) {
 
 func (db *DBManager) GetFriendOnlineList(id uint64) ([]*Online, error) {
 	onlinelist := []*Online{}
-	retdb := db.sql.Model(online_table).Joins("join gtchat_friends on gtchat_friends.dataid = ? AND gtchat_friends.otherdataid = gtchat_onlines.dataid", id)
+	retdb := db.sql.Model(online_table).Joins("join "+db.sql.prefix+"friend on "+db.sql.prefix+"friend.dataid = ? AND "+db.sql.prefix+"friend.otherdataid = "+db.sql.prefix+"online.dataid", id)
 	retdb = retdb.Find(&onlinelist)
 	return onlinelist, retdb.Error
 }
 
 func (db *DBManager) GetOnlineFriendIdList(id uint64) ([]uint64, error) {
 	var friendidlist []uint64
-	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Select("gtchat_friends.otherdataid").Joins("join gtchat_onlines on gtchat_friends.otherdataid = gtchat_onlines.dataid").Scan(&friendidlist)
+	retdb := db.sql.Table(db.sql.prefix+"friend").Where(""+db.sql.prefix+"friend.dataid = ?", id).Select(db.sql.prefix + "friend.otherdataid").Joins("join " + db.sql.prefix + "online on " + db.sql.prefix + "friend.otherdataid = " + db.sql.prefix + "online.dataid").Scan(&friendidlist)
 	return friendidlist, retdb.Error
 }
 
 func (db *DBManager) GetOfflineFriendIdList(id uint64) ([]uint64, error) {
 	var friendidlist []uint64
-	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Select("gtchat_friends.otherdataid").Joins("join gtchat_onlines on gtchat_friends.otherdataid != gtchat_onlines.dataid").Scan(&friendidlist)
+	retdb := db.sql.Table(db.sql.prefix+"friend").Where(db.sql.prefix+"friend.dataid = ?", id).Select(db.sql.prefix + "friend.otherdataid").Joins("join " + db.sql.prefix + "online on " + db.sql.prefix + "friend.otherdataid != " + db.sql.prefix + "online.dataid").Scan(&friendidlist)
 	return friendidlist, retdb.Error
 }
 
 func (db *DBManager) GetFriendIdList(id uint64) ([]uint64, error) {
 	friendidlist := []uint64{}
-	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Pluck("otherdataid", &friendidlist) //.Select("friends.otherdataid").Scan(&friendidlist)
+	retdb := db.sql.Table(db.sql.prefix+"friend").Where(db.sql.prefix+"friend.dataid = ?", id).Pluck("otherdataid", &friendidlist) //.Select("friends.otherdataid").Scan(&friendidlist)
 	return friendidlist, retdb.Error
 }
 
 func (db *DBManager) GetAllFriendInfoList(id uint64) ([]*FriendJson, error) {
 	friendlist := []*FriendJson{}
-	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Select("gtchat_friends.otherdataid as dataid, gtchat_friends.groupname, gtchat_friends.comment, gtchat_app_data.nickname, gtchat_app_data.desc").Joins("join gtchat_app_data on gtchat_friends.otherdataid = gtchat_app_data.id").Find(&friendlist)
+	retdb := db.sql.Table(db.sql.prefix+"friend").Where(db.sql.prefix+"friend.dataid = ?", id).Select("" + db.sql.prefix + "friend.otherdataid as dataid, " + db.sql.prefix + "friend.groupname, " + db.sql.prefix + "friend.comment, " + db.sql.prefix + "app_data.nickname, " + db.sql.prefix + "app_data.desc").Joins("join " + db.sql.prefix + "app_data on " + db.sql.prefix + "friend.otherdataid = " + db.sql.prefix + "app_data.id").Find(&friendlist)
 	return friendlist, retdb.Error
 }
 
 func (db *DBManager) GetFriendInfoList(id uint64, groupname string) ([]*FriendJson, error) {
 	friendlist := []*FriendJson{}
-	retdb := db.sql.Table("gtchat_friends").Where("gtchat_friends.dataid = ?", id).Where("gtchat_friends.groupname = ?", groupname).Select("gtchat_friends.otherdataid as dataid, gtchat_friends.groupname, gtchat_friends.comment, gtchat_app_data.nickname, gtchat_app_data.desc").Joins("join gtchat_app_data on gtchat_friends.otherdataid = gtchat_app_data.id").Where("(SELECT count(1) FROM gtchat_blacks where gtchat_friends.otherdataid = gtchat_blacks.otherdataid) = 0").Find(&friendlist)
+	retdb := db.sql.Table(db.sql.prefix+"friend").Where(db.sql.prefix+"friend.dataid = ?", id).Where(db.sql.prefix+"friend.groupname = ?", groupname).Select("" + db.sql.prefix + "friend.otherdataid as dataid, " + db.sql.prefix + "friend.groupname, " + db.sql.prefix + "friend.comment, " + db.sql.prefix + "app_data.nickname, " + db.sql.prefix + "app_data.desc").Joins("join " + db.sql.prefix + "app_data on " + db.sql.prefix + "friend.otherdataid = " + db.sql.prefix + "app_data.id").Where("(SELECT count(1) FROM " + db.sql.prefix + "black where " + db.sql.prefix + "friend.otherdataid = " + db.sql.prefix + "black.otherdataid) = 0").Find(&friendlist)
 	return friendlist, retdb.Error
 }
 

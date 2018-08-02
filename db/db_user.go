@@ -131,6 +131,6 @@ func (db *DBManager) IsInBlack(id, otherid uint64) (bool, error) {
 
 func (db *DBManager) GetBlackInfoList(id uint64) ([]*FriendJson, error) {
 	blacklist := []*FriendJson{}
-	retdb := db.sql.Table("gtchat_blacks").Where("gtchat_blacks.dataid = ?", id).Select("gtchat_blacks.otherdataid as dataid, gtchat_friends.comment, gtchat_app_data.nickname, gtchat_app_data.desc").Joins("join gtchat_app_data on gtchat_blacks.otherdataid = gtchat_app_data.id").Find(&blacklist)
+	retdb := db.sql.Table(db.sql.prefix+"black").Where(""+db.sql.prefix+"black.dataid = ?", id).Select("" + db.sql.prefix + "blacks.otherdataid as dataid, " + db.sql.prefix + "friend.comment, " + db.sql.prefix + "app_data.nickname, " + db.sql.prefix + "app_data.desc").Joins("join " + db.sql.prefix + "app_data on " + db.sql.prefix + "black.otherdataid = " + db.sql.prefix + "app_data.id").Find(&blacklist)
 	return blacklist, retdb.Error
 }

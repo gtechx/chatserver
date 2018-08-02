@@ -1,15 +1,31 @@
 package gtdb
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	"github.com/gtechx/chatserver/config"
 	//. "github.com/gtechx/base/common"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
+
+type config struct {
+	RedisAddr      string `json:"redisaddr"`
+	RedisPassword  string `json:"redispassword"`
+	RedisDefaultDB uint64 `json:"redisdefaultdb"`
+	RedisMaxConn   int    `json:"redismaxconn"`
+
+	MysqlAddr         string `json:"redisaddr"`
+	MysqlUserPassword string `json:"mysqluserpassword"`
+	MysqlDefaultDB    string `json:"mysqldefaultdb"`
+	MysqlTablePrefix  string `json:"mysqltableprefix"`
+	MysqlLogMode      bool   `json:"mysqllogmode"`
+	MysqlMaxConn      int    `json:"mysqlmaxconn"`
+
+	DefaultGroupName string `json:"defaultgroupname"`
+}
 
 type Redis struct {
 	*redis.Pool
@@ -93,14 +109,14 @@ func (mdm *Mysql) Initialize(saddr, user_pass, defaultdb, prefix string) error {
 
 	db.DB().SetMaxIdleConns(10)
 	db.LogMode(true)
-	//db.SingularTable(true)// 全局禁用表名复数
+	db.SingularTable(true) // 全局禁用表名复数
 
 	mdm.DB = db
 	return err
 }
 
 func (mdm *Mysql) DefaultTableNameHandler(db *gorm.DB, defaultTableName string) string {
-	return mdm.prefix + "_" + defaultTableName
+	return mdm.prefix + defaultTableName
 }
 
 func (mdm *Mysql) UnInitialize() error {
@@ -112,8 +128,9 @@ func (mdm *Mysql) UnInitialize() error {
 }
 
 type DBManager struct {
-	rd  *Redis
-	sql *Mysql
+	rd       *Redis
+	sql      *Mysql
+	dbconfig *config
 }
 
 var instance *DBManager
@@ -125,15 +142,39 @@ func Manager() *DBManager {
 	return instance
 }
 
-func (db *DBManager) InitializeRedis(saddr, spass string, defaultdb uint64) error {
+func (db *DBManager) Initialize(configjson string) error {
+	dbconfig := &config{}
+	err := json.Unmarshal([]byte(configjson), dbconfig)
+	if err != nil {
+		return err
+	}
+
+	db.dbconfig = dbconfig
+
 	db.rd = &Redis{}
-	return db.rd.Initialize(saddr, spass, defaultdb)
+	db.sql = &Mysql{}
+	err = db.rd.Initialize(dbconfig.RedisAddr, dbconfig.RedisPassword, dbconfig.RedisDefaultDB)
+	if err != nil {
+		return err
+	}
+
+	err = db.sql.Initialize(dbconfig.MysqlAddr, dbconfig.MysqlUserPassword, dbconfig.MysqlDefaultDB, dbconfig.MysqlTablePrefix)
+	if err != nil {
+		db.rd.UnInitialize()
+		return err
+	}
+	return nil
 }
 
-func (db *DBManager) InitializeMysql(saddr, user_pass, defaultdb, prefix string) error {
-	db.sql = &Mysql{}
-	return db.sql.Initialize(saddr, user_pass, defaultdb, prefix)
-}
+// func (db *DBManager) InitializeRedis(saddr, spass string, defaultdb uint64) error {
+// 	db.rd = &Redis{}
+// 	return db.rd.Initialize(saddr, spass, defaultdb)
+// }
+
+// func (db *DBManager) InitializeMysql(saddr, user_pass, defaultdb, prefix string) error {
+// 	db.sql = &Mysql{}
+// 	return db.sql.Initialize(saddr, user_pass, defaultdb, prefix)
+// }
 
 func (db *DBManager) UnInitialize() error {
 	var err error
@@ -253,7 +294,7 @@ func (db *DBManager) CreateTestAppData(tx *gorm.DB, tbl_appdata *AppData) error 
 		}
 	}
 
-	if err := tx.Create(&Group{Groupname: config.DefaultGroupName, Dataid: tbl_appdata.ID}).Error; err != nil {
+	if err := tx.Create(&Group{Groupname: db.dbconfig.DefaultGroupName, Dataid: tbl_appdata.ID}).Error; err != nil {
 		return err
 	}
 

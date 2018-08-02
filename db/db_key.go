@@ -328,6 +328,7 @@ type AppData struct {
 	Groups  []Group  `json:"-" gorm:"foreignkey:Dataid;association_foreignkey:ID"`
 }
 
+//对外可见的数据，用于join查询。需要这些数据的结构需要组合该结构
 type AppDataPublic struct {
 	Account  string    `redis:"account" json:"account" gorm:"-"`
 	Appname  string    `redis:"appname" json:"appname" gorm:"-"`
@@ -337,6 +338,9 @@ type AppDataPublic struct {
 	Sex      string    `redis:"sex" json:"sex" gorm:"-"`
 	Birthday time.Time `redis:"birthday" json:"birthday" gorm:"-"`
 	Country  string    `redis:"country" json:"country" gorm:"-"`
+	Isbaned  bool      `redis:"isbaned" json:"isbaned" gorm:"-"`
+	Isjinyan bool      `redis:"isjinyan" json:"isjinyan" gorm:"-"`
+	Isonline bool      `redis:"isonline" json:"isonline" gorm:"-"`
 }
 
 func (appdata *AppData) toAccountApp() *AccountApp {
@@ -401,7 +405,7 @@ func (appdata *AppData) BeforeDelete(tx *gorm.DB) error {
 }
 
 type Online struct {
-	Dataid uint64 `redis:"dataid" json:"dataid" gorm:"not null"`
+	Dataid uint64 `redis:"dataid" json:"dataid,string" gorm:"not null"`
 	// Account    string    `redis:"account" json:"account"`
 	// Appname    string    `redis:"appname" json:"appname"`
 	// Zonename   string    `redis:"zonename" json:"zonename"`
@@ -412,8 +416,8 @@ type Online struct {
 }
 
 type Friend struct {
-	Dataid      uint64 `redis:"dataid" json:"dataid"`
-	Otherdataid uint64 `redis:"otherdataid" json:"otherdataid"`
+	Dataid      uint64 `redis:"dataid" json:"dataid,string"`
+	Otherdataid uint64 `redis:"otherdataid" json:"otherdataid,string"`
 	// Account      string    `redis:"account" json:"account"`
 	// Otheraccount string    `redis:"otheraccount" json:"otheraccount"`
 	// Appname      string    `redis:"appname" json:"appname"`
@@ -424,7 +428,7 @@ type Friend struct {
 }
 
 type Black struct {
-	Dataid      uint64 `redis:"dataid" json:"dataid"`
+	Dataid      uint64 `redis:"dataid" json:"dataid,string"`
 	Otherdataid uint64 `redis:"otherdataid" json:"otherdataid"`
 	// Account      string    `redis:"account" json:"account"`
 	// Otheraccount string    `redis:"otheraccount" json:"otheraccount"`
@@ -457,42 +461,45 @@ type AppBaned struct {
 }
 
 type AppDataBaned struct {
-	Dataid    uint64    `redis:"dataid" json:"dataid" gorm:"unique;not null"`
+	Dataid    uint64    `redis:"dataid" json:"dataid,string" gorm:"unique;not null"`
 	Why       string    `redis:"why" json:"why"`
 	Dateline  time.Time `redis:"dateline" json:"dateline"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
 
 type AppDataJinyan struct {
-	Dataid    uint64    `redis:"dataid" json:"dataid" gorm:"unique;not null"`
+	Dataid    uint64    `redis:"dataid" json:"dataid,string" gorm:"unique;not null"`
 	Why       string    `redis:"why" json:"why"`
 	Dateline  time.Time `redis:"dateline" json:"dateline"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 }
 
 type Room struct {
-	Rid       uint64    `redis:"rid" json:"rid" gorm:"primary_key;AUTO_INCREMENT"`
-	Ownerid   uint64    `redis:"ownerid" json:"ownerid" gorm:"not null"`
+	Rid       uint64    `redis:"rid" json:"rid,string" gorm:"primary_key;AUTO_INCREMENT"`
+	Ownerid   uint64    `redis:"ownerid" json:"ownerid,string" gorm:"not null"`
 	Roomtype  byte      `redis:"jointype" json:"jointype" gorm:"default:1"`
 	Jointype  byte      `redis:"jointype" json:"jointype" gorm:"default:1"`
-	Notice    string    `redis:"notice" json:"notice"`
+	Jieshao   string    `redis:"jieshao" json:"jieshao"`
+	Notice    string    `redis:"notice" json:"notice"` //公告
+	Password  string    `redis:"password" json:"-"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`
+
+	//other info for join
+	Msgsetting byte `redis:"msgsetting" json:"msgsetting" gorm:"-"` //RoomUser.Msgsetting
 }
 
 type RoomUser struct {
-	Rid         uint64    `redis:"rid" json:"rid" gorm:"not null"`
-	Dataid      uint64    `redis:"dataid" json:"dataid" gorm:"not null"`
+	Rid         uint64    `redis:"rid" json:"rid,string" gorm:"not null"`
+	Dataid      uint64    `redis:"dataid" json:"dataid,string" gorm:"not null"`
 	Isowner     bool      `redis:"isowner" json:"isowner"`
 	Isadmin     bool      `redis:"isadmin" json:"isadmin"`
 	Isjinyan    bool      `redis:"isjinyan" json:"isjinyan"`
 	Displayname string    `redis:"displayname" json:"displayname"`
+	Msgsetting  byte      `redis:"msgsetting" json:"msgsetting" gorm:"default:1"`
 	CreatedAt   time.Time `redis:"createdate" json:"createdate"`
 
-	//other info, for join select
-	Nickname string `redis:"nickname" json:"nickname" gorm:"-"`
-	Desc     string `redis:"desc" json:"desc" gorm:"-"`
-	Sex      string `redis:"sex" json:"sex" gorm:"-"`
-	Country  string `redis:"country" json:"country" gorm:"-"`
+	//other info, for join
+	AppDataPublic
 }
 
 var db_tables []interface{} = []interface{}{

@@ -390,9 +390,10 @@ type MsgRetRoomSearch struct {
 //create/delete room
 //join/quit room
 //create/delete room group
-//ban/unban room user
+//invite user
+//ban room user
+//jinyan/unjinyan room user
 //add/remove room role
-//invite/kickout
 //message broadcast
 //公共频道消息传输，如世界、国家等
 

@@ -29,6 +29,17 @@ func (db *DBManager) CreateRoom(tbl_room *Room) error {
 	return nil
 }
 
+func (db *DBManager) UpdateRoom(tbl_room *Room) error {
+	retdb := db.sql.Save(tbl_room)
+	return retdb.Error
+}
+
+func (db *DBManager) IsRoomExists(rid uint64) (bool, error) {
+	var count uint64
+	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Count(&count)
+	return count > 0, retdb.Error
+}
+
 func (db *DBManager) DeleteRoom(rid uint64) error {
 	tx := db.sql.Begin()
 	if err := tx.Delete(&Room{Rid: rid}, "rid = ?", rid).Error; err != nil {
@@ -51,28 +62,28 @@ func (db *DBManager) GetRoom(rid uint64) (*Room, error) {
 
 func (db *DBManager) GetRoomListByOwner(appdataid uint64) ([]*Room, error) {
 	roomlist := []*Room{}
-	retdb := db.sql.Where("dataid = ?", appdataid).Find(roomlist)
+	retdb := db.sql.Where("ownerid = ?", appdataid).Find(roomlist)
 	return roomlist, retdb.Error
 }
 
 func (db *DBManager) GetRoomCountByOwner(appdataid uint64) (uint64, error) {
 	var count uint64
-	retdb := db.sql.Model(room_table).Where("dataid = ?", appdataid).Count(&count)
+	retdb := db.sql.Model(room_table).Where("ownerid = ?", appdataid).Count(&count)
 	return count, retdb.Error
 }
 
 func (db *DBManager) GetRoomListByJoined(appdataid uint64) ([]*Room, error) {
 	roomlist := []*Room{}
-	retdb := db.sql.Table("gtchat_rooms a")
-	retdb = retdb.Joins("join gtchat_room_users b on b.rid = a.rid").Where("dataid = ?", appdataid)
-	retdb = retdb.Select("a.*").Scan(roomlist)
+	retdb := db.sql.Table(db.sql.prefix + "room a")
+	retdb = retdb.Joins("join "+db.sql.prefix+"room_user b on b.rid = a.rid").Where("dataid = ?", appdataid)
+	retdb = retdb.Select("a.*, b.msgsetting").Scan(roomlist)
 	return roomlist, retdb.Error
 }
 
 func (db *DBManager) GetRoomCountByJoined(appdataid uint64) (uint64, error) {
 	var count uint64
-	retdb := db.sql.Table("gtchat_rooms a")
-	retdb = retdb.Joins("join gtchat_room_users b on b.rid = a.rid").Where("dataid = ?", appdataid)
+	retdb := db.sql.Table(db.sql.prefix + "room a")
+	retdb = retdb.Joins("join "+db.sql.prefix+"room_user b on b.rid = a.rid").Where("dataid = ?", appdataid)
 	retdb = retdb.Select("a.*").Count(&count)
 	return count, retdb.Error
 }
@@ -80,6 +91,11 @@ func (db *DBManager) GetRoomCountByJoined(appdataid uint64) (uint64, error) {
 //room user op
 func (db *DBManager) AddRoomUser(tbl_roomuser *RoomUser) error {
 	retdb := db.sql.Create(tbl_roomuser)
+	return retdb.Error
+}
+
+func (db *DBManager) UpdateRoomUser(tbl_roomuser *RoomUser) error {
+	retdb := db.sql.Save(tbl_roomuser)
 	return retdb.Error
 }
 
@@ -96,7 +112,10 @@ func (db *DBManager) GetRoomUser(rid, appdataid uint64) (*RoomUser, error) {
 
 func (db *DBManager) GetRoomUserList(rid uint64) ([]*RoomUser, error) {
 	roomuserlist := []*RoomUser{}
-	retdb := db.sql.Where("rid = ?", rid).Find(roomuserlist)
+	retdb := db.sql.Table(db.sql.prefix + "app_data a")
+	retdb = retdb.Joins("join "+db.sql.prefix+"room_user b on b.dataid = a.id").Where("rid = ?", rid)
+	retdb = retdb.Joins("left join " + db.sql.prefix + "online c on c.dataid = a.id")
+	retdb = retdb.Select("a.*, b.*, c.dataid is not null as isonline").Scan(roomuserlist)
 	return roomuserlist, retdb.Error
 }
 
@@ -106,71 +125,106 @@ func (db *DBManager) GetRoomUserCount(rid uint64) (uint64, error) {
 	return count, retdb.Error
 }
 
-func (db *DBManager) GetRoomList() {
-
-}
-
-func (db *DBManager) getRoomType() {
-
-}
-
-func (db *DBManager) getRoomPassword() {
-
-}
-
-func (db *DBManager) setRoomPassword() {
-
-}
-
-func (db *DBManager) isRoomExist() {
-
-}
-
-func (db *DBManager) isUserInRoom() {
-
-}
-
-func (db *DBManager) addUserToRoom() {
-
-}
-
-func (db *DBManager) removeUserToRoom() {
-
+func (db *DBManager) IsUserInRoom(rid, appdataid uint64) (bool, error) {
+	var count uint64
+	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Where("dataid = ?", appdataid).Count(&count)
+	return count > 0, retdb.Error
 }
 
 //踢出玩家
-func (db *DBManager) banUserInRoom() {
-
+func (db *DBManager) BanUserInRoom(rid, appdataid uint64) error {
+	retdb := db.sql.Delete(roomuser_table, "rid = ? AND dataid = ?", rid, appdataid)
+	return retdb.Error
 }
 
-func (db *DBManager) JinyanUserInRoom() {
-
+func (db *DBManager) JinyanUserInRoom(rid, appdataid uint64) error {
+	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Where("dataid = ?", appdataid).Update("isjinyan", true)
+	return retdb.Error
 }
 
-func (db *DBManager) UnJinyanUserInRoom() {
-
+func (db *DBManager) UnJinyanUserInRoom(rid, appdataid uint64) error {
+	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Where("dataid = ?", appdataid).Update("isjinyan", false)
+	return retdb.Error
 }
 
-func (db *DBManager) setRoomDescription() {
-
+func (db *DBManager) AddRoomAdmin(rid, appdataid uint64) error {
+	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Where("dataid = ?", appdataid).Update("isadmin", true)
+	return retdb.Error
 }
 
-func (db *DBManager) getRoomDescription() {
-
+func (db *DBManager) RemoveRoomAdmin(rid, appdataid uint64) error {
+	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Where("dataid = ?", appdataid).Update("isadmin", false)
+	return retdb.Error
 }
 
-func (db *DBManager) setRoomVerify() {
-
+func (db *DBManager) SetRoomUserDisplayName(rid, appdataid uint64, displayname string) error {
+	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Where("dataid = ?", appdataid).Update("displayname", displayname)
+	return retdb.Error
 }
 
-func (db *DBManager) getRoomVerify() {
-
+func (db *DBManager) SetRoomMsgSetting(rid, appdataid uint64, msgsetting byte) error {
+	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Where("dataid = ?", appdataid).Update("msgsetting", msgsetting)
+	return retdb.Error
 }
 
-func (db *DBManager) setRoomVerifyType() {
-
+func (db *DBManager) GetRoomMsgSetting(rid, appdataid uint64) (byte, error) {
+	var msgsetting byte
+	retdb := db.sql.Model(roomuser_table).Select("msgsetting").Where("rid = ?", rid).Where("dataid = ?", appdataid).Scan(&msgsetting)
+	return msgsetting, retdb.Error
 }
 
-func (db *DBManager) getRoomVerifyType() {
+//room property
+func (db *DBManager) SetRoomNotice(rid uint64, notice string) error {
+	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Update("notice", notice)
+	return retdb.Error
+}
 
+func (db *DBManager) GetRoomNotice(rid uint64) (string, error) {
+	var notice string
+	retdb := db.sql.Model(room_table).Select("notice").Where("rid = ?", rid).Scan(&notice)
+	return notice, retdb.Error
+}
+
+func (db *DBManager) SetRoomType(rid uint64, roomtype byte) error {
+	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Update("roomtype", roomtype)
+	return retdb.Error
+}
+
+func (db *DBManager) GetRoomType(rid uint64) (byte, error) {
+	var roomtype byte
+	retdb := db.sql.Model(room_table).Select("roomtype").Where("rid = ?", rid).Scan(&roomtype)
+	return roomtype, retdb.Error
+}
+
+func (db *DBManager) SetRoomPassword(rid uint64, password string) error {
+	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Update("password", password)
+	return retdb.Error
+}
+
+func (db *DBManager) GetRoomPassword(rid uint64) (string, error) {
+	var password string
+	retdb := db.sql.Model(room_table).Select("password").Where("rid = ?", rid).Scan(&password)
+	return password, retdb.Error
+}
+
+func (db *DBManager) SetRoomJoinType(rid uint64, jointype byte) error {
+	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Update("jointype", jointype)
+	return retdb.Error
+}
+
+func (db *DBManager) GetRoomJoinType(rid uint64) (byte, error) {
+	var jointype byte
+	retdb := db.sql.Model(room_table).Select("jointype").Where("rid = ?", rid).Scan(&jointype)
+	return jointype, retdb.Error
+}
+
+func (db *DBManager) SetRoomJieshao(rid uint64, jieshao string) error {
+	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Update("jieshao", jieshao)
+	return retdb.Error
+}
+
+func (db *DBManager) GetRoomJieshao(rid uint64) (string, error) {
+	var jieshao string
+	retdb := db.sql.Model(room_table).Select("jieshao").Where("rid = ?", rid).Scan(&jieshao)
+	return jieshao, retdb.Error
 }

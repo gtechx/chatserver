@@ -80,7 +80,7 @@ func (filter *BanedAppDataFilter) apply(db *gorm.DB) *gorm.DB {
 
 func (db *DBManager) GetBanedAppDataCount(appname, zonename string, args ...*BanedAppDataFilter) (uint64, error) {
 	var count uint64
-	retdb := db.sql.Table("gtchat_app_data a")
+	retdb := db.sql.Table("" + db.sql.prefix + "app_data a")
 	if appname != "" {
 		retdb = retdb.Where("appname = ?", appname)
 	}
@@ -95,7 +95,7 @@ func (db *DBManager) GetBanedAppDataCount(appname, zonename string, args ...*Ban
 		}
 	}
 
-	retdb = retdb.Joins("join gtchat_app_data_baneds b on b.dataid = a.id")
+	retdb = retdb.Joins("join " + db.sql.prefix + "app_data_baned b on b.dataid = a.id")
 
 	retdb = retdb.Count(&count)
 	return count, retdb.Error
@@ -103,7 +103,7 @@ func (db *DBManager) GetBanedAppDataCount(appname, zonename string, args ...*Ban
 
 func (db *DBManager) GetBanedAppDataList(appname, zonename string, offset, count int, args ...*BanedAppDataFilter) ([]*BanedAppData, error) {
 	appdatalist := []*BanedAppData{}
-	retdb := db.sql.Table("gtchat_app_data a").Offset(offset).Limit(count)
+	retdb := db.sql.Table("" + db.sql.prefix + "app_data a").Offset(offset).Limit(count)
 	if appname != "" {
 		retdb = retdb.Where("appname = ?", appname)
 	}
@@ -118,7 +118,7 @@ func (db *DBManager) GetBanedAppDataList(appname, zonename string, offset, count
 		}
 	}
 
-	retdb = retdb.Joins("join gtchat_app_data_baneds b on b.dataid = a.id")
+	retdb = retdb.Joins("join " + db.sql.prefix + "app_data_baned b on b.dataid = a.id")
 
 	retdb = retdb.Select("a.*, b.*").Scan(&appdatalist)
 	return appdatalist, retdb.Error
@@ -126,8 +126,8 @@ func (db *DBManager) GetBanedAppDataList(appname, zonename string, offset, count
 
 func (db *DBManager) GetBanedAppData(id uint64) (*BanedAppData, error) {
 	appdata := &BanedAppData{}
-	retdb := db.sql.Table("gtchat_app_data a")
-	retdb = retdb.Joins("join gtchat_app_data_baneds b on b.dataid = a.id").Where("dataid = ?", id)
+	retdb := db.sql.Table("" + db.sql.prefix + "app_data a")
+	retdb = retdb.Joins("join "+db.sql.prefix+"app_data_baned b on b.dataid = a.id").Where("dataid = ?", id)
 	retdb = retdb.Select("a.*, b.*").Limit(1).Scan(appdata)
 	return appdata, retdb.Error
 }

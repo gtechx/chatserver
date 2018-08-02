@@ -51,17 +51,22 @@ func main() {
 	// redisAddr = *predisaddr
 
 	defer gtdb.Manager().UnInitialize()
-	err := gtdb.Manager().InitializeRedis(config.RedisAddr, config.RedisPassword, config.RedisDefaultDB)
+	err := gtdb.Manager().Initialize(config.DBConfig)
 	if err != nil {
-		println("InitializeRedis err:", err.Error())
+		println("Initialize DB err:", err.Error())
 		return
 	}
+	// err := gtdb.Manager().InitializeRedis(config.RedisAddr, config.RedisPassword, config.RedisDefaultDB)
+	// if err != nil {
+	// 	println("InitializeRedis err:", err.Error())
+	// 	return
+	// }
 
-	err = gtdb.Manager().InitializeMysql(config.MysqlAddr, config.MysqlUserPassword, config.MysqlDefaultDB, config.MysqlTablePrefix)
-	if err != nil {
-		println("InitializeMysql err:", err.Error())
-		return
-	}
+	// err = gtdb.Manager().InitializeMysql(config.MysqlAddr, config.MysqlUserPassword, config.MysqlDefaultDB, config.MysqlTablePrefix)
+	// if err != nil {
+	// 	println("InitializeMysql err:", err.Error())
+	// 	return
+	// }
 
 	//EntityManager().Initialize()
 
