@@ -112,15 +112,18 @@ func (datakey *DataKey) SetZonename(zonename string) {
 }
 
 type Admin struct {
-	Account      string    `redis:"account" json:"account" gorm:"primary_key"`
-	Adminadmin   bool      `redis:"adminadmin" json:"adminadmin" gorm:"tinyint(1);default:0"`
-	Adminuser    bool      `redis:"adminuser" json:"adminuser" gorm:"tinyint(1);default:0"`
-	Adminapp     bool      `redis:"adminapp" json:"adminapp" gorm:"tinyint(1);default:0"`
-	Adminappdata bool      `redis:"adminappdata" json:"adminappdata" gorm:"tinyint(1);default:0"`
-	Adminonline  bool      `redis:"adminonline" json:"adminonline" gorm:"tinyint(1);default:0"`
-	Adminmessage bool      `redis:"adminmessage" json:"adminmessage" gorm:"tinyint(1);default:0"`
-	Appcount     uint32    `redis:"appcount" json:"appcount" gorm:"default:0"`
-	Expire       time.Time `redis:"expire" json:"expire" gorm:"type:datetime"`
+	Account      string `redis:"account" json:"account" gorm:"primary_key"`
+	Adminadmin   bool   `redis:"adminadmin" json:"adminadmin" gorm:"tinyint(1);default:0"`
+	Adminaccount bool   `redis:"adminaccount" json:"adminaccount" gorm:"tinyint(1);default:0"`
+	Adminapp     bool   `redis:"adminapp" json:"adminapp" gorm:"tinyint(1);default:0"`
+	Adminappdata bool   `redis:"adminappdata" json:"adminappdata" gorm:"tinyint(1);default:0"`
+	Adminonline  bool   `redis:"adminonline" json:"adminonline" gorm:"tinyint(1);default:0"`
+	Adminmessage bool   `redis:"adminmessage" json:"adminmessage" gorm:"tinyint(1);default:0"`
+	Adminjinyan  bool   `redis:"adminjinyan" json:"adminjinyan" gorm:"tinyint(1);default:0"`
+	Adminbaned   bool   `redis:"adminbaned" json:"adminbaned" gorm:"tinyint(1);default:0"`
+	//Appcount     uint32    `redis:"appcount" json:"appcount" gorm:"default:0"`
+	Expire    time.Time `redis:"expire" json:"expire" gorm:"type:datetime"`
+	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 
 	AdminApps []AdminApp `json:"-" gorm:"foreignkey:Adminaccount;association_foreignkey:Account"`
 }
@@ -486,7 +489,8 @@ type AppDataJinyan struct {
 type Room struct {
 	Rid       uint64    `redis:"rid" json:"rid,string" gorm:"primary_key;AUTO_INCREMENT"`
 	Ownerid   uint64    `redis:"ownerid" json:"ownerid,string" gorm:"not null"`
-	Roomtype  byte      `redis:"jointype" json:"jointype" gorm:"default:1"`
+	Roomname  string    `redis:"roomname" json:"roomname"`
+	Roomtype  byte      `redis:"roomtype" json:"roomtype" gorm:"default:1"`
 	Jointype  byte      `redis:"jointype" json:"jointype" gorm:"default:1"`
 	Jieshao   string    `redis:"jieshao" json:"jieshao"`
 	Notice    string    `redis:"notice" json:"notice"` //公告
@@ -500,9 +504,9 @@ type Room struct {
 type RoomUser struct {
 	Rid         uint64    `redis:"rid" json:"rid,string" gorm:"not null"`
 	Dataid      uint64    `redis:"dataid" json:"dataid,string" gorm:"not null"`
-	Isowner     bool      `redis:"isowner" json:"isowner"`
-	Isadmin     bool      `redis:"isadmin" json:"isadmin"`
-	Isjinyan    bool      `redis:"isjinyan" json:"isjinyan"`
+	Isowner     bool      `redis:"isowner" json:"isowner" gorm:"tinyint(1);default:0"`
+	Isadmin     bool      `redis:"isadmin" json:"isadmin" gorm:"tinyint(1);default:0"`
+	Isjinyan    bool      `redis:"isjinyan" json:"isjinyan" gorm:"tinyint(1);default:0"`
 	Displayname string    `redis:"displayname" json:"displayname"`
 	Msgsetting  byte      `redis:"msgsetting" json:"msgsetting" gorm:"default:1"`
 	CreatedAt   time.Time `redis:"createdate" json:"createdate"`
