@@ -185,6 +185,17 @@ func (db *DBManager) GetRoomNotice(rid uint64) (string, error) {
 	return notice, retdb.Error
 }
 
+func (db *DBManager) SetRoomName(rid uint64, roomname string) error {
+	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Update("roomname", roomname)
+	return retdb.Error
+}
+
+func (db *DBManager) GetRoomName(rid uint64) (string, error) {
+	var roomname string
+	retdb := db.sql.Model(room_table).Select("roomname").Where("rid = ?", rid).Scan(&roomname)
+	return roomname, retdb.Error
+}
+
 func (db *DBManager) SetRoomType(rid uint64, roomtype byte) error {
 	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Update("roomtype", roomtype)
 	return retdb.Error

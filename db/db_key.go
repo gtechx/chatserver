@@ -341,9 +341,12 @@ type AppDataPublic struct {
 	Sex      string    `redis:"sex" json:"sex" gorm:"-"`
 	Birthday time.Time `redis:"birthday" json:"birthday" gorm:"-"`
 	Country  string    `redis:"country" json:"country" gorm:"-"`
-	Isbaned  bool      `redis:"isbaned" json:"isbaned" gorm:"-"`
-	Isjinyan bool      `redis:"isjinyan" json:"isjinyan" gorm:"-"`
-	Isonline bool      `redis:"isonline" json:"isonline" gorm:"-"`
+}
+
+type AppDataFlagPublic struct {
+	Isbaned  bool `redis:"isbaned" json:"isbaned" gorm:"-"`
+	Isjinyan bool `redis:"isjinyan" json:"isjinyan" gorm:"-"`
+	Isonline bool `redis:"isonline" json:"isonline" gorm:"-"`
 }
 
 func (appdata *AppData) toAccountApp() *AccountApp {
@@ -487,11 +490,11 @@ type AppDataJinyan struct {
 }
 
 type Room struct {
-	Rid       uint64    `redis:"rid" json:"rid,string" gorm:"primary_key;AUTO_INCREMENT"`
-	Ownerid   uint64    `redis:"ownerid" json:"ownerid,string" gorm:"not null"`
-	Roomname  string    `redis:"roomname" json:"roomname"`
-	Roomtype  byte      `redis:"roomtype" json:"roomtype" gorm:"default:1"`
-	Jointype  byte      `redis:"jointype" json:"jointype" gorm:"default:1"`
+	Rid      uint64 `redis:"rid" json:"rid,string" gorm:"primary_key;AUTO_INCREMENT"`
+	Ownerid  uint64 `redis:"ownerid" json:"ownerid,string" gorm:"not null"`
+	Roomname string `redis:"roomname" json:"roomname"`
+	Roomtype byte   `redis:"roomtype" json:"roomtype" gorm:"default:1"`
+	//Jointype  byte      `redis:"jointype" json:"jointype" gorm:"default:1"`
 	Jieshao   string    `redis:"jieshao" json:"jieshao"`
 	Notice    string    `redis:"notice" json:"notice"` //公告
 	Password  string    `redis:"password" json:"-"`
@@ -514,6 +517,11 @@ type RoomUser struct {
 	//other info, for join
 	AppDataPublic
 }
+
+// type RoomUserJinyan struct {
+// 	Rid    uint64 `redis:"rid" json:"rid,string" gorm:"not null"`
+// 	Dataid uint64 `redis:"dataid" json:"dataid,string" gorm:"not null"`
+// }
 
 var db_tables []interface{} = []interface{}{
 	&Admin{},

@@ -236,13 +236,13 @@ type MsgMultiUsersMessage struct {
 	Message []byte
 }
 
-const MsgId_RoomMessage uint16 = 1012
+// const MsgId_RoomMessage uint16 = 1012
 
-type MsgRoomMessage struct {
-	Room    uint64
-	From    uint64
-	Message []byte
-}
+// type MsgRoomMessage struct {
+// 	Room    uint64
+// 	From    uint64
+// 	Message []byte
+// }
 
 const MsgId_RoomUserMessage uint16 = 1013
 
@@ -386,15 +386,182 @@ type MsgRetRoomSearch struct {
 
 //history message ?
 
-//modify room setting
 //create/delete room
+const MsgId_ReqCreateRoom uint16 = 1100
+
+type MsgReqCreateRoom struct {
+	Name     string `json:"name"`
+	RoomType byte   `json:"roomtype"`
+	Password string `json:"password"`
+	Jieshao  string `json:"jieshao"`
+	Notice   string `json:"notice"` //公告
+}
+
+type MsgRetCreateRoom struct {
+	ErrorCode uint16
+}
+
+const MsgId_ReqDeleteRoom uint16 = 1101
+
+type MsgReqDeleteRoom struct {
+	Rid uint64
+}
+
+type MsgRetDeleteRoom struct {
+	ErrorCode uint16
+}
+
+//modify room setting
+const MsgId_ReqUpdateRoomSetting uint16 = 1102
+
+const (
+	RoomSetting_None     uint8 = iota
+	RoomSetting_RoomName       = 0x1
+	RoomSetting_RoomType       = 0x2
+	RoomSetting_Jieshao        = 0x4
+	RoomSetting_Notice         = 0x8
+	RoomSetting_Password       = 0x10
+)
+
+type MsgReqUpdateRoomSetting struct {
+	Rid      uint64 `json:"rid,string"`
+	Bit      byte   `json:"bit"`
+	RoomName string `json:"roomname"`
+	RoomType byte   `json:"roomtype"` //1.everyone 2.need apply 3.password 4.temp
+	Jieshao  string `json:"jieshao"`
+	Notice   string `json:"notice"` //公告
+	Password string `json:"password"`
+}
+
+type MsgRetUpdateRoomSetting struct {
+	ErrorCode uint16
+}
+
 //join/quit room
+// const MsgId_ReqJoinRoom uint16 = 1103
+
+// type MsgReqJoinRoom struct {
+// 	Rid uint64
+// }
+
+// type MsgRetJoinRoom struct {
+// 	ErrorCode uint16
+// }
+
+// const MsgId_ReqQuitRoom uint16 = 1104
+
+// type MsgReqQuitRoom struct {
+// 	Rid uint64
+// }
+
+// type MsgRetQuitRoom struct {
+// 	ErrorCode uint16
+// }
+
+const MsgId_RoomPresence uint16 = 1103
+
+type MsgRoomPresence struct {
+	PresenceType uint8  `json:"presencetype"` //available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
+	Who          uint64 `json:"who,string"`
+	Nickname     string `json:"nickname"`
+	TimeStamp    int64  `json:"timestamp,string"`
+	Message      string `json:"message"`
+}
+
+type MsgRoomPresenceReceipt struct {
+	ErrorCode uint16
+}
+
+//ban room user
+const MsgId_ReqBanRoomUser uint16 = 1105
+
+type MsgReqBanRoomUser struct {
+	Rid       uint64
+	AppdataId uint64
+}
+
+type MsgRetBanRoomUser struct {
+	ErrorCode uint16
+}
+
+//jinyan/unjinyan room user
+const MsgId_ReqJinyanRoomUser uint16 = 1106
+
+type MsgReqJinyanRoomUser struct {
+	Rid       uint64
+	AppdataId uint64
+}
+
+type MsgRetJinyanRoomUser struct {
+	ErrorCode uint16
+}
+
+const MsgId_ReqUnJinyanRoomUser uint16 = 1107
+
+type MsgReqUnJinyanRoomUser struct {
+	Rid       uint64
+	AppdataId uint64
+}
+
+type MsgRetUnJinyanRoomUser struct {
+	ErrorCode uint16
+}
+
+//add/remove room admin
+const MsgId_ReqAddRoomAdmin uint16 = 1108
+
+type MsgReqAddRoomAdmin struct {
+	Rid       uint64
+	AppdataId uint64
+}
+
+type MsgRetAddRoomAdmin struct {
+	ErrorCode uint16
+}
+
+const MsgId_ReqRemoveRoomAdmin uint16 = 1109
+
+type MsgReqRemoveRoomAdmin struct {
+	Rid       uint64
+	AppdataId uint64
+}
+
+type MsgRetRemoveRoomAdmin struct {
+	ErrorCode uint16
+}
+
+//room message
+const MsgId_RoomMessage uint16 = 1110
+
+type MsgRoomMessage struct {
+	Rid       uint64 `json:"rid,string"`
+	Who       uint64 `json:"who,string"` //使用who，表示客户端填充的接收者，服务器转发时会修改为发送者
+	TimeStamp int64  `json:"timestamp,string"`
+	Nickname  string `json:"nickname"`
+	Message   string `json:"message"`
+}
+
+type MsgRoomReceipt struct {
+	ErrorCode uint16
+}
+
 //create/delete room group
 //invite user
-//ban room user
-//jinyan/unjinyan room user
-//add/remove room role
 //message broadcast
+
 //公共频道消息传输，如世界、国家等
+const MsgId_PublicChannelMessage uint16 = 1200
+
+type MsgPublicChannelMessage struct {
+	Who       uint64 `json:"who,string"` //使用who，表示客户端填充的接收者，服务器转发时会修改为发送者
+	TimeStamp int64  `json:"timestamp,string"`
+	Nickname  string `json:"nickname"`
+	Message   string `json:"message"`
+	Channel   string `json:"channel"`
+}
+
+type MsgPublicChannelMessageReceipt struct {
+	ErrorCode uint16
+}
 
 //define RPC
