@@ -119,6 +119,20 @@ func (db *DBManager) GetRoomUserList(rid uint64) ([]*RoomUser, error) {
 	return roomuserlist, retdb.Error
 }
 
+func (db *DBManager) GetRoomUserIds(rid uint64) ([]uint64, error) {
+	ids := []uint64{}
+	retdb := db.sql.Model(roomuser_table).Select("a.id").Where("rid = ?", rid).Scan(&ids)
+	return ids, retdb.Error
+}
+
+func (db *DBManager) GetRoomUserOnlineIds(rid uint64) ([]uint64, error) {
+	ids := []uint64{}
+	retdb := db.sql.Table(db.sql.prefix+"room_user a").Where("rid = ?", rid)
+	retdb = retdb.Joins("join " + db.sql.prefix + "online b on b.dataid = a.dataid")
+	retdb = retdb.Select("a.dataid").Scan(&ids)
+	return ids, retdb.Error
+}
+
 func (db *DBManager) GetRoomUserCount(rid uint64) (uint64, error) {
 	var count uint64
 	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Count(&count)
@@ -137,7 +151,7 @@ func (db *DBManager) GetRoomAdminIds(rid uint64) ([]uint64, error) {
 	return ids, retdb.Error
 }
 
-func (db *DBManager) IsRoomAdmin(rid, appdataid uint64) error {
+func (db *DBManager) IsRoomAdmin(rid, appdataid uint64) (bool, error) {
 	var isadmin bool
 	retdb := db.sql.Model(roomuser_table).Select("isadmin").Where("rid = ?", rid).Where("dataid = ?", appdataid).Scan(&isadmin)
 	return isadmin, retdb.Error

@@ -528,6 +528,7 @@ type RoomUser struct {
 
 	//other info, for join
 	AppDataPublic
+	Isonline bool `redis:"isonline" json:"isonline" gorm:"-"`
 }
 
 // type RoomUserJinyan struct {

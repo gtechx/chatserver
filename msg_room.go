@@ -129,18 +129,14 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 							if err != nil {
 								errcode = ERR_DB
 							} else {
-								for _, id := range admins {
-									errcode = SendMessageToUser(id, senddata)
-									// err = dbMgr.AddPresence(sess.ID(), who, presencebytes)
-									// if err != nil {
-									// 	errcode = ERR_DB
-									// } else {
-									// 	//send to who
-									// 	errcode = SendMessageToUser(who, senddata)
-									// 	// if errcode != ERR_NONE {
-
-									// 	// }
-									// }
+								err = dbMgr.AddRoomPresence(rid, sess.ID())
+								if err != nil {
+									errcode = ERR_DB
+								} else {
+									//send to admin
+									for _, id := range admins {
+										errcode = SendMessageToUser(id, senddata)
+									}
 								}
 							}
 						}
@@ -162,19 +158,29 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 							if !flag {
 								errcode = ERR_APPDATAID_NOT_EXISTS
 							} else {
-								tbl_roomuser := &gtdb.RoomUser{Rid: rid, Dataid: who}
-								err = dbMgr.AddRoomUser(tbl_roomuser)
+								flag, err = dbMgr.IsRoomPresenceExists(rid, who)
 
 								if err != nil {
 									errcode = ERR_DB
 								} else {
-									presencebytes, err := json.Marshal(presence)
-									if err != nil {
-										errcode = ERR_INVALID_JSON
+									if !flag {
+										errcode = ERR_ROOM_PRESENCE_NOT_EXISTS
 									} else {
-										senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
-										errcode = SendMessageToUser(who, senddata)
-										dbMgr.RemovePresence(sess.ID(), who)
+										tbl_roomuser := &gtdb.RoomUser{Rid: rid, Dataid: who}
+										err = dbMgr.AddRoomUser(tbl_roomuser)
+
+										if err != nil {
+											errcode = ERR_DB
+										} else {
+											presencebytes, err := json.Marshal(presence)
+											if err != nil {
+												errcode = ERR_INVALID_JSON
+											} else {
+												senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
+												errcode = SendMessageToUser(who, senddata)
+												dbMgr.RemoveRoomPresence(rid, who)
+											}
+										}
 									}
 								}
 							}
@@ -183,14 +189,14 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 				}
 			case PresenceType_Unsubscribe:
 				//check if the two are friend, if not omit thie message, else delete friend and send to who.
-				flag, err = dbMgr.IsFriend(sess.ID(), who)
+				flag, err = dbMgr.IsUserInRoom(rid, sess.ID())
 				if err != nil {
 					errcode = ERR_DB
 				} else {
 					if !flag {
-						errcode = ERR_FRIEND_NOT_EXISTS
+						errcode = ERR_ROOM_USER_INVALID
 					} else {
-						err = dbMgr.RemoveFriend(sess.ID(), who)
+						err = dbMgr.RemoveRoomUser(rid, sess.ID())
 						if err != nil {
 							errcode = ERR_DB
 						} else {
@@ -199,7 +205,17 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 								errcode = ERR_INVALID_JSON
 							} else {
 								senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
-								errcode = SendMessageToUser(who, senddata)
+								userlist, err := dbMgr.GetRoomUserIds(rid)
+
+								if err != nil {
+									errcode = ERR_DB
+								} else {
+									for _, user := range userlist {
+										//broadcast to user in room
+										errcode = SendMessageToUser(user, senddata)
+									}
+								}
+								dbMgr.RemoveRoomPresence(rid, who)
 							}
 						}
 					}
@@ -220,38 +236,37 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 							if !flag {
 								errcode = ERR_APPDATAID_NOT_EXISTS
 							} else {
-								senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
-								errcode = SendMessageToUser(who, senddata)
+								flag, err = dbMgr.IsRoomPresenceExists(rid, who)
+
+								if err != nil {
+									errcode = ERR_DB
+								} else {
+									if !flag {
+										errcode = ERR_ROOM_PRESENCE_NOT_EXISTS
+									} else {
+										presencebytes, err := json.Marshal(presence)
+										if err != nil {
+											errcode = ERR_INVALID_JSON
+										} else {
+											senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
+											errcode = SendMessageToUser(who, senddata)
+											dbMgr.RemoveRoomPresence(rid, who)
+										}
+									}
+								}
 							}
-						}
-					}
-				}
-				flag, err = dbMgr.IsPresenceExists(sess.ID(), who)
-				if err != nil {
-					errcode = ERR_DB
-				} else {
-					if !flag {
-						errcode = ERR_PRESENCE_NOT_EXISTS
-					} else {
-						presencebytes, err := json.Marshal(presence)
-						if err != nil {
-							errcode = ERR_INVALID_JSON
-						} else {
-							senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
-							errcode = SendMessageToUser(who, senddata)
-							dbMgr.RemovePresence(sess.ID(), who)
 						}
 					}
 				}
 			case PresenceType_Available, PresenceType_Unavailable, PresenceType_Invisible:
 				//send to my friend online
-				presencebytes, err := json.Marshal(presence)
-				if err != nil {
-					errcode = ERR_INVALID_JSON
-				} else {
-					senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
-					SendMessageToFriendsOnline(sess.ID(), senddata)
-				}
+				// presencebytes, err := json.Marshal(presence)
+				// if err != nil {
+				// 	errcode = ERR_INVALID_JSON
+				// } else {
+				// 	senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
+				// 	SendMessageToFriendsOnline(sess.ID(), senddata)
+				// }
 			}
 		}
 	}
@@ -506,6 +521,10 @@ func HandlerRoomMessage(sess ISession, data []byte) (uint16, interface{}) {
 	flag, err := dbMgr.IsRoomExists(roommsg.Rid)
 	errcode := ERR_NONE
 
+	roommsg.TimeStamp = time.Now().Unix()
+	roommsg.Who = sess.ID()
+	roommsg.Nickname = sess.NickName()
+
 	if err != nil {
 		errcode = ERR_DB
 	} else {
@@ -520,13 +539,20 @@ func HandlerRoomMessage(sess ISession, data []byte) (uint16, interface{}) {
 				if !flag {
 					errcode = ERR_ROOM_USER_INVALID
 				} else {
-					userlist, err := dbMgr.GetRoomUserList(roommsg.Rid)
+					userlist, err := dbMgr.GetRoomUserIds(roommsg.Rid)
 
 					if err != nil {
 						errcode = ERR_DB
 					} else {
-						for _, user := range userlist {
-							//broadcast to user in room
+						msgbytes, err := json.Marshal(roommsg)
+						if err != nil {
+							errcode = ERR_UNKNOWN
+						} else {
+							senddata := packageMsg(RetFrame, 0, MsgId_RoomMessage, msgbytes)
+							for _, user := range userlist {
+								//broadcast to user in room
+								errcode = SendMessageToUser(user, senddata)
+							}
 						}
 					}
 				}
