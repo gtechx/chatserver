@@ -462,6 +462,7 @@ const MsgId_RoomPresence uint16 = 1103
 
 type MsgRoomPresence struct {
 	PresenceType uint8  `json:"presencetype"` //available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
+	Rid          uint64 `json:"rid,string"`
 	Who          uint64 `json:"who,string"`
 	Nickname     string `json:"nickname"`
 	TimeStamp    int64  `json:"timestamp,string"`

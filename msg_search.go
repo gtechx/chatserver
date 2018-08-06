@@ -64,5 +64,24 @@ func HandlerReqNicknameSearch(sess ISession, data []byte) (uint16, interface{}) 
 }
 
 func HandlerReqRoomSearch(sess ISession, data []byte) (uint16, interface{}) {
-	return ERR_NONE, nil
+	roomname := String(data)
+	errcode := ERR_NONE
+	dbMgr := gtdb.Manager()
+	ret := &MsgRetRoomSearch{}
+
+	searchret, err := dbMgr.SearchRoom(roomname)
+	if err != nil {
+		errcode = ERR_DB
+	} else {
+		if searchret != nil {
+			ret.Json, err = json.Marshal(searchret)
+			if err != nil {
+				errcode = ERR_JSON_SERIALIZE
+				ret.Json = nil
+			}
+		}
+	}
+	ret.ErrorCode = errcode
+
+	return errcode, ret
 }

@@ -343,6 +343,18 @@ type AppDataPublic struct {
 	Country  string    `redis:"country" json:"country" gorm:"-"`
 }
 
+type AppDataPublicWithID struct {
+	ID       uint64    `redis:"id" json:"id,string" gorm:"-"`
+	Account  string    `redis:"account" json:"account" gorm:"-"`
+	Appname  string    `redis:"appname" json:"appname" gorm:"-"`
+	Zonename string    `redis:"zonename" json:"zonename" gorm:"-"`
+	Nickname string    `redis:"nickname" json:"nickname" gorm:"-"`
+	Desc     string    `redis:"desc" json:"desc" gorm:"-"`
+	Sex      string    `redis:"sex" json:"sex" gorm:"-"`
+	Birthday time.Time `redis:"birthday" json:"birthday" gorm:"-"`
+	Country  string    `redis:"country" json:"country" gorm:"-"`
+}
+
 type AppDataFlagPublic struct {
 	Isbaned  bool `redis:"isbaned" json:"isbaned" gorm:"-"`
 	Isjinyan bool `redis:"isjinyan" json:"isjinyan" gorm:"-"`
@@ -563,14 +575,13 @@ type FriendJson struct {
 	Comment   string `json:"comment"`
 }
 
-type SearchUserJson struct {
-	Dataid   uint64 `json:"who,string"`
-	Nickname string `json:"nickname"`
-	Country  string `json:"country"`
-}
+// type SearchUserJson struct {
+// 	Dataid uint64 `json:"who,string"`
+// 	AppDataPublic
+// }
 
-type SearchRoomJson struct {
-	Dataid   uint64 `json:"who,string"`
-	Nickname string `json:"nickname"`
-	Country  string `json:"country"`
-}
+// type SearchRoomJson struct {
+// 	Dataid   uint64 `json:"who,string"`
+// 	Nickname string `json:"nickname"`
+// 	Country  string `json:"country"`
+// }

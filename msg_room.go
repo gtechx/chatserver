@@ -6,7 +6,6 @@ import (
 	"time"
 
 	. "github.com/gtechx/base/common"
-	"github.com/gtechx/chatserver/config"
 	"github.com/gtechx/chatserver/db"
 )
 
@@ -87,23 +86,20 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 	}
 
 	presencetype := presence.PresenceType
+	rid := presence.Rid
 	who := presence.Who
 	//timestamp := Int64(data[9:])
 	//message := data[17:]
 
-	if who == sess.ID() {
-		return ERR_FRIEND_SELF, ERR_FRIEND_SELF
-	}
-
-	presence.Nickname = sess.NickName()
+	//presence.Nickname = sess.NickName()
 	presence.TimeStamp = time.Now().Unix()
-	presence.Who = sess.ID()
+	//presence.Who = sess.ID()
 
 	//presence := &MsgPresence{PresenceType: presencetype, Who: sess.ID(), TimeStamp: timestamp, Message: message}
 
 	errcode := ERR_NONE
 	dbMgr := gtdb.Manager()
-	flag, err := dbMgr.IsRoomExists(who)
+	flag, err := dbMgr.IsRoomExists(rid)
 
 	if err != nil {
 		errcode = ERR_DB
@@ -114,55 +110,73 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 			//
 			switch presencetype {
 			case PresenceType_Subscribe:
-				flag, err = dbMgr.IsFriend(sess.ID(), who)
+				presence.Nickname = sess.NickName()
+				presence.Who = sess.ID()
+				flag, err = dbMgr.IsUserInRoom(rid, sess.ID())
 				if err != nil {
 					errcode = ERR_DB
 				} else {
 					if flag {
-						errcode = ERR_FRIEND_EXISTS
+						errcode = ERR_ROOM_USER_EXISTS
 					} else {
-						//send presence to who and record this presence for who's answer
 						presencebytes, err := json.Marshal(presence)
 						if err != nil {
 							errcode = ERR_INVALID_JSON
 						} else {
-							senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
-							err = dbMgr.AddPresence(sess.ID(), who, presencebytes)
+							senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
+							admins, err := dbMgr.GetRoomAdminIds(rid)
+
 							if err != nil {
 								errcode = ERR_DB
 							} else {
-								//send to who
-								errcode = SendMessageToUser(who, senddata)
-								// if errcode != ERR_NONE {
+								for _, id := range admins {
+									errcode = SendMessageToUser(id, senddata)
+									// err = dbMgr.AddPresence(sess.ID(), who, presencebytes)
+									// if err != nil {
+									// 	errcode = ERR_DB
+									// } else {
+									// 	//send to who
+									// 	errcode = SendMessageToUser(who, senddata)
+									// 	// if errcode != ERR_NONE {
 
-								// }
+									// 	// }
+									// }
+								}
 							}
 						}
 					}
 				}
 			case PresenceType_Subscribed:
-				//check if server has record, if not omit this message, else send to record sender
-				flag, err = dbMgr.IsPresenceExists(sess.ID(), who)
+				flag, err = dbMgr.IsRoomAdmin(rid, sess.ID())
 				if err != nil {
 					errcode = ERR_DB
 				} else {
 					if !flag {
-						errcode = ERR_PRESENCE_NOT_EXISTS
+						errcode = ERR_ROOM_ADMIN_INVALID
 					} else {
-						tbl_from := &gtdb.Friend{Dataid: who, Otherdataid: sess.ID(), Groupname: config.DefaultGroupName}
-						tbl_to := &gtdb.Friend{Dataid: sess.ID(), Otherdataid: who, Groupname: config.DefaultGroupName}
-						err = dbMgr.AddFriend(tbl_from, tbl_to)
+						flag, err = dbMgr.IsAppDataExists(who)
 
 						if err != nil {
 							errcode = ERR_DB
 						} else {
-							presencebytes, err := json.Marshal(presence)
-							if err != nil {
-								errcode = ERR_INVALID_JSON
+							if !flag {
+								errcode = ERR_APPDATAID_NOT_EXISTS
 							} else {
-								senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
-								errcode = SendMessageToUser(who, senddata)
-								dbMgr.RemovePresence(sess.ID(), who)
+								tbl_roomuser := &gtdb.RoomUser{Rid: rid, Dataid: who}
+								err = dbMgr.AddRoomUser(tbl_roomuser)
+
+								if err != nil {
+									errcode = ERR_DB
+								} else {
+									presencebytes, err := json.Marshal(presence)
+									if err != nil {
+										errcode = ERR_INVALID_JSON
+									} else {
+										senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
+										errcode = SendMessageToUser(who, senddata)
+										dbMgr.RemovePresence(sess.ID(), who)
+									}
+								}
 							}
 						}
 					}
@@ -184,14 +198,34 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 							if err != nil {
 								errcode = ERR_INVALID_JSON
 							} else {
-								senddata := packageMsg(RetFrame, 0, MsgId_Presence, presencebytes)
+								senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
 								errcode = SendMessageToUser(who, senddata)
 							}
 						}
 					}
 				}
 			case PresenceType_Unsubscribed:
-				//check if server has record, if not omit this message, else send to record sender
+				flag, err = dbMgr.IsRoomAdmin(rid, sess.ID())
+				if err != nil {
+					errcode = ERR_DB
+				} else {
+					if !flag {
+						errcode = ERR_ROOM_ADMIN_INVALID
+					} else {
+						flag, err = dbMgr.IsAppDataExists(who)
+
+						if err != nil {
+							errcode = ERR_DB
+						} else {
+							if !flag {
+								errcode = ERR_APPDATAID_NOT_EXISTS
+							} else {
+								senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
+								errcode = SendMessageToUser(who, senddata)
+							}
+						}
+					}
+				}
 				flag, err = dbMgr.IsPresenceExists(sess.ID(), who)
 				if err != nil {
 					errcode = ERR_DB
