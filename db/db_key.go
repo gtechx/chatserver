@@ -510,6 +510,7 @@ type Room struct {
 	Jieshao   string    `redis:"jieshao" json:"jieshao"`
 	Notice    string    `redis:"notice" json:"notice"` //公告
 	Password  string    `redis:"password" json:"-"`
+	Maxuser   uint16    `redis:"maxuser" json:"maxuser" gorm:"default:500"`
 	CreatedAt time.Time `redis:"createdate" json:"createdate"`
 
 	//other info for join

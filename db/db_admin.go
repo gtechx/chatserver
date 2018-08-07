@@ -15,7 +15,7 @@ var admin_table = &Admin{}
 type AdminFilter struct {
 	Account      string
 	Adminadmin   bool
-	Adminuser    bool
+	Adminaccount bool
 	Adminapp     bool
 	Adminappdata bool
 	Adminonline  bool
@@ -31,8 +31,8 @@ func (filter *AdminFilter) apply(db *gorm.DB) *gorm.DB {
 	if filter.Adminadmin != false {
 		retdb = retdb.Where("adminadmin = ?", filter.Adminadmin)
 	}
-	if filter.Adminuser != false {
-		retdb = retdb.Where("adminuser = ?", filter.Adminuser)
+	if filter.Adminaccount != false {
+		retdb = retdb.Where("Adminaccount = ?", filter.Adminaccount)
 	}
 	if filter.Adminapp != false {
 		retdb = retdb.Where("adminapp = ?", filter.Adminapp)

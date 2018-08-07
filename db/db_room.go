@@ -121,7 +121,7 @@ func (db *DBManager) GetRoomUserList(rid uint64) ([]*RoomUser, error) {
 
 func (db *DBManager) GetRoomUserIds(rid uint64) ([]uint64, error) {
 	ids := []uint64{}
-	retdb := db.sql.Model(roomuser_table).Select("a.id").Where("rid = ?", rid).Scan(&ids)
+	retdb := db.sql.Model(roomuser_table).Select("a.dataid").Where("rid = ?", rid).Scan(&ids)
 	return ids, retdb.Error
 }
 
@@ -133,13 +133,13 @@ func (db *DBManager) GetRoomUserOnlineIds(rid uint64) ([]uint64, error) {
 	return ids, retdb.Error
 }
 
-func (db *DBManager) GetRoomUserCount(rid uint64) (uint64, error) {
-	var count uint64
+func (db *DBManager) GetRoomUserCount(rid uint64) (uint16, error) {
+	var count uint16
 	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Count(&count)
 	return count, retdb.Error
 }
 
-func (db *DBManager) IsUserInRoom(rid, appdataid uint64) (bool, error) {
+func (db *DBManager) IsRoomUser(rid, appdataid uint64) (bool, error) {
 	var count uint64
 	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Where("dataid = ?", appdataid).Count(&count)
 	return count > 0, retdb.Error
@@ -158,17 +158,17 @@ func (db *DBManager) IsRoomAdmin(rid, appdataid uint64) (bool, error) {
 }
 
 //踢出玩家
-func (db *DBManager) BanUserInRoom(rid, appdataid uint64) error {
-	retdb := db.sql.Delete(roomuser_table, "rid = ? AND dataid = ?", rid, appdataid)
-	return retdb.Error
-}
+// func (db *DBManager) BanUserInRoom(rid, appdataid uint64) error {
+// 	retdb := db.sql.Delete(roomuser_table, "rid = ? AND dataid = ?", rid, appdataid)
+// 	return retdb.Error
+// }
 
-func (db *DBManager) JinyanUserInRoom(rid, appdataid uint64) error {
+func (db *DBManager) JinyanRoomUser(rid, appdataid uint64) error {
 	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Where("dataid = ?", appdataid).Update("isjinyan", true)
 	return retdb.Error
 }
 
-func (db *DBManager) UnJinyanUserInRoom(rid, appdataid uint64) error {
+func (db *DBManager) UnJinyanRoomUser(rid, appdataid uint64) error {
 	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Where("dataid = ?", appdataid).Update("isjinyan", false)
 	return retdb.Error
 }
@@ -264,4 +264,15 @@ func (db *DBManager) GetRoomJieshao(rid uint64) (string, error) {
 	var jieshao string
 	retdb := db.sql.Model(room_table).Select("jieshao").Where("rid = ?", rid).Scan(&jieshao)
 	return jieshao, retdb.Error
+}
+
+func (db *DBManager) SetRoomMaxUser(rid uint64, maxuser uint16) error {
+	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Update("maxuser", maxuser)
+	return retdb.Error
+}
+
+func (db *DBManager) GetRoomMaxUser(rid uint64) (uint16, error) {
+	var maxuser uint16
+	retdb := db.sql.Model(room_table).Select("maxuser").Where("rid = ?", rid).Scan(&maxuser)
+	return maxuser, retdb.Error
 }

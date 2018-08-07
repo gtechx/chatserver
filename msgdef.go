@@ -415,12 +415,20 @@ type MsgRetDeleteRoom struct {
 const MsgId_ReqUpdateRoomSetting uint16 = 1102
 
 const (
-	RoomSetting_None     uint8 = iota
-	RoomSetting_RoomName       = 0x1
-	RoomSetting_RoomType       = 0x2
-	RoomSetting_Jieshao        = 0x4
-	RoomSetting_Notice         = 0x8
-	RoomSetting_Password       = 0x10
+	RoomSetting_None     byte = 0
+	RoomSetting_RoomName byte = 0x1
+	RoomSetting_RoomType byte = 0x2
+	RoomSetting_Jieshao  byte = 0x4
+	RoomSetting_Notice   byte = 0x8
+	RoomSetting_Password byte = 0x10
+)
+
+const (
+	RoomType_None byte = iota
+	RoomType_Everyone
+	RoomType_Apply
+	RoomType_Password
+	RoomType_Temp
 )
 
 type MsgReqUpdateRoomSetting struct {
@@ -466,6 +474,7 @@ type MsgRoomPresence struct {
 	Who          uint64 `json:"who,string"`
 	Nickname     string `json:"nickname"`
 	TimeStamp    int64  `json:"timestamp,string"`
+	Password     string `json:"password"`
 	Message      string `json:"message"`
 }
 
