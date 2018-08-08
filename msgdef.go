@@ -35,10 +35,8 @@ const (
 	DataType_Friend uint8 = iota
 	//DataType_Group
 	DataType_Presence
-	DataType_Room
 	DataType_Black
 	DataType_Offline_Message
-	DataType_RoomMessage
 )
 
 //available,subscribe,subscribed,unsubscribe,unsubscribed,unavailable,invisible
@@ -553,6 +551,29 @@ type MsgRoomMessage struct {
 
 type MsgRoomReceipt struct {
 	ErrorCode uint16
+}
+
+//get room list
+const MsgId_ReqRoomList uint16 = 1111
+
+type MsgReqRoomList struct {
+}
+
+type MsgRetRoomList struct {
+	ErrorCode uint16
+	Json      []byte
+}
+
+//get room presence list
+const MsgId_ReqRoomPresenceList uint16 = 1112
+
+type MsgReqRoomPresenceList struct {
+	Rid uint64
+}
+
+type MsgRetRoomPresenceList struct {
+	ErrorCode uint16
+	Json      []byte
 }
 
 //create/delete room group

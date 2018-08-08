@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"time"
 
 	. "github.com/gtechx/base/common"
@@ -27,208 +25,26 @@ func RegisterRoomMsg() {
 }
 
 func HandlerReqCreateRoom(sess ISession, data []byte) (uint16, interface{}) {
-	var roommsg *MsgReqCreateRoom = &MsgReqCreateRoom{}
-	err := json.Unmarshal(data, roommsg)
-
-	fmt.Println(string(data))
-	fmt.Println(roommsg)
-	if err != nil {
-		fmt.Println(err.Error())
-		return ERR_INVALID_JSON, ERR_INVALID_JSON
-	}
-
 	errcode := ERR_NONE
-	dbMgr := gtdb.Manager()
-
-	tbl_room := &gtdb.Room{Ownerid: sess.ID(), Roomname: roommsg.Name, Roomtype: roommsg.RoomType, Jieshao: roommsg.Jieshao, Notice: roommsg.Notice, Password: roommsg.Password}
-	err = dbMgr.CreateRoom(tbl_room)
-
-	if err != nil {
-		errcode = ERR_DB
+	var roommsg *MsgReqCreateRoom = &MsgReqCreateRoom{}
+	if !jsonUnMarshal(data, roommsg, &errcode) {
+		return errcode, errcode
 	}
 
+	createRoom(sess.ID(), roommsg, &errcode)
 	return errcode, errcode
 }
 
 func HandlerReqDeleteRoom(sess ISession, data []byte) (uint16, interface{}) {
 	rid := Uint64(data)
-
-	dbMgr := gtdb.Manager()
-	flag, err := dbMgr.IsRoomExists(rid)
 	errcode := ERR_NONE
 
-	if err != nil {
-		errcode = ERR_DB
-	} else {
-		if !flag {
-			errcode = ERR_ROOM_NOT_EXISTS
-		} else {
-			err = dbMgr.DeleteRoom(rid)
-
-			if err != nil {
-				errcode = ERR_DB
-			}
-		}
+	if !isRoomExists(rid, &errcode) {
+		return errcode, errcode
 	}
 
+	deleteRoom(rid, &errcode)
 	return errcode, errcode
-}
-
-//正条件，在条件满足的时候才去做事情
-func isRoomFull(rid uint64, perrcode *uint16) bool {
-	dbMgr := gtdb.Manager()
-
-	usercount, err := dbMgr.GetRoomUserCount(rid)
-	if err != nil {
-		*perrcode = ERR_DB
-	} else {
-		maxusercount, err := dbMgr.GetRoomMaxUser(rid)
-		if err != nil {
-			*perrcode = ERR_DB
-		} else {
-			if usercount != maxusercount {
-				*perrcode = ERR_ROOM_NOT_FULL
-			} else {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-//反条件，在条件满足的时候才去做事情
-func isNotRoomFull(rid uint64, perrcode *uint16) bool {
-	dbMgr := gtdb.Manager()
-
-	usercount, err := dbMgr.GetRoomUserCount(rid)
-	if err != nil {
-		*perrcode = ERR_DB
-	} else {
-		maxusercount, err := dbMgr.GetRoomMaxUser(rid)
-		if err != nil {
-			*perrcode = ERR_DB
-		} else {
-			if usercount == maxusercount {
-				*perrcode = ERR_ROOM_FULL
-			} else {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-func addRoomUser(rid, appdataid uint64, presence *MsgRoomPresence) uint16 {
-	errcode := ERR_NONE
-	dbMgr := gtdb.Manager()
-
-	tbl_roomuser := &gtdb.RoomUser{Rid: rid, Dataid: appdataid}
-	err := dbMgr.AddRoomUser(tbl_roomuser)
-
-	if err != nil {
-		errcode = ERR_DB
-	} else {
-		presencebytes, err := json.Marshal(presence)
-		if err != nil {
-			errcode = ERR_INVALID_JSON
-		} else {
-			senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
-			userlist, err := dbMgr.GetRoomUserIds(rid)
-
-			if err != nil {
-				errcode = ERR_DB
-			} else {
-				for _, user := range userlist {
-					//broadcast to user in room
-					errcode = SendMessageToUser(user, senddata)
-				}
-			}
-		}
-	}
-
-	return errcode
-}
-
-func isRoomPassword(rid uint64, password string, perrcode *uint16) bool {
-	roompassword, err := gtdb.Manager().GetRoomPassword(rid)
-
-	if err != nil {
-		*perrcode = ERR_DB
-	} else {
-		if password != roompassword {
-			*perrcode = ERR_ROOM_PASSWORD_INVALID
-		} else {
-			return true
-		}
-	}
-
-	return false
-}
-
-func isRoomExists(rid uint64, perrcode *uint16) bool {
-	flag, err := gtdb.Manager().IsRoomExists(rid)
-
-	if err != nil {
-		*perrcode = ERR_DB
-	} else {
-		if !flag {
-			*perrcode = ERR_ROOM_NOT_EXISTS
-		} else {
-			return true
-		}
-	}
-
-	return false
-}
-
-func isRoomNotExists(rid uint64, perrcode *uint16) bool {
-	flag, err := gtdb.Manager().IsRoomExists(rid)
-
-	if err != nil {
-		*perrcode = ERR_DB
-	} else {
-		if flag {
-			*perrcode = ERR_ROOM_EXISTS
-		} else {
-			return true
-		}
-	}
-
-	return false
-}
-
-func isRoomUser(rid, appdataid uint64, perrcode *uint16) bool {
-	flag, err := gtdb.Manager().IsRoomUser(rid, appdataid)
-
-	if err != nil {
-		*perrcode = ERR_DB
-	} else {
-		if !flag {
-			*perrcode = ERR_ROOM_USER_INVALID
-		} else {
-			return true
-		}
-	}
-
-	return false
-}
-
-func isNotRoomUser(rid, appdataid uint64, perrcode *uint16) bool {
-	flag, err := gtdb.Manager().IsRoomUser(rid, appdataid)
-
-	if err != nil {
-		*perrcode = ERR_DB
-	} else {
-		if flag {
-			*perrcode = ERR_ROOM_USER_EXISTS
-		} else {
-			return true
-		}
-	}
-
-	return false
 }
 
 func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
@@ -248,22 +64,23 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 
 	presence.TimeStamp = time.Now().Unix()
 
-	dbMgr := gtdb.Manager()
-
 	switch presencetype {
 	case PresenceType_Subscribe:
 		presence.Nickname = sess.NickName()
 		presence.Who = sess.ID()
 
-		if isRoomUser(rid, sess.ID(), &errcode) {
+		if !isNotRoomUser(rid, sess.ID(), &errcode) {
 			return errcode, errcode
 		}
 
-		if isRoomFull(rid, &errcode) {
+		if !isRoomNotFull(rid, &errcode) {
 			return errcode, errcode
 		}
 
-		roomtype, _ := dbMgr.GetRoomType(rid)
+		var roomtype byte
+		if !getRoomType(rid, &roomtype, &errcode) {
+			return errcode, errcode
+		}
 
 		if roomtype == RoomType_Apply {
 			var presencebytes []byte
@@ -271,152 +88,86 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 				return errcode, errcode
 			}
 
-			var admins []uint64
-			if !getRoomAdminIds(rid, &admins, &errcode) {
+			if !sendPresenceToRoomAdmin(rid, presencebytes, &errcode) {
 				return errcode, errcode
 			}
-			senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
-
-			err = dbMgr.AddRoomPresence(rid, sess.ID(), presencebytes)
-			if err != nil {
-				errcode = ERR_DB
-			} else {
-				//send to admin
-				for _, id := range admins {
-					errcode = SendMessageToUser(id, senddata)
-				}
-			}
 		} else if roomtype == RoomType_Everyone {
-			errcode = addRoomUser(rid, sess.ID(), presence)
+			if !addRoomUser(rid, sess.ID(), presence, &errcode) {
+				return errcode, errcode
+			}
 		} else if roomtype == RoomType_Password {
-			if isRoomPassword(rid, presence.Password, &errcode) {
-				errcode = addRoomUser(rid, sess.ID(), presence)
+			if !isRoomPassword(rid, presence.Password, &errcode) {
+				return errcode, errcode
+			}
+
+			if !addRoomUser(rid, sess.ID(), presence, &errcode) {
+				return errcode, errcode
 			}
 		}
 	case PresenceType_Subscribed:
-		flag, err = dbMgr.IsRoomAdmin(rid, sess.ID())
-		if err != nil {
-			errcode = ERR_DB
-		} else {
-			if !flag {
-				errcode = ERR_ROOM_ADMIN_INVALID
-			} else {
-				flag, err = dbMgr.IsAppDataExists(who)
+		if !isRoomAdmin(rid, sess.ID(), &errcode) {
+			return errcode, errcode
+		}
 
-				if err != nil {
-					errcode = ERR_DB
-				} else {
-					if !flag {
-						errcode = ERR_APPDATAID_NOT_EXISTS
-					} else {
-						flag, err = dbMgr.IsRoomPresenceExists(rid, who)
+		if !isAppDataExists(who, &errcode) {
+			return errcode, errcode
+		}
 
-						if err != nil {
-							errcode = ERR_DB
-						} else {
-							if !flag {
-								errcode = ERR_ROOM_PRESENCE_NOT_EXISTS
-							} else {
-								tbl_roomuser := &gtdb.RoomUser{Rid: rid, Dataid: who}
-								err = dbMgr.AddRoomUser(tbl_roomuser)
+		if !isRoomPresenceExists(rid, who, &errcode) {
+			return errcode, errcode
+		}
 
-								if err != nil {
-									errcode = ERR_DB
-								} else {
-									presencebytes, err := json.Marshal(presence)
-									if err != nil {
-										errcode = ERR_INVALID_JSON
-									} else {
-										senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
-										userlist, err := dbMgr.GetRoomUserIds(rid)
+		if !addRoomUser(rid, sess.ID(), presence, &errcode) {
+			return errcode, errcode
+		}
 
-										if err != nil {
-											errcode = ERR_DB
-										} else {
-											for _, user := range userlist {
-												//broadcast to user in room
-												errcode = SendMessageToUser(user, senddata)
-											}
-										}
-										dbMgr.RemoveRoomPresence(rid, who)
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+		if !removeRoomPresence(rid, sess.ID(), &errcode) {
+			return errcode, errcode
 		}
 	case PresenceType_Unsubscribe:
-		//check if the two are friend, if not omit thie message, else delete friend and send to who.
-		flag, err = dbMgr.IsRoomUser(rid, sess.ID())
-		if err != nil {
-			errcode = ERR_DB
-		} else {
-			if !flag {
-				errcode = ERR_ROOM_USER_INVALID
-			} else {
-				err = dbMgr.RemoveRoomUser(rid, sess.ID())
-				if err != nil {
-					errcode = ERR_DB
-				} else {
-					presencebytes, err := json.Marshal(presence)
-					if err != nil {
-						errcode = ERR_INVALID_JSON
-					} else {
-						senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
-						userlist, err := dbMgr.GetRoomUserIds(rid)
+		if !isRoomUser(rid, sess.ID(), &errcode) {
+			return errcode, errcode
+		}
 
-						if err != nil {
-							errcode = ERR_DB
-						} else {
-							for _, user := range userlist {
-								//broadcast to user in room
-								errcode = SendMessageToUser(user, senddata)
-							}
-						}
-						dbMgr.RemoveRoomPresence(rid, who)
-					}
-				}
-			}
+		if !removeRoomUser(rid, sess.ID(), &errcode) {
+			return errcode, errcode
+		}
+
+		var presencebytes []byte
+		if !jsonMarshal(presence, &presencebytes, &errcode) {
+			return errcode, errcode
+		}
+
+		if !sendPresenceToRoomUser(rid, presencebytes, &errcode) {
+			return errcode, errcode
+		}
+
+		if !removeRoomPresence(rid, sess.ID(), &errcode) {
+			return errcode, errcode
 		}
 	case PresenceType_Unsubscribed:
-		flag, err = dbMgr.IsRoomAdmin(rid, sess.ID())
-		if err != nil {
-			errcode = ERR_DB
-		} else {
-			if !flag {
-				errcode = ERR_ROOM_ADMIN_INVALID
-			} else {
-				flag, err = dbMgr.IsAppDataExists(who)
+		if !isRoomAdmin(rid, sess.ID(), &errcode) {
+			return errcode, errcode
+		}
 
-				if err != nil {
-					errcode = ERR_DB
-				} else {
-					if !flag {
-						errcode = ERR_APPDATAID_NOT_EXISTS
-					} else {
-						flag, err = dbMgr.IsRoomPresenceExists(rid, who)
+		if !isAppDataExists(who, &errcode) {
+			return errcode, errcode
+		}
 
-						if err != nil {
-							errcode = ERR_DB
-						} else {
-							if !flag {
-								errcode = ERR_ROOM_PRESENCE_NOT_EXISTS
-							} else {
-								presencebytes, err := json.Marshal(presence)
-								if err != nil {
-									errcode = ERR_INVALID_JSON
-								} else {
-									senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
-									errcode = SendMessageToUser(who, senddata)
-									dbMgr.RemoveRoomPresence(rid, who)
-								}
-							}
-						}
-					}
-				}
-			}
+		if !isRoomPresenceExists(rid, who, &errcode) {
+			return errcode, errcode
+		}
+
+		var presencebytes []byte
+		if !jsonMarshal(presence, &presencebytes, &errcode) {
+			return errcode, errcode
+		}
+
+		senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
+		errcode = SendMessageToUser(who, senddata)
+
+		if !removeRoomPresence(rid, sess.ID(), &errcode) {
+			return errcode, errcode
 		}
 	case PresenceType_Available, PresenceType_Unavailable, PresenceType_Invisible:
 		//send to my friend online
@@ -434,49 +185,44 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 }
 
 func HandlerReqUpdateRoomSetting(sess ISession, data []byte) (uint16, interface{}) {
+	errcode := ERR_NONE
 	var roomsetting *MsgReqUpdateRoomSetting = &MsgReqUpdateRoomSetting{}
-	err := json.Unmarshal(data, roomsetting)
-
-	fmt.Println(string(data))
-	fmt.Println(roomsetting)
-	if err != nil {
-		fmt.Println(err.Error())
-		return ERR_INVALID_JSON, ERR_INVALID_JSON
+	if !jsonUnMarshal(data, roomsetting, &errcode) {
+		return errcode, errcode
 	}
 
-	errcode := ERR_NONE
 	dbMgr := gtdb.Manager()
 
 	if roomsetting.Bit&RoomSetting_RoomName != 0 {
-		dbMgr.SetRoomName(roomsetting.Rid, roomsetting.RoomName)
+		err := dbMgr.SetRoomName(roomsetting.Rid, roomsetting.RoomName)
 		if err != nil {
 			return ERR_DB, ERR_DB
 		}
 	}
 
 	if roomsetting.Bit&RoomSetting_RoomType != 0 {
-		dbMgr.SetRoomType(roomsetting.Rid, roomsetting.RoomType)
+		err := dbMgr.SetRoomType(roomsetting.Rid, roomsetting.RoomType)
 		if err != nil {
 			return ERR_DB, ERR_DB
 		}
 	}
 
 	if roomsetting.Bit&RoomSetting_Jieshao != 0 {
-		dbMgr.SetRoomJieshao(roomsetting.Rid, roomsetting.Jieshao)
+		err := dbMgr.SetRoomJieshao(roomsetting.Rid, roomsetting.Jieshao)
 		if err != nil {
 			return ERR_DB, ERR_DB
 		}
 	}
 
 	if roomsetting.Bit&RoomSetting_Notice != 0 {
-		dbMgr.SetRoomNotice(roomsetting.Rid, roomsetting.Notice)
+		err := dbMgr.SetRoomNotice(roomsetting.Rid, roomsetting.Notice)
 		if err != nil {
 			return ERR_DB, ERR_DB
 		}
 	}
 
 	if roomsetting.Bit&RoomSetting_Password != 0 {
-		dbMgr.SetRoomPassword(roomsetting.Rid, roomsetting.Password)
+		err := dbMgr.SetRoomPassword(roomsetting.Rid, roomsetting.Password)
 		if err != nil {
 			return ERR_DB, ERR_DB
 		}
@@ -488,36 +234,17 @@ func HandlerReqUpdateRoomSetting(sess ISession, data []byte) (uint16, interface{
 func HandlerReqBanRoomUser(sess ISession, data []byte) (uint16, interface{}) {
 	rid := Uint64(data)
 	appdataid := Uint64(data[8:])
-
-	dbMgr := gtdb.Manager()
-	flag, err := dbMgr.IsRoomExists(rid)
 	errcode := ERR_NONE
 
-	if err != nil {
-		errcode = ERR_DB
-	} else {
-		if !flag {
-			errcode = ERR_ROOM_NOT_EXISTS
-		} else {
-			flag, err = dbMgr.IsAppDataExists(appdataid)
-
-			if err != nil {
-				errcode = ERR_DB
-			} else {
-				if !flag {
-					errcode = ERR_ROOM_NOT_EXISTS
-				} else {
-					err = dbMgr.RemoveRoomUser(rid, appdataid)
-
-					if err != nil {
-						errcode = ERR_DB
-					}
-
-					//TODO:通知管理员
-				}
-			}
-		}
+	if !isRoomExists(rid, &errcode) {
+		return errcode, errcode
 	}
+
+	if !isAppDataExists(appdataid, &errcode) {
+		return errcode, errcode
+	}
+
+	removeRoomUser(rid, appdataid, &errcode)
 
 	return errcode, errcode
 }
@@ -525,36 +252,17 @@ func HandlerReqBanRoomUser(sess ISession, data []byte) (uint16, interface{}) {
 func HandlerReqJinyanRoomUser(sess ISession, data []byte) (uint16, interface{}) {
 	rid := Uint64(data)
 	appdataid := Uint64(data[8:])
-
-	dbMgr := gtdb.Manager()
-	flag, err := dbMgr.IsRoomExists(rid)
 	errcode := ERR_NONE
 
-	if err != nil {
-		errcode = ERR_DB
-	} else {
-		if !flag {
-			errcode = ERR_ROOM_NOT_EXISTS
-		} else {
-			flag, err = dbMgr.IsAppDataExists(appdataid)
-
-			if err != nil {
-				errcode = ERR_DB
-			} else {
-				if !flag {
-					errcode = ERR_ROOM_NOT_EXISTS
-				} else {
-					err = dbMgr.JinyanRoomUser(rid, appdataid)
-
-					if err != nil {
-						errcode = ERR_DB
-					}
-
-					//TODO:通知在线成员
-				}
-			}
-		}
+	if !isRoomExists(rid, &errcode) {
+		return errcode, errcode
 	}
+
+	if !isAppDataExists(appdataid, &errcode) {
+		return errcode, errcode
+	}
+
+	jinyanRoomUser(rid, appdataid, &errcode)
 
 	return errcode, errcode
 }
@@ -562,34 +270,17 @@ func HandlerReqJinyanRoomUser(sess ISession, data []byte) (uint16, interface{}) 
 func HandlerReqUnJinyanRoomUser(sess ISession, data []byte) (uint16, interface{}) {
 	rid := Uint64(data)
 	appdataid := Uint64(data[8:])
-
-	dbMgr := gtdb.Manager()
-	flag, err := dbMgr.IsRoomExists(rid)
 	errcode := ERR_NONE
 
-	if err != nil {
-		errcode = ERR_DB
-	} else {
-		if !flag {
-			errcode = ERR_ROOM_NOT_EXISTS
-		} else {
-			flag, err = dbMgr.IsAppDataExists(appdataid)
-
-			if err != nil {
-				errcode = ERR_DB
-			} else {
-				if !flag {
-					errcode = ERR_ROOM_NOT_EXISTS
-				} else {
-					err = dbMgr.UnJinyanRoomUser(rid, appdataid)
-
-					if err != nil {
-						errcode = ERR_DB
-					}
-				}
-			}
-		}
+	if !isRoomExists(rid, &errcode) {
+		return errcode, errcode
 	}
+
+	if !isAppDataExists(appdataid, &errcode) {
+		return errcode, errcode
+	}
+
+	unjinyanRoomUser(rid, appdataid, &errcode)
 
 	return errcode, errcode
 }
@@ -597,34 +288,17 @@ func HandlerReqUnJinyanRoomUser(sess ISession, data []byte) (uint16, interface{}
 func HandlerReqAddRoomAdmin(sess ISession, data []byte) (uint16, interface{}) {
 	rid := Uint64(data)
 	appdataid := Uint64(data[8:])
-
-	dbMgr := gtdb.Manager()
-	flag, err := dbMgr.IsRoomExists(rid)
 	errcode := ERR_NONE
 
-	if err != nil {
-		errcode = ERR_DB
-	} else {
-		if !flag {
-			errcode = ERR_ROOM_NOT_EXISTS
-		} else {
-			flag, err = dbMgr.IsAppDataExists(appdataid)
-
-			if err != nil {
-				errcode = ERR_DB
-			} else {
-				if !flag {
-					errcode = ERR_ROOM_NOT_EXISTS
-				} else {
-					err = dbMgr.AddRoomAdmin(rid, appdataid)
-
-					if err != nil {
-						errcode = ERR_DB
-					}
-				}
-			}
-		}
+	if !isRoomExists(rid, &errcode) {
+		return errcode, errcode
 	}
+
+	if !isAppDataExists(appdataid, &errcode) {
+		return errcode, errcode
+	}
+
+	addRoomAdmin(rid, appdataid, &errcode)
 
 	return errcode, errcode
 }
@@ -632,34 +306,17 @@ func HandlerReqAddRoomAdmin(sess ISession, data []byte) (uint16, interface{}) {
 func HandlerReqRemoveRoomAdmin(sess ISession, data []byte) (uint16, interface{}) {
 	rid := Uint64(data)
 	appdataid := Uint64(data[8:])
-
-	dbMgr := gtdb.Manager()
-	flag, err := dbMgr.IsRoomExists(rid)
 	errcode := ERR_NONE
 
-	if err != nil {
-		errcode = ERR_DB
-	} else {
-		if !flag {
-			errcode = ERR_ROOM_NOT_EXISTS
-		} else {
-			flag, err = dbMgr.IsAppDataExists(appdataid)
-
-			if err != nil {
-				errcode = ERR_DB
-			} else {
-				if !flag {
-					errcode = ERR_ROOM_NOT_EXISTS
-				} else {
-					err = dbMgr.RemoveRoomAdmin(rid, appdataid)
-
-					if err != nil {
-						errcode = ERR_DB
-					}
-				}
-			}
-		}
+	if !isRoomExists(rid, &errcode) {
+		return errcode, errcode
 	}
+
+	if !isAppDataExists(appdataid, &errcode) {
+		return errcode, errcode
+	}
+
+	removeRoomAdmin(rid, appdataid, &errcode)
 
 	return errcode, errcode
 }
@@ -670,30 +327,12 @@ func HandlerRoomMessage(sess ISession, data []byte) (uint16, interface{}) {
 	if !jsonUnMarshal(data, roommsg, &errcode) {
 		return errcode, errcode
 	}
-	// err := json.Unmarshal(data, roommsg)
 
-	// fmt.Println(string(data))
-	// fmt.Println(roommsg)
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// 	return ERR_INVALID_JSON, ERR_INVALID_JSON
-	// }
-
-	if isRoomNotExists(roommsg.Rid, &errcode) {
+	if !isRoomExists(roommsg.Rid, &errcode) {
 		return errcode, errcode
 	}
 
-	if isNotRoomUser(roommsg.Rid, sess.ID(), &errcode) {
-		return errcode, errcode
-	}
-
-	var userlist []uint64
-	if !getRoomUserIds(roommsg.Rid, &userlist, &errcode) {
-		return errcode, errcode
-	}
-
-	var msgbytes []byte
-	if !jsonMarshal(roommsg, &msgbytes, &errcode) {
+	if !isRoomUser(roommsg.Rid, sess.ID(), &errcode) {
 		return errcode, errcode
 	}
 
@@ -701,11 +340,16 @@ func HandlerRoomMessage(sess ISession, data []byte) (uint16, interface{}) {
 	roommsg.Who = sess.ID()
 	roommsg.Nickname = sess.NickName()
 
-	senddata := packageMsg(RetFrame, 0, MsgId_RoomMessage, msgbytes)
-	for _, user := range userlist {
-		//broadcast to user in room
-		errcode = SendMessageToUser(user, senddata)
+	var msgbytes []byte
+	if !jsonMarshal(roommsg, &msgbytes, &errcode) {
+		return errcode, errcode
 	}
+
+	//最后一个if判断不需要
+	// if !sendMessageToRoomUser(roommsg.Rid, msgbytes, &errcode) {
+	// 	return errcode, errcode
+	// }
+	sendMessageToRoomUser(roommsg.Rid, msgbytes, &errcode)
 
 	// if getRoomUserIds(roommsg.Rid, &userlist, &errcode) {
 	// 	var msgbytes []byte
@@ -738,49 +382,49 @@ func HandlerRoomMessage(sess ISession, data []byte) (uint16, interface{}) {
 	return errcode, errcode
 }
 
-func getRoomUserIds(rid uint64, ids *[]uint64, perrcode *uint16) bool {
-	userlist, err := gtdb.Manager().GetRoomUserIds(rid)
+func HandlerReqRoomList(sess ISession, data []byte) (uint16, interface{}) {
+	errcode := ERR_NONE
 
-	if err != nil {
-		*perrcode = ERR_DB
-	} else {
-		*ids = userlist
-		return true
+	var roomlist []*gtdb.Room
+	if !getRoomList(sess.ID(), &roomlist, &errcode) {
+		return errcode, errcode
 	}
 
-	return false
+	var msgbytes []byte
+	if !jsonMarshal(roomlist, &msgbytes, &errcode) {
+		return errcode, errcode
+	}
+
+	ret := &MsgRetRoomList{}
+	ret.Json = msgbytes
+	ret.ErrorCode = errcode
+	return errcode, ret
 }
 
-func getRoomAdminIds(rid uint64, ids *[]uint64, perrcode *uint16) bool {
-	userlist, err := gtdb.Manager().GetRoomAdminIds(rid)
+func HandlerReqRoomPresenceList(sess ISession, data []byte) (uint16, interface{}) {
+	rid := Uint64(data)
+	errcode := ERR_NONE
 
-	if err != nil {
-		*perrcode = ERR_DB
-	} else {
-		*ids = userlist
-		return true
+	if !isRoomExists(rid, &errcode) {
+		return errcode, errcode
 	}
 
-	return false
-}
-
-func jsonMarshal(data interface{}, out *[]byte, perrcode *uint16) bool {
-	databytes, err := json.Marshal(data)
-	if err != nil {
-		*perrcode = ERR_JSON_SERIALIZE
-	} else {
-		*out = databytes
-		return true
+	if !isRoomAdmin(rid, sess.ID(), &errcode) {
+		return errcode, errcode
 	}
 
-	return false
-}
-
-func jsonUnMarshal(data []byte, out interface{}, perrcode *uint16) bool {
-	err := json.Unmarshal(data, out)
-	if err == nil {
-		return true
+	var datalist map[string]string
+	if !getRoomPresenceList(rid, &datalist, &errcode) {
+		return errcode, errcode
 	}
-	*perrcode = ERR_INVALID_JSON
-	return false
+
+	var msgbytes []byte
+	if !jsonMarshal(datalist, &msgbytes, &errcode) {
+		return errcode, errcode
+	}
+
+	ret := &MsgRetRoomPresenceList{}
+	ret.Json = msgbytes
+	ret.ErrorCode = errcode
+	return errcode, ret
 }

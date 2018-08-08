@@ -372,8 +372,6 @@ func HandlerReqDataList(sess ISession, data []byte) (uint16, interface{}) {
 			// }
 			return errcode, nil
 		}
-	case DataType_Room:
-	case DataType_RoomMessage:
 	}
 
 	ret.ErrorCode = errcode
