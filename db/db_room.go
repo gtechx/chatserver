@@ -42,7 +42,7 @@ func (db *DBManager) IsRoomExists(rid uint64) (bool, error) {
 
 func (db *DBManager) DeleteRoom(rid uint64) error {
 	tx := db.sql.Begin()
-	if err := tx.Delete(&Room{Rid: rid}, "rid = ?", rid).Error; err != nil {
+	if err := tx.Delete(&Room{Rid: rid}).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -62,7 +62,7 @@ func (db *DBManager) GetRoom(rid uint64) (*Room, error) {
 
 func (db *DBManager) GetRoomListByOwner(appdataid uint64) ([]*Room, error) {
 	roomlist := []*Room{}
-	retdb := db.sql.Where("ownerid = ?", appdataid).Find(roomlist)
+	retdb := db.sql.Where("ownerid = ?", appdataid).Find(&roomlist)
 	return roomlist, retdb.Error
 }
 
@@ -76,7 +76,7 @@ func (db *DBManager) GetRoomListByJoined(appdataid uint64) ([]*Room, error) {
 	roomlist := []*Room{}
 	retdb := db.sql.Table(db.sql.prefix + "room a")
 	retdb = retdb.Joins("join "+db.sql.prefix+"room_user b on b.rid = a.rid").Where("dataid = ?", appdataid)
-	retdb = retdb.Select("a.*, b.msgsetting").Scan(roomlist)
+	retdb = retdb.Select("a.*, b.msgsetting").Scan(&roomlist)
 	return roomlist, retdb.Error
 }
 
@@ -115,13 +115,13 @@ func (db *DBManager) GetRoomUserList(rid uint64) ([]*RoomUser, error) {
 	retdb := db.sql.Table(db.sql.prefix + "app_data a")
 	retdb = retdb.Joins("join "+db.sql.prefix+"room_user b on b.dataid = a.id").Where("rid = ?", rid)
 	retdb = retdb.Joins("left join " + db.sql.prefix + "online c on c.dataid = a.id")
-	retdb = retdb.Select("a.*, b.*, c.dataid is not null as isonline").Scan(roomuserlist)
+	retdb = retdb.Select("a.*, b.*, c.dataid is not null as isonline").Scan(&roomuserlist)
 	return roomuserlist, retdb.Error
 }
 
 func (db *DBManager) GetRoomUserIds(rid uint64) ([]uint64, error) {
 	ids := []uint64{}
-	retdb := db.sql.Model(roomuser_table).Select("a.dataid").Where("rid = ?", rid).Scan(&ids)
+	retdb := db.sql.Model(roomuser_table).Select("dataid").Where("rid = ?", rid).Scan(&ids)
 	return ids, retdb.Error
 }
 

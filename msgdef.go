@@ -48,6 +48,8 @@ const (
 	PresenceType_Available
 	PresenceType_Unavailable
 	PresenceType_Invisible
+
+	PresenceType_Dismiss
 )
 
 var msgHandler = map[uint16]func(ISession, []byte) (uint16, interface{}){}
@@ -388,8 +390,8 @@ type MsgRetRoomSearch struct {
 const MsgId_ReqCreateRoom uint16 = 1100
 
 type MsgReqCreateRoom struct {
-	Name     string `json:"name"`
-	RoomType byte   `json:"roomtype"`
+	RoomName string `json:"roomname"`
+	RoomType byte   `json:"roomtype,string"`
 	Password string `json:"password"`
 	Jieshao  string `json:"jieshao"`
 	Notice   string `json:"notice"` //公告
@@ -572,6 +574,18 @@ type MsgReqRoomPresenceList struct {
 }
 
 type MsgRetRoomPresenceList struct {
+	ErrorCode uint16
+	Json      []byte
+}
+
+//get room user list
+const MsgId_ReqRoomUserList uint16 = 1113
+
+type MsgReqRoomUserList struct {
+	Rid uint64
+}
+
+type MsgRetRoomUserList struct {
 	ErrorCode uint16
 	Json      []byte
 }

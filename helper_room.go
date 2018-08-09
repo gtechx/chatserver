@@ -9,7 +9,7 @@ import (
 
 //所有这类函数，返回false表示出错
 func createRoom(appdataid uint64, roommsg *MsgReqCreateRoom, perrcode *uint16) bool {
-	tbl_room := &gtdb.Room{Ownerid: appdataid, Roomname: roommsg.Name, Roomtype: roommsg.RoomType, Jieshao: roommsg.Jieshao, Notice: roommsg.Notice, Password: roommsg.Password}
+	tbl_room := &gtdb.Room{Ownerid: appdataid, Roomname: roommsg.RoomName, Roomtype: roommsg.RoomType, Jieshao: roommsg.Jieshao, Notice: roommsg.Notice, Password: roommsg.Password}
 
 	err := gtdb.Manager().CreateRoom(tbl_room)
 
@@ -419,6 +419,19 @@ func isRoomPresenceExists(rid, appdataid uint64, perrcode *uint16) bool {
 		} else {
 			return true
 		}
+	}
+
+	return false
+}
+
+func getRoomUserList(rid uint64, puserlist *[]*gtdb.RoomUser, perrcode *uint16) bool {
+	userlist, err := gtdb.Manager().GetRoomUserList(rid)
+
+	if err != nil {
+		*perrcode = ERR_DB
+	} else {
+		*puserlist = userlist
+		return true
 	}
 
 	return false

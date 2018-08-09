@@ -22,6 +22,10 @@ func RegisterRoomMsg() {
 	registerMsgHandler(MsgId_ReqAddRoomAdmin, HandlerReqAddRoomAdmin)
 	registerMsgHandler(MsgId_ReqRemoveRoomAdmin, HandlerReqRemoveRoomAdmin)
 	registerMsgHandler(MsgId_RoomMessage, HandlerRoomMessage)
+
+	registerMsgHandler(MsgId_ReqRoomList, HandlerReqRoomList)
+	registerMsgHandler(MsgId_ReqRoomPresenceList, HandlerReqRoomPresenceList)
+	registerMsgHandler(MsgId_ReqRoomUserList, HandlerReqRoomUserList)
 }
 
 func HandlerReqCreateRoom(sess ISession, data []byte) (uint16, interface{}) {
@@ -43,7 +47,33 @@ func HandlerReqDeleteRoom(sess ISession, data []byte) (uint16, interface{}) {
 		return errcode, errcode
 	}
 
-	deleteRoom(rid, &errcode)
+	var ids []uint64
+	if !getRoomUserIds(rid, &ids, &errcode) {
+		return errcode, errcode
+	}
+
+	if !deleteRoom(rid, &errcode) {
+		return errcode, errcode
+	}
+
+	//通知房间其他人，房间解散
+	var presence *MsgRoomPresence = &MsgRoomPresence{}
+	presence.PresenceType = PresenceType_Dismiss
+	presence.Rid = rid
+	presence.Who = sess.ID()
+	presence.Nickname = sess.NickName()
+	presence.TimeStamp = time.Now().Unix()
+
+	var presencebytes []byte
+	jsonMarshal(presence, &presencebytes, &errcode)
+	senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
+
+	myid := sess.ID()
+	for _, id := range ids {
+		if id != myid {
+			SendMessageToUser(id, senddata)
+		}
+	}
 	return errcode, errcode
 }
 
@@ -424,6 +454,30 @@ func HandlerReqRoomPresenceList(sess ISession, data []byte) (uint16, interface{}
 	}
 
 	ret := &MsgRetRoomPresenceList{}
+	ret.Json = msgbytes
+	ret.ErrorCode = errcode
+	return errcode, ret
+}
+
+func HandlerReqRoomUserList(sess ISession, data []byte) (uint16, interface{}) {
+	rid := Uint64(data)
+	errcode := ERR_NONE
+
+	if !isRoomUser(rid, sess.ID(), &errcode) {
+		return errcode, errcode
+	}
+
+	var datalist []*gtdb.RoomUser
+	if !getRoomUserList(rid, &datalist, &errcode) {
+		return errcode, errcode
+	}
+
+	var msgbytes []byte
+	if !jsonMarshal(datalist, &msgbytes, &errcode) {
+		return errcode, errcode
+	}
+
+	ret := &MsgRetRoomUserList{}
 	ret.Json = msgbytes
 	ret.ErrorCode = errcode
 	return errcode, ret
