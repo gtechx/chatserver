@@ -205,7 +205,7 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 						}
 					}
 				}
-			case PresenceType_Unsubscribe:
+			case PresenceType_UnSubscribe:
 				//check if the two are friend, if not omit thie message, else delete friend and send to who.
 				flag, err = dbMgr.IsFriend(sess.ID(), who)
 				if err != nil {
@@ -228,7 +228,7 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 						}
 					}
 				}
-			case PresenceType_Unsubscribed:
+			case PresenceType_UnSubscribed:
 				//check if server has record, if not omit this message, else send to record sender
 				flag, err = dbMgr.IsPresenceExists(sess.ID(), who)
 				if err != nil {
@@ -247,7 +247,7 @@ func HandlerPresence(sess ISession, data []byte) (uint16, interface{}) {
 						}
 					}
 				}
-			case PresenceType_Available, PresenceType_Unavailable, PresenceType_Invisible:
+			case PresenceType_Available, PresenceType_UnAvailable, PresenceType_Invisible:
 				//send to my friend online
 				presencebytes, err := json.Marshal(presence)
 				if err != nil {

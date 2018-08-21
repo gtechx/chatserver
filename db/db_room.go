@@ -152,9 +152,9 @@ func (db *DBManager) GetRoomAdminIds(rid uint64) ([]uint64, error) {
 }
 
 func (db *DBManager) IsRoomAdmin(rid, appdataid uint64) (bool, error) {
-	var isadmin bool
-	retdb := db.sql.Model(roomuser_table).Select("isadmin").Where("rid = ?", rid).Where("dataid = ?", appdataid).Scan(&isadmin)
-	return isadmin, retdb.Error
+	var count uint64
+	retdb := db.sql.Model(roomuser_table).Where("rid = ?", rid).Where("dataid = ?", appdataid).Where("isadmin = ?", 1).Count(&count)
+	return count > 0, retdb.Error
 }
 
 func (db *DBManager) IsRoomOwner(rid, appdataid uint64) (bool, error) {
@@ -200,9 +200,9 @@ func (db *DBManager) SetRoomMsgSetting(rid, appdataid uint64, msgsetting byte) e
 }
 
 func (db *DBManager) GetRoomMsgSetting(rid, appdataid uint64) (byte, error) {
-	var msgsetting byte
-	retdb := db.sql.Model(roomuser_table).Select("msgsetting").Where("rid = ?", rid).Where("dataid = ?", appdataid).Scan(&msgsetting)
-	return msgsetting, retdb.Error
+	roomuser := &RoomUser{}
+	retdb := db.sql.Model(roomuser_table).Select("msgsetting").Where("rid = ?", rid).Where("dataid = ?", appdataid).Scan(roomuser)
+	return roomuser.Msgsetting, retdb.Error
 }
 
 //room property
@@ -212,9 +212,9 @@ func (db *DBManager) SetRoomNotice(rid uint64, notice string) error {
 }
 
 func (db *DBManager) GetRoomNotice(rid uint64) (string, error) {
-	var notice string
-	retdb := db.sql.Model(room_table).Select("notice").Where("rid = ?", rid).Scan(&notice)
-	return notice, retdb.Error
+	room := &Room{}
+	retdb := db.sql.Model(room_table).Select("notice").Where("rid = ?", rid).Scan(room)
+	return room.Notice, retdb.Error
 }
 
 func (db *DBManager) SetRoomName(rid uint64, roomname string) error {
@@ -223,9 +223,9 @@ func (db *DBManager) SetRoomName(rid uint64, roomname string) error {
 }
 
 func (db *DBManager) GetRoomName(rid uint64) (string, error) {
-	var roomname string
-	retdb := db.sql.Model(room_table).Select("roomname").Where("rid = ?", rid).Scan(&roomname)
-	return roomname, retdb.Error
+	room := &Room{}
+	retdb := db.sql.Model(room_table).Select("roomname").Where("rid = ?", rid).Scan(room)
+	return room.Roomname, retdb.Error
 }
 
 func (db *DBManager) SetRoomType(rid uint64, roomtype byte) error {
@@ -234,9 +234,9 @@ func (db *DBManager) SetRoomType(rid uint64, roomtype byte) error {
 }
 
 func (db *DBManager) GetRoomType(rid uint64) (byte, error) {
-	var roomtype byte
-	retdb := db.sql.Model(room_table).Select("roomtype").Where("rid = ?", rid).Scan(&roomtype)
-	return roomtype, retdb.Error
+	room := &Room{}
+	retdb := db.sql.Model(room_table).Select("roomtype").Where("rid = ?", rid).Scan(room)
+	return room.Roomtype, retdb.Error
 }
 
 func (db *DBManager) SetRoomPassword(rid uint64, password string) error {
@@ -245,21 +245,21 @@ func (db *DBManager) SetRoomPassword(rid uint64, password string) error {
 }
 
 func (db *DBManager) GetRoomPassword(rid uint64) (string, error) {
-	var password string
-	retdb := db.sql.Model(room_table).Select("password").Where("rid = ?", rid).Scan(&password)
-	return password, retdb.Error
+	room := &Room{}
+	retdb := db.sql.Model(room_table).Select("password").Where("rid = ?", rid).Scan(room)
+	return room.Password, retdb.Error
 }
 
-func (db *DBManager) SetRoomJoinType(rid uint64, jointype byte) error {
-	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Update("jointype", jointype)
-	return retdb.Error
-}
+// func (db *DBManager) SetRoomJoinType(rid uint64, jointype byte) error {
+// 	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Update("jointype", jointype)
+// 	return retdb.Error
+// }
 
-func (db *DBManager) GetRoomJoinType(rid uint64) (byte, error) {
-	var jointype byte
-	retdb := db.sql.Model(room_table).Select("jointype").Where("rid = ?", rid).Scan(&jointype)
-	return jointype, retdb.Error
-}
+// func (db *DBManager) GetRoomJoinType(rid uint64) (byte, error) {
+// 	room := &Room{}
+// 	retdb := db.sql.Model(room_table).Select("jointype").Where("rid = ?", rid).Scan(room)
+// 	return room.Roomtype, retdb.Error
+// }
 
 func (db *DBManager) SetRoomJieshao(rid uint64, jieshao string) error {
 	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Update("jieshao", jieshao)
@@ -267,9 +267,9 @@ func (db *DBManager) SetRoomJieshao(rid uint64, jieshao string) error {
 }
 
 func (db *DBManager) GetRoomJieshao(rid uint64) (string, error) {
-	var jieshao string
-	retdb := db.sql.Model(room_table).Select("jieshao").Where("rid = ?", rid).Scan(&jieshao)
-	return jieshao, retdb.Error
+	room := &Room{}
+	retdb := db.sql.Model(room_table).Select("jieshao").Where("rid = ?", rid).Scan(room)
+	return room.Jieshao, retdb.Error
 }
 
 func (db *DBManager) SetRoomMaxUser(rid uint64, maxuser uint16) error {
@@ -278,7 +278,7 @@ func (db *DBManager) SetRoomMaxUser(rid uint64, maxuser uint16) error {
 }
 
 func (db *DBManager) GetRoomMaxUser(rid uint64) (uint16, error) {
-	var maxuser uint16
-	retdb := db.sql.Model(room_table).Select("maxuser").Where("rid = ?", rid).Scan(&maxuser)
-	return maxuser, retdb.Error
+	room := &Room{}
+	retdb := db.sql.Model(room_table).Select("maxuser").Where("rid = ?", rid).Scan(room)
+	return room.Maxuser, retdb.Error
 }

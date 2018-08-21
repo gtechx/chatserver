@@ -154,7 +154,7 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 		if !removeRoomPresence(rid, sess.ID(), &errcode) {
 			return errcode, errcode
 		}
-	case PresenceType_Unsubscribe:
+	case PresenceType_UnSubscribe:
 		if !isRoomUser(rid, sess.ID(), &errcode) {
 			return errcode, errcode
 		}
@@ -179,7 +179,7 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 		if !removeRoomPresence(rid, sess.ID(), &errcode) {
 			return errcode, errcode
 		}
-	case PresenceType_Unsubscribed:
+	case PresenceType_UnSubscribed:
 		if !isRoomAdmin(rid, sess.ID(), &errcode) {
 			return errcode, errcode
 		}
@@ -203,7 +203,7 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 		if !removeRoomPresence(rid, sess.ID(), &errcode) {
 			return errcode, errcode
 		}
-	case PresenceType_Available, PresenceType_Unavailable, PresenceType_Invisible:
+	case PresenceType_Available, PresenceType_UnAvailable, PresenceType_Invisible:
 		//send to my friend online
 		// presencebytes, err := json.Marshal(presence)
 		// if err != nil {

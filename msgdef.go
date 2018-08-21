@@ -43,10 +43,10 @@ const (
 const (
 	PresenceType_Subscribe uint8 = iota
 	PresenceType_Subscribed
-	PresenceType_Unsubscribe
-	PresenceType_Unsubscribed
+	PresenceType_UnSubscribe
+	PresenceType_UnSubscribed
 	PresenceType_Available
-	PresenceType_Unavailable
+	PresenceType_UnAvailable
 	PresenceType_Invisible
 
 	PresenceType_Dismiss
