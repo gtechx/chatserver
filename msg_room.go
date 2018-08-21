@@ -159,6 +159,10 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 			return errcode, errcode
 		}
 
+		if !isNotRoomOwner(rid, sess.ID(), &errcode) {
+			return errcode, errcode
+		}
+
 		if !removeRoomUser(rid, sess.ID(), &errcode) {
 			return errcode, errcode
 		}

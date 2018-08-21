@@ -157,6 +157,12 @@ func (db *DBManager) IsRoomAdmin(rid, appdataid uint64) (bool, error) {
 	return isadmin, retdb.Error
 }
 
+func (db *DBManager) IsRoomOwner(rid, appdataid uint64) (bool, error) {
+	var count uint64
+	retdb := db.sql.Model(room_table).Where("rid = ?", rid).Where("ownerid = ?", appdataid).Count(&count)
+	return count > 0, retdb.Error
+}
+
 //踢出玩家
 // func (db *DBManager) BanUserInRoom(rid, appdataid uint64) error {
 // 	retdb := db.sql.Delete(roomuser_table, "rid = ? AND dataid = ?", rid, appdataid)

@@ -350,8 +350,40 @@ func isNotRoomUser(rid, appdataid uint64, perrcode *uint16) bool {
 	return false
 }
 
+func isRoomOwner(rid, appdataid uint64, perrcode *uint16) bool {
+	flag, err := gtdb.Manager().IsRoomOwner(rid, appdataid)
+
+	if err != nil {
+		*perrcode = ERR_DB
+	} else {
+		if !flag {
+			*perrcode = ERR_ROOM_NOT_OWNER
+		} else {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isNotRoomOwner(rid, appdataid uint64, perrcode *uint16) bool {
+	flag, err := gtdb.Manager().IsRoomOwner(rid, appdataid)
+
+	if err != nil {
+		*perrcode = ERR_DB
+	} else {
+		if flag {
+			*perrcode = ERR_ROOM_OWNER
+		} else {
+			return true
+		}
+	}
+
+	return false
+}
+
 func isRoomAdmin(rid, appdataid uint64, perrcode *uint16) bool {
-	flag, err := gtdb.Manager().IsRoomUser(rid, appdataid)
+	flag, err := gtdb.Manager().IsRoomAdmin(rid, appdataid)
 
 	if err != nil {
 		*perrcode = ERR_DB
@@ -367,7 +399,7 @@ func isRoomAdmin(rid, appdataid uint64, perrcode *uint16) bool {
 }
 
 func isNotRoomAdmin(rid, appdataid uint64, perrcode *uint16) bool {
-	flag, err := gtdb.Manager().IsRoomUser(rid, appdataid)
+	flag, err := gtdb.Manager().IsRoomAdmin(rid, appdataid)
 
 	if err != nil {
 		*perrcode = ERR_DB
