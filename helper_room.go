@@ -115,7 +115,7 @@ func addRoomUser(rid, appdataid uint64, presence *MsgRoomPresence, perrcode *uin
 			} else {
 				for _, user := range userlist {
 					//broadcast to user in room
-					errcode := SendMessageToUser(user, senddata)
+					errcode := SendMessageToUser(user.Dataid, senddata)
 
 					if errcode != ERR_NONE {
 						*perrcode = errcode
@@ -141,7 +141,7 @@ func sendMessageToRoomUser(rid uint64, msgbytes []byte, perrcode *uint16) bool {
 	} else {
 		for _, user := range userlist {
 			//broadcast to user in room
-			errcode := SendMessageToUser(user, senddata)
+			errcode := SendMessageToUser(user.Dataid, senddata)
 
 			if errcode != ERR_NONE {
 				*perrcode = errcode
@@ -165,7 +165,7 @@ func sendPresenceToRoomUser(rid uint64, presencebytes []byte, perrcode *uint16) 
 	} else {
 		for _, user := range userlist {
 			//broadcast to user in room
-			errcode := SendMessageToUser(user, senddata)
+			errcode := SendMessageToUser(user.Dataid, senddata)
 
 			if errcode != ERR_NONE {
 				*perrcode = errcode
@@ -189,7 +189,7 @@ func sendPresenceToRoomAdmin(rid uint64, presencebytes []byte, perrcode *uint16)
 	} else {
 		for _, user := range userlist {
 			//broadcast to user in room
-			errcode := SendMessageToUser(user, senddata)
+			errcode := SendMessageToUser(user.Dataid, senddata)
 
 			if errcode != ERR_NONE {
 				*perrcode = errcode
@@ -201,6 +201,15 @@ func sendPresenceToRoomAdmin(rid uint64, presencebytes []byte, perrcode *uint16)
 	}
 
 	return false
+}
+
+func addRoomPresence(rid, appdataid uint64, presence []byte, perrcode *uint16) bool {
+	err := gtdb.Manager().AddRoomPresence(rid, appdataid, presence)
+	if err != nil {
+		*perrcode = ERR_DB
+		return false
+	}
+	return true
 }
 
 func removeRoomPresence(rid, appdataid uint64, perrcode *uint16) bool {
@@ -414,7 +423,7 @@ func isNotRoomAdmin(rid, appdataid uint64, perrcode *uint16) bool {
 	return false
 }
 
-func getRoomUserIds(rid uint64, ids *[]uint64, perrcode *uint16) bool {
+func getRoomUserIds(rid uint64, ids *[]*gtdb.RoomUser, perrcode *uint16) bool {
 	userlist, err := gtdb.Manager().GetRoomUserIds(rid)
 
 	if err != nil {
@@ -427,7 +436,7 @@ func getRoomUserIds(rid uint64, ids *[]uint64, perrcode *uint16) bool {
 	return false
 }
 
-func getRoomAdminIds(rid uint64, ids *[]uint64, perrcode *uint16) bool {
+func getRoomAdminIds(rid uint64, ids *[]*gtdb.RoomUser, perrcode *uint16) bool {
 	userlist, err := gtdb.Manager().GetRoomAdminIds(rid)
 
 	if err != nil {

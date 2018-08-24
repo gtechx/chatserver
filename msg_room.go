@@ -47,8 +47,8 @@ func HandlerReqDeleteRoom(sess ISession, data []byte) (uint16, interface{}) {
 		return errcode, errcode
 	}
 
-	var ids []uint64
-	if !getRoomUserIds(rid, &ids, &errcode) {
+	var uselist []*gtdb.RoomUser
+	if !getRoomUserIds(rid, &uselist, &errcode) {
 		return errcode, errcode
 	}
 
@@ -69,9 +69,9 @@ func HandlerReqDeleteRoom(sess ISession, data []byte) (uint16, interface{}) {
 	senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
 
 	myid := sess.ID()
-	for _, id := range ids {
-		if id != myid {
-			SendMessageToUser(id, senddata)
+	for _, user := range uselist {
+		if user.Dataid != myid {
+			SendMessageToUser(user.Dataid, senddata)
 		}
 	}
 	return errcode, errcode
@@ -115,6 +115,10 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 		if roomtype == RoomType_Apply {
 			var presencebytes []byte
 			if !jsonMarshal(presence, &presencebytes, &errcode) {
+				return errcode, errcode
+			}
+
+			if !addRoomPresence(rid, sess.ID(), presencebytes, &errcode) {
 				return errcode, errcode
 			}
 
@@ -442,11 +446,9 @@ func HandlerReqRoomPresenceList(sess ISession, data []byte) (uint16, interface{}
 	if !isRoomExists(rid, &errcode) {
 		return errcode, errcode
 	}
-
 	if !isRoomAdmin(rid, sess.ID(), &errcode) {
 		return errcode, errcode
 	}
-
 	var datalist map[string]string
 	if !getRoomPresenceList(rid, &datalist, &errcode) {
 		return errcode, errcode
