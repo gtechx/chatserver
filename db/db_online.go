@@ -172,7 +172,7 @@ func (db *DBManager) SetUserOnline(tbl_online *Online) error {
 }
 
 func (db *DBManager) SetUserOffline(id uint64, platform string) error {
-	retdb := db.sql.Delete(online_table).Where("dataid = ? AND platform = ?", id, platform)
+	retdb := db.sql.Delete(online_table, "dataid = ? AND platform = ?", id, platform)
 	return retdb.Error
 }
 

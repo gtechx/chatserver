@@ -98,6 +98,7 @@ func (s *Sess) startRecv() {
 			s.errorChan <- true
 			break
 		}
+
 		switch msgtype {
 		case TickFrame:
 			//s.sendChan <- tickdata
@@ -107,6 +108,7 @@ func (s *Sess) startRecv() {
 			//s.sendChan <- senddata
 			s.sendList.Put(senddata)
 		default:
+			fmt.Println("processing msg:", msgid, " id:", id, " datalen:", len(databuff))
 			if msgid != MsgId_ReqQuitChat {
 				errcode, ret := HandleMsg(msgid, s, databuff)
 				if errcode == ERR_MSG_INVALID {

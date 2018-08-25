@@ -157,7 +157,7 @@ func (db *DBManager) UnJinyanAppDatas(ids []uint64) error {
 			return err
 		}
 
-		if err := tx.Delete(appdatajinyan_table).Where("dataid = ?", id).Error; err != nil {
+		if err := tx.Delete(appdatajinyan_table, "dataid = ?", id).Error; err != nil {
 			tx.Rollback()
 			return err
 		}
@@ -183,7 +183,7 @@ func (db *DBManager) JinyanAppData(tbl_appdatajinyan *AppDataJinyan) error {
 
 func (db *DBManager) UnJinyanAppData(id uint64) error {
 	tx := db.sql.Begin()
-	if err := tx.Delete(appdatajinyan_table).Where("dataid = ?", id).Error; err != nil {
+	if err := tx.Delete(appdatajinyan_table, "dataid = ?", id).Error; err != nil {
 		tx.Rollback()
 		return err
 	}

@@ -151,11 +151,11 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 			return errcode, errcode
 		}
 
-		if !addRoomUser(rid, sess.ID(), presence, &errcode) {
+		if !addRoomUser(rid, who, presence, &errcode) {
 			return errcode, errcode
 		}
 
-		if !removeRoomPresence(rid, sess.ID(), &errcode) {
+		if !removeRoomPresence(rid, who, &errcode) {
 			return errcode, errcode
 		}
 	case PresenceType_UnSubscribe:
@@ -204,7 +204,7 @@ func HandlerReqRoomPresence(sess ISession, data []byte) (uint16, interface{}) {
 		senddata := packageMsg(RetFrame, 0, MsgId_RoomPresence, presencebytes)
 		errcode = SendMessageToUser(who, senddata)
 
-		if !removeRoomPresence(rid, sess.ID(), &errcode) {
+		if !removeRoomPresence(rid, who, &errcode) {
 			return errcode, errcode
 		}
 	case PresenceType_Available, PresenceType_UnAvailable, PresenceType_Invisible:

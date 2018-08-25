@@ -157,7 +157,7 @@ func (db *DBManager) UnbanAppDatas(ids []uint64) error {
 			return err
 		}
 
-		if err := tx.Delete(appdatabaned_table).Where("dataid = ?", id).Error; err != nil {
+		if err := tx.Delete(appdatabaned_table, "dataid = ?", id).Error; err != nil {
 			tx.Rollback()
 			return err
 		}
@@ -183,7 +183,7 @@ func (db *DBManager) BanAppData(tbl_appdatabaned *AppDataBaned) error {
 
 func (db *DBManager) UnbanAppData(id uint64) error {
 	tx := db.sql.Begin()
-	if err := tx.Delete(appdatabaned_table).Where("dataid = ?", id).Error; err != nil {
+	if err := tx.Delete(appdatabaned_table, "dataid = ?", id).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
