@@ -47,6 +47,10 @@ func HandlerReqDeleteRoom(sess ISession, data []byte) (uint16, interface{}) {
 		return errcode, errcode
 	}
 
+	if !isRoomOwner(rid, sess.ID(), &errcode) {
+		return errcode, errcode
+	}
+
 	var uselist []*gtdb.RoomUser
 	if !getRoomUserIds(rid, &uselist, &errcode) {
 		return errcode, errcode
