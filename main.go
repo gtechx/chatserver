@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"time"
+	"io"
 
 	. "github.com/gtechx/base/common"
 	//"github.com/gtechx/base/gtnet"
@@ -259,7 +260,7 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 	var msgid uint16
 	var databuff []byte
 
-	_, err := conn.Read(typebuff)
+	_, err := io.ReadFull(conn, typebuff)
 	if err != nil {
 		fmt.Println(err.Error())
 		goto end
@@ -271,7 +272,7 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 		goto end
 	}
 
-	_, err = conn.Read(idbuff)
+	_, err = io.ReadFull(conn, idbuff)
 	if err != nil {
 		fmt.Println(err.Error())
 		goto end
@@ -280,7 +281,7 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 
 	//fmt.Println("id:", id)
 
-	_, err = conn.Read(sizebuff)
+	_, err = io.ReadFull(conn, sizebuff)
 	if err != nil {
 		fmt.Println(err.Error())
 		goto end
@@ -294,7 +295,7 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 		goto end
 	}
 
-	_, err = conn.Read(msgidbuff)
+	_, err = io.ReadFull(conn, msgidbuff)
 	if err != nil {
 		fmt.Println(err.Error())
 		goto end
@@ -309,7 +310,7 @@ func readMsgHeader(conn net.Conn) (byte, uint16, uint16, uint16, []byte, error) 
 
 	databuff = make([]byte, size)
 
-	_, err = conn.Read(databuff)
+	_, err = io.ReadFull(conn, databuff)
 	if err != nil {
 		fmt.Println(err.Error())
 		goto end
